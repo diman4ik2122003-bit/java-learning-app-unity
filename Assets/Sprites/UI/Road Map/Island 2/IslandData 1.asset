@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6acc5de8025ec3049af93cf7f2f94cb9, type: 3}
+  m_Name: IslandData 1
+  m_EditorClassIdentifier: Assembly-CSharp::IslandData
+  islandId: 2
+  background: {fileID: -2729052536238076402, guid: 26f4072bde268c447906d818640a54d1, type: 3}
+  levelButtonSize: {x: 129.0838, y: 153.3642}
+  levels:
+  - sprite: {fileID: 6040649613417962703, guid: fe82cc2560374ce439ce2d746604c6bc, type: 3}
+    anchoredPosition: {x: -542, y: 245}
+  - sprite: {fileID: -6327325649173860178, guid: 7490ab20570b29e479d921e20a850004, type: 3}
+    anchoredPosition: {x: -456, y: 0}
+  - sprite: {fileID: -2351124063596626731, guid: 1b60a9177477c504b96635d54b8f7439, type: 3}
+    anchoredPosition: {x: -243, y: -176}
+  - sprite: {fileID: -2333655104237556482, guid: 1a216d82b3a0044478be1bc1b144e942, type: 3}
+    anchoredPosition: {x: 29, y: -142}
+  - sprite: {fileID: -2858338080222453747, guid: b5821105e85ef9841ba65d2a507387e9, type: 3}
+    anchoredPosition: {x: 276, y: -20}
+  - sprite: {fileID: -1872977586338071037, guid: af15d5cff2409c64fafdcfc16abcd1f1, type: 3}
+    anchoredPosition: {x: 543, y: 71}
