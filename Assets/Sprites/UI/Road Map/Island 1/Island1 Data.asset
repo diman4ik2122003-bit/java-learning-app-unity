@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6acc5de8025ec3049af93cf7f2f94cb9, type: 3}
-  m_Name: IslandData
+  m_Name: Island1 Data
   m_EditorClassIdentifier: Assembly-CSharp::IslandData
   islandId: 1
   background: {fileID: -8034372917572550119, guid: 638378e9b42979c4288e55010fa5f0e2, type: 3}

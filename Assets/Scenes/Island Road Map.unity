@@ -230,6 +230,7 @@ MonoBehaviour:
   allIslands:
   - {fileID: 11400000, guid: 90efe6b327f66c24d89eee31a1dea3b4, type: 2}
   - {fileID: 11400000, guid: 41cfdbde4a21c1449a49e4a3863f791a, type: 2}
+  - {fileID: 11400000, guid: e0e50b657ac355b41bd2fa6340679f2e, type: 2}
   background: {fileID: 734640857}
   levelsParent: {fileID: 2016685414}
   levelButtonPrefab: {fileID: 41806030896015467, guid: 986fe1961bb4a3143b72b2c615002993, type: 3}

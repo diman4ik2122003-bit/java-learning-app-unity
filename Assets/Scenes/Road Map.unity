@@ -762,6 +762,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 441280807}
+  - component: {fileID: 441280815}
+  - component: {fileID: 441280814}
+  - component: {fileID: 441280813}
+  - component: {fileID: 441280812}
+  - component: {fileID: 441280811}
   - component: {fileID: 441280810}
   - component: {fileID: 441280809}
   - component: {fileID: 441280808}
@@ -835,7 +840,31 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 441280809}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 441280814}
+        m_TargetAssemblyTypeName: CloudTransitionActivator, Assembly-CSharp
+        m_MethodName: ActivateTransition
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 441280811}
+        m_TargetAssemblyTypeName: IslandSelector, Assembly-CSharp
+        m_MethodName: OnClick
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &441280809
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -874,6 +903,77 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 441280806}
   m_CullTransparentMesh: 1
+--- !u!114 &441280811
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 441280806}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a9366ab2de39144a85a2e314e3e88b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IslandSelector
+  islandData: {fileID: 11400000, guid: e0e50b657ac355b41bd2fa6340679f2e, type: 2}
+--- !u!114 &441280812
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 441280806}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed95697a0061ba844808776216224e23, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpringyHoverButton
+  targetScale: 1.12
+  springPower: 0.07
+  springSpeed: 12
+--- !u!114 &441280813
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 441280806}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7bcd97f0e4cb034f9422d617915c386, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::JellyButton
+  jellyPower: 0.2
+  jellyDuration: 0.2
+--- !u!114 &441280814
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 441280806}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e294e379da0cde84ca7a67a38f57e194, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CloudTransitionActivator
+  targetSceneName: Island Road Map
+--- !u!114 &441280815
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 441280806}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53c2605731a0a8d4ab4a24f918955ebf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FloatingGroupController
+  minOffset: {x: 0, y: 5, z: 0}
+  maxOffset: {x: 0, y: 20, z: 0}
+  minSpeed: 0.5
+  maxSpeed: 2
 --- !u!1 &481677151
 GameObject:
   m_ObjectHideFlags: 0
