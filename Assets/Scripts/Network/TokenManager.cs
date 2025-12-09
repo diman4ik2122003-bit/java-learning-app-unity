@@ -32,14 +32,6 @@ public class TokenManager : MonoBehaviour
         StartCoroutine(RequestProfile());
     }
 
-    // ===== язык из JS =====
-    public void ReceiveLanguageFromJS(string lang)
-    {
-        Debug.Log("[TokenManager] ReceiveLanguageFromJS: " + lang);
-        if (LocalizationManager.Instance != null)
-            LocalizationManager.Instance.SetLanguage(lang);
-    }
-
     private IEnumerator RequestProfile()
     {
         UnityWebRequest www = UnityWebRequest.Get(backendUrl);
