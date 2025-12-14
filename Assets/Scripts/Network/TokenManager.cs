@@ -16,7 +16,8 @@ public class TokenManager : MonoBehaviour
     [SerializeField] private string backendUrl =
         "https://java-learning-app.onrender.com/api/v1/auth/profile";
 
-    private string firebaseIdToken;
+    [HideInInspector]
+    public string firebaseIdToken;
 
     void Start()
     {
@@ -29,6 +30,13 @@ public class TokenManager : MonoBehaviour
     public void ReceiveTokenFromJS(string token)
     {
         firebaseIdToken = token;
+        
+        // Передаём токен в JavaJudgeClient
+        if (JavaJudgeClient.Instance != null)
+        {
+            JavaJudgeClient.Instance.SetAuthToken(token);
+        }
+        
         StartCoroutine(RequestProfile());
     }
 

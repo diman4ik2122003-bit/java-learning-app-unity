@@ -1,0 +1,15 @@
+.unity-text-field__input {
+    --unity-cursor-color: rgb(255, 255, 255);
+}
+
+#CodeInput {
+    --unity-cursor-color: rgb(255, 255, 255);
+}
+
+#CodeInput .unity-text-field__input {
+    --unity-cursor-color: rgb(255, 255, 255);
+}
+
+.unity-base-text-field__input {
+    --unity-cursor-color: rgb(255, 255, 255);
+}
