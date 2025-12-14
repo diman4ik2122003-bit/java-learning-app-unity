@@ -29,13 +29,6 @@ mergeInto(LibraryManager.library, {
         sendToUnity("ReceiveTokenFromJS", token);
       }
 
-      // lang
-      if (data.type === "lang") {
-        const lang = data.value || "";
-        console.log("[jslib] lang:", lang);
-        sendToUnity("ReceiveLanguageFromJS", lang);
-      }
-
       // fullscreen
       if (data.type === "fullscreen") {
         console.log("[jslib] fullscreen requested");
