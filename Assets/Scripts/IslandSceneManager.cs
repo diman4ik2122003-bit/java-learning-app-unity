@@ -18,7 +18,7 @@ public class IslandSceneManager : MonoBehaviour
             background.sprite = data.background;
 
         RenderLevelButtons(data);
-        Debug.Log("BG CHANGED: " + data.islandId);
+        Debug.Log("[IslandSceneManager] BG CHANGED: " + data.islandId);
     }
 
     private void RenderLevelButtons(IslandData currentIsland)
@@ -41,7 +41,6 @@ public class IslandSceneManager : MonoBehaviour
             {
                 btnRect.anchoredPosition = level.anchoredPosition;
 
-                // Один размер для всех кнопок этого острова
                 if (currentIsland.levelButtonSize != Vector2.zero)
                     btnRect.sizeDelta = currentIsland.levelButtonSize;
             }
@@ -53,17 +52,23 @@ public class IslandSceneManager : MonoBehaviour
                 img.preserveAspect = true;
             }
 
-            int levelIndex = i;
-            var button = btnGO.GetComponent<UnityEngine.UI.Button>();
-            if (button)
-                button.onClick.AddListener(() => StartLevel(levelIndex));
+            // ⭐ Передаём LevelData в кнопку через LevelButtonController
+            var buttonController = btnGO.GetComponent<LevelButtonController>();
+            if (buttonController)
+            {
+                buttonController.Initialize(level.levelData);
+            }
+            else
+            {
+                Debug.LogWarning("[IslandSceneManager] LevelButtonController не найден на префабе кнопки!");
+            }
         }
     }
 
     private void Start()
     {
         string selectedId = PlayerPrefs.GetString("SelectedIsland", "");
-        Debug.Log("[MANAGER] Read SelectedIsland = " + selectedId);
+        Debug.Log("[IslandSceneManager] Read SelectedIsland = " + selectedId);
 
         var data = allIslands.FirstOrDefault(i => i.islandId == selectedId);
         if (data != null)
@@ -72,13 +77,7 @@ public class IslandSceneManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("Selected island not found!");
+            Debug.LogWarning("[IslandSceneManager] Selected island not found!");
         }
-    }
-
-    private void StartLevel(int levelIndex)
-    {
-        Debug.Log("Start level index: " + levelIndex);
-        // сюда позже добавишь логику загрузки уровня
     }
 }
