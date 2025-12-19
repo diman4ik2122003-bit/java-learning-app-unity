@@ -9,6 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6134935703684998058}
+  - component: {fileID: 8672001293924317545}
+  - component: {fileID: 7338882382942367764}
   - component: {fileID: 1009860581456743042}
   - component: {fileID: 7408979119790934018}
   - component: {fileID: 6091755389381402953}
@@ -38,6 +40,31 @@ RectTransform:
   m_AnchoredPosition: {x: -595.9, y: -27.8}
   m_SizeDelta: {x: 131.5921, y: 86.8039}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &8672001293924317545
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 41806030896015467}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 646d9832438459a49b06146471d6f914, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LevelButtonController
+--- !u!114 &7338882382942367764
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 41806030896015467}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e294e379da0cde84ca7a67a38f57e194, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CloudTransitionActivator
+  targetSceneName: Level2
 --- !u!222 &1009860581456743042
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -119,4 +146,28 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 7408979119790934018}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 8672001293924317545}
+        m_TargetAssemblyTypeName: LevelButtonController, Assembly-CSharp
+        m_MethodName: OnButtonClick
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 7338882382942367764}
+        m_TargetAssemblyTypeName: CloudTransitionActivator, Assembly-CSharp
+        m_MethodName: ActivateTransition
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
