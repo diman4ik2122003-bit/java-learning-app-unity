@@ -5,7 +5,6 @@ public class CodeEditorUIToolkit : MonoBehaviour
 {
     private UIDocument uiDocument;
     public StyleSheet customStyleSheet;
-    public RectTransform codeEditorPanelRect;  // Перетащи сюда CodeEditorPanel
     
     private TextField codeInput;
     private ScrollView lineNumbersScroll;
@@ -14,10 +13,19 @@ public class CodeEditorUIToolkit : MonoBehaviour
     private Button resetButton;
     private Label consoleOutput;
     private ScrollView codeScrollView;
+    private VisualElement mainContainer;
+    private VisualElement consolePanel;
+    private VisualElement buttonPanel;
     
-    private string[] keywords = { "moveRight", "moveLeft", "jump", "wait", "repeat", "if" };
     private bool isUpdatingScroll = false;
     private int previousCaretPosition = 0;
+    
+    // ⭐ Масштабирование
+    private float baseScale = 1f;
+    private float currentScale = 1f;
+    private const float MIN_SCALE = 0.7f;
+    private const float MAX_SCALE = 2f;
+    private const float SCALE_STEP = 0.1f;
 
     void OnEnable()
     {
@@ -27,7 +35,40 @@ public class CodeEditorUIToolkit : MonoBehaviour
             uiDocument = gameObject.AddComponent<UIDocument>();
         }
 
+        // ⭐ Определяем базовый масштаб по разрешению
+        CalculateBaseScale();
+        currentScale = baseScale;
+        
         BuildUI();
+    }
+
+    // ⭐ Вычисляем базовый масштаб по разрешению
+    void CalculateBaseScale()
+    {
+        float screenWidth = Screen.width;
+        
+        if (screenWidth >= 3840) // 4K
+        {
+            baseScale = 1.6f;
+        }
+        else if (screenWidth >= 2560) // QHD
+        {
+            baseScale = 1.3f;
+        }
+        else if (screenWidth >= 1920) // Full HD
+        {
+            baseScale = 1f;
+        }
+        else if (screenWidth >= 1366) // HD
+        {
+            baseScale = 0.9f;
+        }
+        else // Маленькие экраны
+        {
+            baseScale = 0.8f;
+        }
+        
+        Debug.Log($"Screen: {screenWidth}px → Base Scale: {baseScale}x");
     }
 
     void BuildUI()
@@ -40,19 +81,16 @@ public class CodeEditorUIToolkit : MonoBehaviour
             root.styleSheets.Add(customStyleSheet);
         }
 
-        // === Фиксированная позиция справа (как CodeEditorPanel) ===
-        var mainContainer = new VisualElement();
+        // === Главный контейнер ===
+        mainContainer = new VisualElement();
         mainContainer.name = "MainContainer";
         mainContainer.style.position = Position.Absolute;
-        
-        // Для разрешения 1920x1080:
-        // CodeEditorPanel: Right=-360, Width=720
-        // Значит: left = 1920 - 720 - 360 = 840
-        mainContainer.style.right = 0;   // ПРОЩЕ: просто справа с отступом 10px
+        mainContainer.style.right = 0;
         mainContainer.style.top = 0;
-        mainContainer.style.width = 720;
-        mainContainer.style.bottom = 0;  // растягиваем до низа экрана
-        mainContainer.style.height = Screen.height;
+        mainContainer.style.bottom = 0;
+        
+        mainContainer.style.width = new Length(37.5f, LengthUnit.Percent);
+        mainContainer.style.minWidth = 400;
         
         mainContainer.style.backgroundColor = new Color(0.18f, 0.18f, 0.19f);
         mainContainer.style.paddingTop = 10;
@@ -60,14 +98,74 @@ public class CodeEditorUIToolkit : MonoBehaviour
         mainContainer.style.paddingLeft = 10;
         mainContainer.style.paddingRight = 10;
         mainContainer.style.flexDirection = FlexDirection.Column;
+        
         root.Add(mainContainer);
+
+        // === Панель масштабирования (вверху) ===
+        var scalePanel = new VisualElement();
+        scalePanel.name = "ScalePanel";
+        scalePanel.style.flexDirection = FlexDirection.Row;
+        scalePanel.style.justifyContent = Justify.FlexEnd;
+        scalePanel.style.height = 30;
+        scalePanel.style.marginBottom = 5;
+        mainContainer.Add(scalePanel);
+
+        // Кнопка уменьшения масштаба
+        var zoomOutButton = new Button(() => ChangeScale(-SCALE_STEP));
+        zoomOutButton.text = "−";
+        zoomOutButton.style.width = 30;
+        zoomOutButton.style.height = 25;
+        zoomOutButton.style.fontSize = 18;
+        zoomOutButton.style.backgroundColor = new Color(0.3f, 0.3f, 0.3f);
+        zoomOutButton.style.color = Color.white;
+        zoomOutButton.style.borderTopLeftRadius = 4;
+        zoomOutButton.style.borderBottomLeftRadius = 4;
+        scalePanel.Add(zoomOutButton);
+
+        // Метка масштаба
+        var scaleLabel = new Label($"{Mathf.RoundToInt(currentScale * 100)}%");
+        scaleLabel.name = "ScaleLabel";
+        scaleLabel.style.width = 50;
+        scaleLabel.style.height = 25;
+        scaleLabel.style.fontSize = 12;
+        scaleLabel.style.color = Color.white;
+        scaleLabel.style.backgroundColor = new Color(0.2f, 0.2f, 0.2f);
+        scaleLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+        scalePanel.Add(scaleLabel);
+
+        // Кнопка увеличения масштаба
+        var zoomInButton = new Button(() => ChangeScale(SCALE_STEP));
+        zoomInButton.text = "+";
+        zoomInButton.style.width = 30;
+        zoomInButton.style.height = 25;
+        zoomInButton.style.fontSize = 18;
+        zoomInButton.style.backgroundColor = new Color(0.3f, 0.3f, 0.3f);
+        zoomInButton.style.color = Color.white;
+        zoomInButton.style.borderTopRightRadius = 4;
+        zoomInButton.style.borderBottomRightRadius = 4;
+        scalePanel.Add(zoomInButton);
+
+        // Кнопка сброса масштаба
+        var resetScaleButton = new Button(() => ResetScale());
+        resetScaleButton.text = "100%";
+        resetScaleButton.style.width = 45;
+        resetScaleButton.style.height = 25;
+        resetScaleButton.style.fontSize = 11;
+        resetScaleButton.style.marginLeft = 5;
+        resetScaleButton.style.backgroundColor = new Color(0.25f, 0.25f, 0.25f);
+        resetScaleButton.style.color = new Color(0.8f, 0.8f, 0.8f);
+        resetScaleButton.style.borderTopLeftRadius = 4;
+        resetScaleButton.style.borderTopRightRadius = 4;
+        resetScaleButton.style.borderBottomLeftRadius = 4;
+        resetScaleButton.style.borderBottomRightRadius = 4;
+        scalePanel.Add(resetScaleButton);
 
         // === Панель редактора ===
         var editorPanel = new VisualElement();
         editorPanel.name = "EditorPanel";
-        editorPanel.style.flexGrow = 1;  // растёт ВНУТРИ mainContainer
-        editorPanel.style.flexShrink = 1;  // может сжиматься
-        editorPanel.style.minHeight = 400;  // минимум 400px
+        editorPanel.style.flexGrow = 1;
+        editorPanel.style.flexShrink = 1;
+        editorPanel.style.minHeight = 300;
         editorPanel.style.flexDirection = FlexDirection.Row;
         editorPanel.style.backgroundColor = new Color(0.12f, 0.12f, 0.12f);
         editorPanel.style.borderBottomWidth = 1;
@@ -94,7 +192,6 @@ public class CodeEditorUIToolkit : MonoBehaviour
         lineNumbers = new Label("1");
         lineNumbers.name = "LineNumbers";
         lineNumbers.style.color = new Color(0.52f, 0.52f, 0.52f);
-        lineNumbers.style.fontSize = 14;
         lineNumbers.style.paddingTop = 10;
         lineNumbers.style.paddingBottom = 10;
         lineNumbers.style.paddingLeft = 5;
@@ -115,20 +212,24 @@ public class CodeEditorUIToolkit : MonoBehaviour
         codeScrollView.style.flexGrow = 1;
         editorPanel.Add(codeScrollView);
 
-        // === TextField (многострочный редактор) ===
+        // === TextField ===
         codeInput = new TextField();
         codeInput.name = "CodeInput";
         codeInput.multiline = true;
-        codeInput.value = "// Напиши код здесь\nmoveRight(5)\njump(8)";
-        codeInput.style.fontSize = 14;
+        codeInput.value = "// Твой код здесь\nint distanceRight = 5;\nint distanceUp = 5;\nPlayer.moveRight(distanceRight);\nPlayer.moveUp(distanceUp);";
         codeInput.style.color = new Color(0.95f, 0.95f, 0.95f);
         codeInput.style.backgroundColor = new Color(0.08f, 0.08f, 0.08f);
         codeInput.style.minHeight = 870;
         
         codeInput.RegisterValueChangedCallback(OnCodeChanged);
-        
-        // Отслеживаем фокус для каретки
-        codeInput.RegisterCallback<FocusInEvent>(evt => UpdateCaretVisibility());
+        codeInput.RegisterCallback<FocusInEvent>(evt => 
+        {
+            var inputElement = codeInput.Q("unity-text-input");
+            if (inputElement != null)
+            {
+                inputElement.style.unityBackgroundImageTintColor = Color.white;
+            }
+        });
         codeInput.RegisterCallback<KeyDownEvent>(evt => 
         {
             codeInput.schedule.Execute(() => ScrollToCaretPosition()).ExecuteLater(10);
@@ -136,10 +237,8 @@ public class CodeEditorUIToolkit : MonoBehaviour
         
         codeScrollView.Add(codeInput);
 
-        // Синхронизация скролла
         codeScrollView.verticalScroller.valueChanged += SyncScroll;
 
-        // Стилизация внутреннего элемента
         codeInput.RegisterCallback<GeometryChangedEvent>(evt =>
         {
             var inputElement = codeInput.Q("unity-text-input");
@@ -160,11 +259,10 @@ public class CodeEditorUIToolkit : MonoBehaviour
         });
 
         // === Панель кнопок ===
-        var buttonPanel = new VisualElement();
+        buttonPanel = new VisualElement();
         buttonPanel.name = "ButtonPanel";
         buttonPanel.style.flexDirection = FlexDirection.Row;
         buttonPanel.style.justifyContent = Justify.SpaceAround;
-        buttonPanel.style.height = 40;
         buttonPanel.style.flexShrink = 0;
         buttonPanel.style.marginBottom = 10;
         mainContainer.Add(buttonPanel);
@@ -176,7 +274,6 @@ public class CodeEditorUIToolkit : MonoBehaviour
         runButton.style.width = new Length(45, LengthUnit.Percent);
         runButton.style.backgroundColor = new Color(0f, 0.48f, 0.8f);
         runButton.style.color = Color.white;
-        runButton.style.fontSize = 16;
         runButton.style.borderTopLeftRadius = 4;
         runButton.style.borderTopRightRadius = 4;
         runButton.style.borderBottomLeftRadius = 4;
@@ -190,17 +287,15 @@ public class CodeEditorUIToolkit : MonoBehaviour
         resetButton.style.width = new Length(45, LengthUnit.Percent);
         resetButton.style.backgroundColor = new Color(0.77f, 0.77f, 0.77f);
         resetButton.style.color = new Color(0.12f, 0.12f, 0.12f);
-        resetButton.style.fontSize = 16;
         resetButton.style.borderTopLeftRadius = 4;
         resetButton.style.borderTopRightRadius = 4;
         resetButton.style.borderBottomLeftRadius = 4;
         resetButton.style.borderBottomRightRadius = 4;
         buttonPanel.Add(resetButton);
 
-        // === Консоль ===
-        var consolePanel = new VisualElement();
+        // === Консоль (⭐ увеличена высота) ===
+        consolePanel = new VisualElement();
         consolePanel.name = "ConsolePanel";
-        consolePanel.style.height = 120;
         consolePanel.style.flexShrink = 0;
         consolePanel.style.backgroundColor = new Color(0.12f, 0.12f, 0.12f);
         consolePanel.style.borderBottomWidth = 1;
@@ -214,7 +309,7 @@ public class CodeEditorUIToolkit : MonoBehaviour
         mainContainer.Add(consolePanel);
 
         var consoleLabel = new Label("Console");
-        consoleLabel.style.fontSize = 12;
+        consoleLabel.name = "ConsoleLabel";
         consoleLabel.style.color = new Color(0.67f, 0.67f, 0.67f);
         consoleLabel.style.paddingTop = 5;
         consoleLabel.style.paddingLeft = 10;
@@ -226,25 +321,111 @@ public class CodeEditorUIToolkit : MonoBehaviour
 
         consoleOutput = new Label("Console ready.");
         consoleOutput.name = "ConsoleOutput";
-        consoleOutput.style.fontSize = 12;
         consoleOutput.style.color = new Color(0.8f, 0.8f, 0.8f);
         consoleOutput.style.paddingTop = 5;
         consoleOutput.style.paddingLeft = 10;
         consoleOutput.style.whiteSpace = WhiteSpace.Pre;
         consoleScrollView.Add(consoleOutput);
 
+        // ⭐ Применяем начальный масштаб
+        ApplyScale();
+        
         UpdateLineNumbers(codeInput.value);
     }
 
-    void UpdateCaretVisibility()
+    void Update()
     {
+        // ⭐ Горячие клавиши масштабирования
+        if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
+        {
+            if (Input.GetKeyDown(KeyCode.Equals) || Input.GetKeyDown(KeyCode.KeypadPlus))
+            {
+                ChangeScale(SCALE_STEP);
+            }
+            else if (Input.GetKeyDown(KeyCode.Minus) || Input.GetKeyDown(KeyCode.KeypadMinus))
+            {
+                ChangeScale(-SCALE_STEP);
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha0) || Input.GetKeyDown(KeyCode.Keypad0))
+            {
+                ResetScale();
+            }
+        }
+    }
+
+    // ⭐ Изменение масштаба
+    void ChangeScale(float delta)
+    {
+        currentScale = Mathf.Clamp(currentScale + delta, MIN_SCALE, MAX_SCALE);
+        ApplyScale();
+        
+        Debug.Log($"Scale changed: {Mathf.RoundToInt(currentScale * 100)}%");
+    }
+
+    // ⭐ Сброс масштаба к базовому
+    void ResetScale()
+    {
+        currentScale = baseScale;
+        ApplyScale();
+        
+        Debug.Log($"Scale reset to base: {Mathf.RoundToInt(currentScale * 100)}%");
+    }
+
+    // ⭐ Применение масштаба ко всем элементам
+    void ApplyScale()
+    {
+        var root = uiDocument.rootVisualElement;
+        
+        // Обновляем метку масштаба
+        var scaleLabel = root.Q<Label>("ScaleLabel");
+        if (scaleLabel != null)
+        {
+            scaleLabel.text = $"{Mathf.RoundToInt(currentScale * 100)}%";
+        }
+        
+        // Шрифты редактора кода
         if (codeInput != null)
         {
-            var inputElement = codeInput.Q("unity-text-input");
-            if (inputElement != null)
-            {
-                inputElement.style.unityBackgroundImageTintColor = Color.white;
-            }
+            codeInput.style.fontSize = Mathf.RoundToInt(14 * currentScale);
+        }
+        
+        if (lineNumbers != null)
+        {
+            lineNumbers.style.fontSize = Mathf.RoundToInt(14 * currentScale);
+        }
+        
+        // Шрифты кнопок
+        if (runButton != null)
+        {
+            runButton.style.fontSize = Mathf.RoundToInt(16 * currentScale);
+        }
+        
+        if (resetButton != null)
+        {
+            resetButton.style.fontSize = Mathf.RoundToInt(16 * currentScale);
+        }
+        
+        // Высота кнопок
+        if (buttonPanel != null)
+        {
+            buttonPanel.style.height = Mathf.RoundToInt(40 * currentScale);
+        }
+        
+        // Консоль (⭐ увеличена высота + адаптивная)
+        if (consolePanel != null)
+        {
+            consolePanel.style.height = Mathf.RoundToInt(180 * currentScale); // Было 120, стало 180
+        }
+        
+        var consoleLabel = root.Q<Label>("ConsoleLabel");
+        if (consoleLabel != null)
+        {
+            consoleLabel.style.fontSize = Mathf.RoundToInt(12 * currentScale);
+        }
+        
+        if (consoleOutput != null)
+        {
+            consoleOutput.style.fontSize = Mathf.RoundToInt(12 * currentScale);
         }
     }
 
@@ -260,7 +441,7 @@ public class CodeEditorUIToolkit : MonoBehaviour
         string text = codeInput.value.Substring(0, Mathf.Min(caretIndex, codeInput.value.Length));
         int lineNumber = text.Split('\n').Length - 1;
 
-        float lineHeight = 20f;
+        float lineHeight = 20f * currentScale; // ⭐ Учитываем масштаб
         float caretY = lineNumber * lineHeight;
         float viewportHeight = codeScrollView.contentViewport.resolvedStyle.height;
         float currentScroll = codeScrollView.scrollOffset.y;
@@ -338,7 +519,7 @@ public class CodeEditorUIToolkit : MonoBehaviour
     {
         if (codeInput != null)
         {
-            codeInput.value = "// Напиши код здесь\n";
+            codeInput.value = "// Твой код здесь\n";
         }
         
         AddConsoleLog("⟲ Сброс");
@@ -350,26 +531,12 @@ public class CodeEditorUIToolkit : MonoBehaviour
         }
     }
 
-    void Start()
-    {
-        if (codeInput != null)
-        {
-            codeInput.schedule.Execute(() =>
-            {
-                codeInput.Focus();
-            }).ExecuteLater(100);
-        }
-    }
-
     public void AddConsoleLog(string message, bool isError = false)
     {
         if (consoleOutput != null)
         {
-            string coloredMessage = isError 
-                ? $"<color=#FF5555>{message}</color>" 
-                : message;
-            
-            consoleOutput.text += "\n" + coloredMessage;
+            string color = isError ? "#ff6b6b" : "#ffffff";
+            consoleOutput.text += $"<color={color}>{message}</color>\n";
         }
     }
 
@@ -394,17 +561,4 @@ public class CodeEditorUIToolkit : MonoBehaviour
     {
         return codeInput?.value ?? "";
     }
-
-    // public string GetCode()
-    // {
-    //     return codeInput?.value ?? "";
-    // }
-
-    // public void SetCode(string code)
-    // {
-    //     if (codeInput != null)
-    //     {
-    //         codeInput.value = code;
-    //     }
-    // }
 }

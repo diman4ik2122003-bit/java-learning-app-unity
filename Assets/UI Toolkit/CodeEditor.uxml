@@ -1,13 +1,39 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
-    <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
-        <!-- Номера строк -->
-        <ui:Label name="LineNumbers" text="1&#10;2&#10;3" 
-                  style="width: 40px; color: #888888; font-size: 14px;" />
+    
+    <!-- Root Container -->
+    <ui:VisualElement name="RootContainer" class="code-editor-root">
         
-        <!-- Редактор кода -->
-        <ui:ScrollView style="flex-grow: 1;">
-            <ui:TextField name="CodeInput" multiline="true" 
-                          style="flex-grow: 1; font-size: 14px; background-color: #1E1E1E; color: #FFFFFF;" />
-        </ui:ScrollView>
+        <!-- Main Container (Code + Console) -->
+        <ui:VisualElement name="MainContainer" class="code-editor-container">
+            
+            <!-- Left Panel: Code Editor -->
+            <ui:VisualElement name="CodeEditorPanel" class="code-editor-panel">
+                <ui:TextField name="CodeInput" class="code-input" multiline="true" />
+            </ui:VisualElement>
+            
+            <!-- Right Panel: Console -->
+            <ui:VisualElement name="ConsolePanel" class="console-panel">
+                
+                <!-- Console Header -->
+                <ui:VisualElement name="ConsoleHeader" class="console-header">
+                    <ui:Label text="Console" class="console-title" />
+                </ui:VisualElement>
+                
+                <!-- Console ScrollView -->
+                <ui:ScrollView name="ConsoleScrollView" class="console-scroll">
+                    <ui:VisualElement name="ConsoleContent" class="console-content" />
+                </ui:ScrollView>
+                
+            </ui:VisualElement>
+            
+        </ui:VisualElement>
+        
+        <!-- Bottom Buttons -->
+        <ui:VisualElement name="ButtonsPanel" class="buttons-panel">
+            <ui:Button name="RunButton" text="▶ Run Code" class="run-button" />
+            <ui:Button name="ResetButton" text="↻ Reset" class="reset-button" />
+        </ui:VisualElement>
+        
     </ui:VisualElement>
+    
 </ui:UXML>

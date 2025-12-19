@@ -16,19 +16,39 @@ public class LevelData : ScriptableObject
     [TextArea(3, 6)]
     public string description = "Создай переменную distance и используй её в Player.moveRight()";
     
-    [TextArea(2, 4)]
-    public string hint = "💡 Пример:\nint distance = 5;\nPlayer.moveRight(distance);";
-    
     [Header("Starting Code")]
     [TextArea(5, 10)]
     public string starterCode = "// Создай переменную distance\n\n// Двигайся на distance метров вправо\n";
+    
+    [Header("Solution (for progressive hints)")]
+    [TextArea(5, 10)]
+    public string solutionCode = "int distance = 5;\nPlayer.moveRight(distance);";
     
     [Header("Positions")]
     public Vector3 playerStartPosition = Vector3.zero;
     public Vector3 goalPosition = new Vector3(5, 0, 0);
     
-    [Header("Validation")]
+    [Header("Progressive Hints System")]
+    public int attemptsBeforeFirstHint = 3;
+    
+    [Tooltip("Первая подсказка - общая")]
+    [TextArea(2, 4)]
+    public string hint1 = "💡 Используй переменную для хранения расстояния";
+    
+    [Tooltip("Вторая подсказка - более конкретная")]
+    [TextArea(2, 4)]
+    public string hint2 = "💡 Создай переменную: int distance = 5;";
+    
+    [Tooltip("Третья подсказка - почти решение")]
+    [TextArea(2, 4)]
+    public string hint3 = "💡 Используй Player.moveRight(distance);";
+    
+    [Header("Validation (Optional)")]
     public LevelValidation[] validations;
+    
+    [Header("Legacy Hint (deprecated)")]
+    [TextArea(2, 4)]
+    public string hint = "💡 Пример:\nint distance = 5;\nPlayer.moveRight(distance);";
 }
 
 [Serializable]
@@ -44,23 +64,3 @@ public class LevelValidation
     [TextArea(2, 3)]
     public string invalidExample = "Player.moveRight(5); // напрямую число";
 }
-
-
-
-// using UnityEngine;
-
-// [CreateAssetMenu(fileName = "Level", menuName = "Game/LevelData")]
-// public class LevelData : ScriptableObject
-// {
-//     public string levelNumber = "1";
-//     public string title = "Уровень 1: Первые шаги";
-    
-//     [TextArea(3, 10)]
-//     public string description = "Научись двигать персонажа вправо.\n\nИспользуй команду:\nmoveRight(расстояние)";
-    
-//     [TextArea(5, 15)]
-//     public string starterCode = "// Твой код здесь\nmoveRight(2)\njump(5)\nmoveRight(2)";
-    
-//     public Vector2 playerStartPosition = new Vector2(-4, -2);
-//     public Vector2 goalPosition = new Vector2(4, -2);
-// }

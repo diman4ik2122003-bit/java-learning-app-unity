@@ -7,7 +7,7 @@ using System;
 public class JavaCodeExecutor : MonoBehaviour
 {
     [Header("Server Settings")]
-    public string serverUrl = "http://localhost:3000/api/submissions/execute";
+    public string serverUrl = "http://localhost:4000/api/v1/submissions/execute";
     
     private CodeEditorUIToolkit codeEditor;
     private PlayerController player;
@@ -22,20 +22,32 @@ public class JavaCodeExecutor : MonoBehaviour
     {
         if (codeEditor == null)
         {
-            Debug.LogError("CodeEditor not found!");
+            Debug.LogError("[JavaCodeExecutor] CodeEditor not found!");
+            return;
+        }
+        
+        if (player == null)
+        {
+            Debug.LogError("[JavaCodeExecutor] Player not found!");
             return;
         }
         
         string code = codeEditor.GetCode();
+        
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            codeEditor.AddConsoleLog("❌ Код пустой!", true);
+            CallExecutionFinished(); // ← Даже при пустом коде вызываем!
+            return;
+        }
+        
         StartCoroutine(SendCodeToServer(code));
     }
     
     IEnumerator SendCodeToServer(string code)
     {
-        // Показываем индикатор загрузки
         codeEditor.AddConsoleLog("⏳ Отправка кода на сервер...");
         
-        // Создаём JSON
         var request = new ExecutionRequest { code = code, levelId = 1 };
         string json = JsonUtility.ToJson(request);
         
@@ -51,51 +63,63 @@ public class JavaCodeExecutor : MonoBehaviour
             if (www.result == UnityWebRequest.Result.Success)
             {
                 string responseJson = www.downloadHandler.text;
+                Debug.Log("[JavaCodeExecutor] Server response: " + responseJson);
                 
-                try
+                ExecutionResult result = ParseResponse(responseJson);
+                
+                if (result != null)
                 {
-                    ExecutionResult result = JsonUtility.FromJson<ExecutionResult>(responseJson);
-                    
                     if (result.success && result.status == "success")
                     {
-                        codeEditor.AddConsoleLog("✅ Код выполнен успешно!");
-                        ExecuteCommands(result.commands);
+                        codeEditor.AddConsoleLog("✅ Код скомпилирован!");
+                        codeEditor.AddConsoleLog($"📝 Команд: {result.commands.Length}");
+                        
+                        yield return StartCoroutine(ExecuteCommandsSequence(result.commands));
+                    }
+                    else if (result.status == "compilation_error")
+                    {
+                        codeEditor.AddConsoleLog(result.error, true);
+                        CallExecutionFinished(); // ← Ошибка компиляции = провал
+                    }
+                    else if (result.status == "runtime_error")
+                    {
+                        codeEditor.AddConsoleLog(result.error, true);
+                        CallExecutionFinished(); // ← Ошибка выполнения = провал
                     }
                     else
                     {
-                        // Ошибка компиляции или выполнения
-                        codeEditor.AddConsoleLog(result.error, true);
-                        
-                        // Показываем детали в консоли Unity
-                        if (!string.IsNullOrEmpty(result.details))
-                        {
-                            Debug.Log("Детали ошибки:\n" + result.details);
-                        }
+                        codeEditor.AddConsoleLog("❌ " + (result.error ?? "Неизвестная ошибка"), true);
+                        CallExecutionFinished(); // ← Любая ошибка = провал
                     }
                 }
-                catch (Exception e)
+                else
                 {
-                    codeEditor.AddConsoleLog("❌ Ошибка обработки ответа: " + e.Message, true);
-                    Debug.LogError("Response: " + responseJson);
+                    codeEditor.AddConsoleLog("❌ Ошибка обработки ответа сервера", true);
+                    CallExecutionFinished(); // ← Ошибка парсинга = провал
                 }
             }
             else
             {
                 codeEditor.AddConsoleLog("❌ Ошибка соединения с сервером", true);
-                Debug.LogError("Network error: " + www.error);
+                codeEditor.AddConsoleLog($"Детали: {www.error}", true);
+                Debug.LogError("[JavaCodeExecutor] Network error: " + www.error);
+                CallExecutionFinished(); // ← Сетевая ошибка = провал
             }
         }
     }
     
-    void ExecuteCommands(GameCommand[] commands)
+    ExecutionResult ParseResponse(string json)
     {
-        if (player == null)
+        try
         {
-            Debug.LogError("Player not found!");
-            return;
+            return JsonUtility.FromJson<ExecutionResult>(json);
         }
-        
-        StartCoroutine(ExecuteCommandsSequence(commands));
+        catch (Exception e)
+        {
+            Debug.LogError("[JavaCodeExecutor] Parse error: " + e.Message);
+            Debug.LogError("[JavaCodeExecutor] Response was: " + json);
+            return null;
+        }
     }
     
     IEnumerator ExecuteCommandsSequence(GameCommand[] commands)
@@ -114,19 +138,45 @@ public class JavaCodeExecutor : MonoBehaviour
                     yield return player.MoveLeftCoroutine(cmd.value);
                     break;
                     
-                case "jump":
-                    yield return player.JumpCoroutine(cmd.value);
+                case "moveUp":
+                    yield return player.MoveUpCoroutine(cmd.value);
+                    break;
+                    
+                case "moveDown":
+                    yield return player.MoveDownCoroutine(cmd.value);
                     break;
                     
                 case "wait":
                     yield return new WaitForSeconds(cmd.value * 0.1f);
                     break;
+                    
+                default:
+                    codeEditor.AddConsoleLog($"⚠️ Неизвестная команда: {cmd.action}", true);
+                    break;
             }
             
-            yield return new WaitForSeconds(0.2f); // пауза между командами
+            yield return new WaitForSeconds(0.1f);
         }
         
-        codeEditor.AddConsoleLog("🎉 Выполнение завершено!");
+        codeEditor.AddConsoleLog("✅ Выполнение завершено!");
+        
+        // ⭐ КРИТИЧНО: ВСЕГДА вызываем LevelManager
+        CallExecutionFinished();
+    }
+
+    // ⭐ Единая точка вызова OnExecutionFinished
+    void CallExecutionFinished()
+    {
+        LevelManager levelManager = FindObjectOfType<LevelManager>();
+        if (levelManager != null)
+        {
+            Debug.Log("[JavaCodeExecutor] ⭐ Вызываем OnExecutionFinished()");
+            levelManager.OnExecutionFinished();
+        }
+        else
+        {
+            Debug.LogWarning("[JavaCodeExecutor] LevelManager не найден!");
+        }
     }
 }
 
