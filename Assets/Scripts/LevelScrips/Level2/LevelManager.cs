@@ -1,4 +1,3 @@
-// Assets/Scripts/LevelScripts/LevelManager.cs
 using UnityEngine;
 using TMPro;
 
@@ -12,8 +11,9 @@ public class LevelManager : MonoBehaviour
     [Header("Hint UI")]
     public GameObject hintPanel;
     public TMP_Text hintText;
-    public UnityEngine.UI.Button showHintButton;
-    public UnityEngine.UI.Button useSolutionButton;
+    public UnityEngine.UI.Button closeHintButton;
+    public UnityEngine.UI.Button showHintButton; // Кнопка внизу экрана "Показать подсказку"
+    public UnityEngine.UI.Button useSolutionButton; // Кнопка "Использовать решение"
 
     [Header("Game References")]
     public PlayerController player;
@@ -26,65 +26,80 @@ public class LevelManager : MonoBehaviour
     public GameObject victoryPanel;
 
     [Header("Level Progression")]
-    public LevelData[] allLevels; // Fallback если уровень не выбран из roadmap
+    public LevelData[] allLevels;
     private int currentLevelIndex = 0;
     
     // ⭐ Система провалов и подсказок
     private int failedAttempts = 0;
     private bool levelCompleted = false;
-    private LevelData currentLevel; // Текущий загруженный уровень
+    private LevelData currentLevel;
+    private int currentHintIndex = 0; // Текущий уровень подсказки (0-3)
 
     void Start()
     {
-        // ⭐ Проверяем был ли выбран уровень из roadmap
+        // Загружаем уровень
         if (LevelSelectionManager.SelectedLevel != null)
         {
+            Debug.Log("[LevelManager] Загружаем уровень из roadmap: " + LevelSelectionManager.SelectedLevel.levelId);
             LoadLevelDirectly(LevelSelectionManager.SelectedLevel);
-            LevelSelectionManager.SelectedLevel = null; // Очищаем после загрузки
+            LevelSelectionManager.SelectedLevel = null;
         }
         else if (allLevels != null && allLevels.Length > 0)
         {
-            // Fallback: загружаем первый уровень из массива
+            Debug.Log("[LevelManager] Загружаем первый уровень из массива");
             LoadLevelByIndex(0);
-        
-        HideHintUI();
         }
         else
         {
             Debug.LogError("[LevelManager] Нет уровней для загрузки!");
         }
+        
+        HideHintUI();
     }
 
-    // ⭐ Загружает конкретный LevelData напрямую
     void LoadLevelDirectly(LevelData level)
     {
-        if (!level)
+        if (level == null)
         {
             Debug.LogError("[LevelManager] LevelData is null!");
             return;
         }
 
         currentLevel = level;
-        currentLevelIndex = -1; // Указываем что уровень загружен не из массива
+        currentLevelIndex = -1;
+        
+        // Сброс системы подсказок
+        failedAttempts = 0;
+        currentHintIndex = 0;
+        levelCompleted = false;
+        HideHintUI();
 
-        taskTitle.text = level.levelName;
+        // UI
+        taskTitle.text = $"{level.groupName} - {level.levelName}";
         taskDescription.text = level.description;
 
         if (codeEditorUIToolkit != null)
         {
             codeEditorUIToolkit.SetCode(level.starterCode);
+            codeEditorUIToolkit.ClearConsole();
         }
 
-        player.transform.position = level.playerStartPosition;
-        goalTransform.position = level.goalPosition;
+        if (player != null)
+        {
+            Debug.Log($"[LevelManager] Устанавливаем позицию игрока: {level.playerStartPosition}");
+            player.SetStartPosition(level.playerStartPosition);
+        }
 
-        player.ResetState();
-        levelCompleted = false;
+        if (goalTransform != null)
+        {
+            Debug.Log($"[LevelManager] Устанавливаем позицию цели: {level.goalPosition}");
+            goalTransform.position = level.goalPosition;
+        }
 
         if (victoryPanel != null)
             victoryPanel.SetActive(false);
 
-        Debug.Log("[LevelManager] Загружен уровень: " + level.levelId);
+        Debug.Log($"[LevelManager] ✅ Загружен уровень: {level.levelId}");
     }
 
     void LoadLevelByIndex(int index)
@@ -98,34 +113,8 @@ public class LevelManager : MonoBehaviour
         currentLevelIndex = index;
         LevelData level = allLevels[index];
         
-        // Сброс всего
-        failedAttempts = 0;
-        levelCompleted = false;
-        HideHintUI();
-        
-        // UI
-        taskTitle.text = $"{level.groupName} - {level.levelName}";
-        taskDescription.text = level.description;
-        
-        if (codeEditorUIToolkit != null)
-        {
-            codeEditorUIToolkit.SetCode(level.starterCode);
-            codeEditorUIToolkit.ClearConsole();
-        }
-
-        // Позиции
-        player.SetStartPosition(level.playerStartPosition);
-        
-        if (goalTransform != null)
-        {
-            goalTransform.position = level.goalPosition;
-        }
-        
-        if (victoryPanel != null)
-            victoryPanel.SetActive(false);
-            
-        Debug.Log($"[LevelManager] Загружен уровень: {level.levelId}");
-        LoadLevelDirectly(allLevels[index]);
+        Debug.Log($"[LevelManager] Загружаем уровень по индексу {index}: {level.levelId}");
+        LoadLevelDirectly(level);
     }
 
     public void OnRunCode()
@@ -138,12 +127,9 @@ public class LevelManager : MonoBehaviour
             return;
         }
 
-        string userCode = codeEditorUIToolkit.GetCode();
-        Debug.Log("[LevelManager] Запуск кода:\n" + userCode);
-
         player.ResetState();
 
-        if (CodeExecutor.Instance != null)
+        if (useJavaServer)
         {
             JavaCodeExecutor executor = FindObjectOfType<JavaCodeExecutor>();
             if (executor != null)
@@ -159,21 +145,14 @@ public class LevelManager : MonoBehaviour
         {
             if (CodeExecutor.Instance != null)
             {
-                CodeExecutor.Instance.Execute(userCode, player);
-            }
-            else
-            {
-                Debug.LogError("[LevelManager] CodeExecutor.Instance не найден!");
+                CodeExecutor.Instance.Execute(codeEditorUIToolkit.GetCode(), player);
             }
         }
     }
 
-    // ⭐ ВЫЗЫВАЕТСЯ ИЗ JavaCodeExecutor ПОСЛЕ ВЫПОЛНЕНИЯ КОДА
     public void OnExecutionFinished()
     {
         Debug.Log("[LevelManager] ⭐ Выполнение завершено. Проверяем успех...");
-        
-        // Даём 0.3 секунды на завершение анимаций
         Invoke(nameof(CheckAfterExecution), 0.3f);
     }
     
@@ -185,14 +164,19 @@ public class LevelManager : MonoBehaviour
         }
     }
 
-    // ⭐ Провал уровня
     void OnLevelFailed()
     {
         failedAttempts++;
         
-        LevelData currentLevel = allLevels[currentLevelIndex];
+        if (currentLevel == null)
+        {
+            Debug.LogError("[LevelManager] currentLevel is null!");
+            return;
+        }
+        
         Debug.Log($"[LevelManager] ❌ ПРОВАЛ! Попытка {failedAttempts}");
         
+        // ⭐ В консоль выводим только счётчик попыток
         if (codeEditorUIToolkit != null)
         {
             codeEditorUIToolkit.AddConsoleLog($"❌ Попытка {failedAttempts}. Попробуй ещё раз!");
@@ -203,43 +187,45 @@ public class LevelManager : MonoBehaviour
         
         if (failedAttempts >= attemptsPerHint * 4)
         {
-            // 12+ попыток → ПОЛНОЕ РЕШЕНИЕ ДОСТУПНО
+            // 12+ попыток → КНОПКА "Использовать решение"
+            currentHintIndex = 4;
             ShowSolutionButton();
             if (codeEditorUIToolkit != null)
-                codeEditorUIToolkit.AddConsoleLog("💡 Нужна помощь? Используй кнопку 'Решение'");
+                codeEditorUIToolkit.AddConsoleLog("💡 Кнопка 'Решение' доступна!");
         }
         else if (failedAttempts >= attemptsPerHint * 3)
         {
             // 9+ попыток → ПОДСКАЗКА 3
-            ShowHint(currentLevel.hint3, 3);
+            currentHintIndex = 3;
+            EnableHintButton();
         }
         else if (failedAttempts >= attemptsPerHint * 2)
         {
             // 6+ попыток → ПОДСКАЗКА 2
-            ShowHint(currentLevel.hint2, 2);
+            currentHintIndex = 2;
+            EnableHintButton();
         }
         else if (failedAttempts >= attemptsPerHint)
         {
             // 3+ попытки → ПОДСКАЗКА 1
-            ShowHint(currentLevel.hint1, 1);
+            currentHintIndex = 1;
+            EnableHintButton();
         }
     }
 
-    void ShowHint(string hintMessage, int hintLevel)
+    // ⭐ Включаем кнопку "Показать подсказку"
+    void EnableHintButton()
     {
-        if (string.IsNullOrEmpty(hintMessage)) return;
-        
-        Debug.Log($"[LevelManager] 💡 Подсказка {hintLevel}: {hintMessage}");
-        
-        if (codeEditorUIToolkit != null)
-        {
-            codeEditorUIToolkit.AddConsoleLog($"💡 Подсказка {hintLevel}: {hintMessage}");
-        }
-        
-        // Показываем кнопку "Показать подсказку"
-        if (showHintButton != null)
+        if (showHintButton != null && !showHintButton.gameObject.activeSelf)
         {
             showHintButton.gameObject.SetActive(true);
+            
+            if (codeEditorUIToolkit != null)
+            {
+                codeEditorUIToolkit.AddConsoleLog("💡 Подсказка доступна! Нажми кнопку 'Подсказка'");
+            }
+            
+            Debug.Log($"[LevelManager] 💡 Подсказка {currentHintIndex} доступна");
         }
     }
 
@@ -251,61 +237,82 @@ public class LevelManager : MonoBehaviour
         }
     }
 
-    // ⭐ Кнопка "Показать подсказку"
+    // ⭐ КНОПКА "Показать подсказку" (открывает панель)
     public void OnShowHint()
     {
-        if (hintPanel != null && hintText != null)
+        if (currentLevel == null || hintPanel == null || hintText == null)
         {
-            LevelData currentLevel = allLevels[currentLevelIndex];
-            
-            // Показываем последнюю доступную подсказку
-            string hint = "";
-            int attemptsPerHint = currentLevel.attemptsBeforeFirstHint;
-            
-            if (failedAttempts >= attemptsPerHint * 3)
-                hint = currentLevel.hint3;
-            else if (failedAttempts >= attemptsPerHint * 2)
-                hint = currentLevel.hint2;
-            else if (failedAttempts >= attemptsPerHint)
-                hint = currentLevel.hint1;
-            else
-                hint = currentLevel.hint; // fallback
-            
-            hintText.text = hint;
+            Debug.LogError("[LevelManager] Hint UI не настроен!");
+            return;
+        }
+        
+        string hintMessage = GetCurrentHint();
+        
+        if (!string.IsNullOrEmpty(hintMessage))
+        {
+            hintText.text = hintMessage;
             hintPanel.SetActive(true);
+            
+            Debug.Log($"[LevelManager] 💡 Показана подсказка {currentHintIndex}: {hintMessage}");
+        }
+        else
+        {
+            Debug.LogWarning("[LevelManager] Подсказка пуста!");
         }
     }
 
-    // ⭐ Кнопка "Использовать решение"
+    // ⭐ Получить текущую подсказку
+    string GetCurrentHint()
+    {
+        if (currentLevel == null) return "";
+        
+        switch (currentHintIndex)
+        {
+            case 1: return currentLevel.hint1;
+            case 2: return currentLevel.hint2;
+            case 3: return currentLevel.hint3;
+            default: return currentLevel.hint; // fallback
+        }
+    }
+
+    // ⭐ КНОПКА "Использовать решение"
     public void OnUseSolution()
     {
-        LevelData currentLevel = allLevels[currentLevelIndex];
+        if (currentLevel == null)
+        {
+            Debug.LogError("[LevelManager] currentLevel is null!");
+            return;
+        }
         
         if (codeEditorUIToolkit != null && !string.IsNullOrEmpty(currentLevel.solutionCode))
         {
             codeEditorUIToolkit.SetCode(currentLevel.solutionCode);
             codeEditorUIToolkit.AddConsoleLog("💡 Загружено правильное решение. Нажми Run!");
+            
+            Debug.Log("[LevelManager] Загружено решение уровня");
         }
         
+        // Скрываем кнопку после использования
         if (useSolutionButton != null)
             useSolutionButton.gameObject.SetActive(false);
     }
 
-    // ⭐ Закрыть панель подсказок
+    // ⭐ КНОПКА "Закрыть" в HintPanel
     public void OnCloseHint()
     {
         if (hintPanel != null)
+        {
             hintPanel.SetActive(false);
+            Debug.Log("[LevelManager] Панель подсказок закрыта");
+        }
     }
     
     void HideHintUI()
     {
         if (showHintButton != null)
             showHintButton.gameObject.SetActive(false);
-        
         if (useSolutionButton != null)
             useSolutionButton.gameObject.SetActive(false);
-        
         if (hintPanel != null)
             hintPanel.SetActive(false);
     }
@@ -323,7 +330,16 @@ public class LevelManager : MonoBehaviour
         
         if (currentLevel != null)
         {
-            LoadLevelDirectly(currentLevel);
+            // ⭐ НЕ сбрасываем failedAttempts и currentHintIndex
+            // Подсказки остаются доступными
+            if (codeEditorUIToolkit != null)
+            {
+                codeEditorUIToolkit.SetCode(currentLevel.starterCode);
+                codeEditorUIToolkit.ClearConsole();
+            }
+            
+            player.SetStartPosition(currentLevel.playerStartPosition);
+            levelCompleted = false;
         }
         else if (currentLevelIndex >= 0 && currentLevelIndex < allLevels.Length)
         {
@@ -358,19 +374,12 @@ public class LevelManager : MonoBehaviour
         {
             codeEditorUIToolkit.AddConsoleLog("🎉 Уровень пройден!");
             
-            // Статистика
             if (failedAttempts == 0)
-            {
                 codeEditorUIToolkit.AddConsoleLog("⭐ Идеально! Решено с первой попытки!");
-            }
             else if (failedAttempts <= 2)
-            {
                 codeEditorUIToolkit.AddConsoleLog($"✨ Отлично! Попыток: {failedAttempts + 1}");
-            }
             else
-            {
                 codeEditorUIToolkit.AddConsoleLog($"📊 Попыток: {failedAttempts + 1}");
-            }
         }
         
         if (victoryPanel != null)
@@ -384,14 +393,13 @@ public class LevelManager : MonoBehaviour
         if (victoryPanel != null)
             victoryPanel.SetActive(false);
 
-        // Если уровень был загружен из roadmap - переход на следующий в массиве
         if (currentLevelIndex >= 0)
         {
             LoadLevelByIndex(currentLevelIndex + 1);
         }
         else
         {
-            Debug.LogWarning("[LevelManager] Следующий уровень недоступен (уровень загружен из roadmap)");
+            Debug.LogWarning("[LevelManager] Следующий уровень недоступен");
         }
     }
 }

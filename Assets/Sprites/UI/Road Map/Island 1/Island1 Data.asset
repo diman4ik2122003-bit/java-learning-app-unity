@@ -18,13 +18,19 @@ MonoBehaviour:
   levels:
   - sprite: {fileID: 6119744594000515781, guid: bf5213a4a5c8e804ca52b2e422e13363, type: 3}
     anchoredPosition: {x: -622, y: -7}
+    levelData: {fileID: 11400000, guid: d026b0c8912add044af0b4ca33db9ee3, type: 2}
   - sprite: {fileID: 7427962829179523234, guid: cfbff5339df3b5a4597a60b64dcacc52, type: 3}
     anchoredPosition: {x: -309, y: 80}
+    levelData: {fileID: 11400000, guid: 3d8fba48a34e8fc4093d5855e4404910, type: 2}
   - sprite: {fileID: -2565680503065603460, guid: 6925f5a5e6303f545834b741ac61035d, type: 3}
     anchoredPosition: {x: -51, y: -105}
+    levelData: {fileID: 11400000, guid: 2b237af4f4968584481911703bf8d5be, type: 2}
   - sprite: {fileID: -4851032984777233990, guid: 21c2d277743537845becae454975229a, type: 3}
     anchoredPosition: {x: 241, y: -342}
+    levelData: {fileID: 0}
   - sprite: {fileID: -6786241049556961072, guid: 35deec6be31fcd844ba02898c71ec228, type: 3}
     anchoredPosition: {x: 509, y: -36}
+    levelData: {fileID: 0}
   - sprite: {fileID: -4663189236019052247, guid: acdc060fcdc464f47b8f5286615af994, type: 3}
     anchoredPosition: {x: 210, y: 153}
+    levelData: {fileID: 0}
