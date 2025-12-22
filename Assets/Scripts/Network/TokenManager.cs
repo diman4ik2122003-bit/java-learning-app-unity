@@ -21,6 +21,10 @@ public class TokenManager : MonoBehaviour
     [Header("UI (optional)")]
     [SerializeField] private TMP_Text nicknameText;
 
+    [Header("Dev Mode (Editor Only)")]
+    [SerializeField] private bool useDevToken = true;
+    [SerializeField] private string devTokenForEditor = ""; // сюда вставь idToken
+
     [Header("Binders (optional)")]
     [SerializeField] private StatsPanelBinder statsPanel;
     [SerializeField] private AchievementsPanelBinder achievementsPanel;
@@ -47,13 +51,35 @@ public class TokenManager : MonoBehaviour
 
         if (!statsPanel) statsPanel = FindFirstObjectByType<StatsPanelBinder>();
         if (!achievementsPanel) achievementsPanel = FindFirstObjectByType<AchievementsPanelBinder>();
+        
+        // ⭐ ИНИЦИАЛИЗАЦИЯ ТОКЕНА В AWAKE (раньше Start)
+        #if !UNITY_WEBGL || UNITY_EDITOR
+        if (useDevToken && !string.IsNullOrEmpty(devTokenForEditor))
+        {
+            firebaseIdToken = devTokenForEditor;
+            Debug.Log("[TokenManager] DEV MODE: firebaseIdToken установлен в Awake");
+            
+            if (JavaJudgeClient.Instance != null)
+                JavaJudgeClient.Instance.SetAuthToken(devTokenForEditor);
+        }
+        else
+        {
+            Debug.LogWarning("[TokenManager] DEV MODE включён, но devTokenForEditor пуст!");
+        }
+        #endif
     }
 
     private void Start()
     {
-#if UNITY_WEBGL && !UNITY_EDITOR
-        RegisterMessageListener();
-#endif
+        #if UNITY_WEBGL && !UNITY_EDITOR
+            RegisterMessageListener();
+        #else
+            // В редакторе уже установили токен в Awake, теперь можем загрузить данные
+            if (!string.IsNullOrEmpty(firebaseIdToken))
+            {
+                StartCoroutine(LoadAllSessionData());
+            }
+        #endif
     }
 
     // ===== токен из JS =====

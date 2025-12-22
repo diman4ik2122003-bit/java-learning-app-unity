@@ -1,5 +1,7 @@
 using UnityEngine;
 using TMPro;
+using System.Collections;
+using System; // ⭐ ДОБАВЬ ЭТО
 
 public class LevelManager : MonoBehaviour
 {
@@ -12,8 +14,8 @@ public class LevelManager : MonoBehaviour
     public GameObject hintPanel;
     public TMP_Text hintText;
     public UnityEngine.UI.Button closeHintButton;
-    public UnityEngine.UI.Button showHintButton; // Кнопка внизу экрана "Показать подсказку"
-    public UnityEngine.UI.Button useSolutionButton; // Кнопка "Использовать решение"
+    public UnityEngine.UI.Button showHintButton;
+    public UnityEngine.UI.Button useSolutionButton;
 
     [Header("Game References")]
     public PlayerController player;
@@ -29,11 +31,17 @@ public class LevelManager : MonoBehaviour
     public LevelData[] allLevels;
     private int currentLevelIndex = 0;
     
+    public VictoryPanelUI victoryPanelUI;
+
     // ⭐ Система провалов и подсказок
     private int failedAttempts = 0;
+    private int hintsUsedCount = 0;
+    private int currentHintIndex = 0;
     private bool levelCompleted = false;
     private LevelData currentLevel;
-    private int currentHintIndex = 0; // Текущий уровень подсказки (0-3)
+    
+    // ⭐ Система отслеживания прогресса
+    private float levelStartTime = 0f;
 
     void Start()
     {
@@ -68,10 +76,13 @@ public class LevelManager : MonoBehaviour
         currentLevel = level;
         currentLevelIndex = -1;
         
-        // Сброс системы подсказок
+        // ⭐ Сброс всех счётчиков
         failedAttempts = 0;
+        hintsUsedCount = 0;
         currentHintIndex = 0;
         levelCompleted = false;
+        levelStartTime = Time.time;
+        
         HideHintUI();
 
         // UI
@@ -147,6 +158,10 @@ public class LevelManager : MonoBehaviour
             {
                 CodeExecutor.Instance.Execute(codeEditorUIToolkit.GetCode(), player);
             }
+            else
+            {
+                Debug.LogError("[LevelManager] CodeExecutor.Instance не найден!");
+            }
         }
     }
 
@@ -176,7 +191,6 @@ public class LevelManager : MonoBehaviour
         
         Debug.Log($"[LevelManager] ❌ ПРОВАЛ! Попытка {failedAttempts}");
         
-        // ⭐ В консоль выводим только счётчик попыток
         if (codeEditorUIToolkit != null)
         {
             codeEditorUIToolkit.AddConsoleLog($"❌ Попытка {failedAttempts}. Попробуй ещё раз!");
@@ -187,7 +201,6 @@ public class LevelManager : MonoBehaviour
         
         if (failedAttempts >= attemptsPerHint * 4)
         {
-            // 12+ попыток → КНОПКА "Использовать решение"
             currentHintIndex = 4;
             ShowSolutionButton();
             if (codeEditorUIToolkit != null)
@@ -195,25 +208,21 @@ public class LevelManager : MonoBehaviour
         }
         else if (failedAttempts >= attemptsPerHint * 3)
         {
-            // 9+ попыток → ПОДСКАЗКА 3
             currentHintIndex = 3;
             EnableHintButton();
         }
         else if (failedAttempts >= attemptsPerHint * 2)
         {
-            // 6+ попыток → ПОДСКАЗКА 2
             currentHintIndex = 2;
             EnableHintButton();
         }
         else if (failedAttempts >= attemptsPerHint)
         {
-            // 3+ попытки → ПОДСКАЗКА 1
             currentHintIndex = 1;
             EnableHintButton();
         }
     }
 
-    // ⭐ Включаем кнопку "Показать подсказку"
     void EnableHintButton()
     {
         if (showHintButton != null && !showHintButton.gameObject.activeSelf)
@@ -237,7 +246,6 @@ public class LevelManager : MonoBehaviour
         }
     }
 
-    // ⭐ КНОПКА "Показать подсказку" (открывает панель)
     public void OnShowHint()
     {
         if (currentLevel == null || hintPanel == null || hintText == null)
@@ -261,7 +269,6 @@ public class LevelManager : MonoBehaviour
         }
     }
 
-    // ⭐ Получить текущую подсказку
     string GetCurrentHint()
     {
         if (currentLevel == null) return "";
@@ -271,11 +278,10 @@ public class LevelManager : MonoBehaviour
             case 1: return currentLevel.hint1;
             case 2: return currentLevel.hint2;
             case 3: return currentLevel.hint3;
-            default: return currentLevel.hint; // fallback
+            default: return currentLevel.hint;
         }
     }
 
-    // ⭐ КНОПКА "Использовать решение"
     public void OnUseSolution()
     {
         if (currentLevel == null)
@@ -283,6 +289,8 @@ public class LevelManager : MonoBehaviour
             Debug.LogError("[LevelManager] currentLevel is null!");
             return;
         }
+        
+        hintsUsedCount++;
         
         if (codeEditorUIToolkit != null && !string.IsNullOrEmpty(currentLevel.solutionCode))
         {
@@ -292,12 +300,10 @@ public class LevelManager : MonoBehaviour
             Debug.Log("[LevelManager] Загружено решение уровня");
         }
         
-        // Скрываем кнопку после использования
         if (useSolutionButton != null)
             useSolutionButton.gameObject.SetActive(false);
     }
 
-    // ⭐ КНОПКА "Закрыть" в HintPanel
     public void OnCloseHint()
     {
         if (hintPanel != null)
@@ -330,8 +336,6 @@ public class LevelManager : MonoBehaviour
         
         if (currentLevel != null)
         {
-            // ⭐ НЕ сбрасываем failedAttempts и currentHintIndex
-            // Подсказки остаются доступными
             if (codeEditorUIToolkit != null)
             {
                 codeEditorUIToolkit.SetCode(currentLevel.starterCode);
@@ -361,6 +365,8 @@ public class LevelManager : MonoBehaviour
 
     void OnLevelCompleted()
     {
+        if (levelCompleted) return;
+        
         levelCompleted = true;
         
         Debug.Log("[LevelManager] 🎉 Уровень пройден!");
@@ -370,20 +376,180 @@ public class LevelManager : MonoBehaviour
             CodeExecutor.Instance.StopExecution();
         }
         
+        // ⭐ ВЫЧИСЛЯЕМ СТАТИСТИКУ
+        int completionTime = Mathf.RoundToInt(Time.time - levelStartTime);
+        int stars = CalculateStars(failedAttempts, hintsUsedCount, completionTime);
+        int codeLines = CountCodeLines(codeEditorUIToolkit.GetCode());
+        int attemptsTotal = failedAttempts + 1;
+
+        Debug.Log($"[LevelManager] Статистика: time={completionTime}s, attempts={attemptsTotal}, stars={stars}");
+        
+        if (victoryPanelUI != null)
+        {
+            victoryPanelUI.SetStats(completionTime, attemptsTotal, stars, 0);
+        }
+
         if (codeEditorUIToolkit != null)
         {
             codeEditorUIToolkit.AddConsoleLog("🎉 Уровень пройден!");
+            codeEditorUIToolkit.AddConsoleLog($"⭐ Звёзд: {stars}/3");
+            codeEditorUIToolkit.AddConsoleLog($"⏱️ Время: {completionTime}с");
+            codeEditorUIToolkit.AddConsoleLog($"📊 Попыток: {failedAttempts + 1}");
             
             if (failedAttempts == 0)
-                codeEditorUIToolkit.AddConsoleLog("⭐ Идеально! Решено с первой попытки!");
+                codeEditorUIToolkit.AddConsoleLog("🏆 Идеально! Решено с первой попытки!");
             else if (failedAttempts <= 2)
-                codeEditorUIToolkit.AddConsoleLog($"✨ Отлично! Попыток: {failedAttempts + 1}");
-            else
-                codeEditorUIToolkit.AddConsoleLog($"📊 Попыток: {failedAttempts + 1}");
+                codeEditorUIToolkit.AddConsoleLog($"✨ Отлично!");
+        }
+        
+        // ⭐ ДИАГНОСТИКА
+        Debug.Log("=== ДИАГНОСТИКА ПРОГРЕССА ===");
+        Debug.Log($"ProgressAPI.Instance: {(ProgressAPIService.Instance != null ? "OK" : "NULL")}");
+        Debug.Log($"Token: {PlayerPrefs.GetString("authToken", "NO_TOKEN")}");
+        Debug.Log($"Challenge ID: {currentLevel?.levelId}");
+        Debug.Log("==============================");
+
+        // ⭐ ПОКАЗЫВАЕМ ПАНЕЛЬ С ДИАГНОСТИКОЙ
+        if (victoryPanel != null)
+        {
+            Debug.Log("[LevelManager] Активируем victoryPanel");
+            victoryPanel.SetActive(true);
+        }
+        else
+        {
+            Debug.LogError("[LevelManager] victoryPanel == null!");
+        }
+        
+        if (victoryPanelUI != null)
+        {
+            Debug.Log($"[LevelManager] Вызываем SetStats({completionTime}, {attemptsTotal}, {stars}, 0)");
+            victoryPanelUI.SetStats(completionTime, attemptsTotal, stars, 0);
+        }
+        else
+        {
+            Debug.LogError("[LevelManager] victoryPanelUI == null!");
+        }
+        
+        // ⭐ СОХРАНЯЕМ НА СЕРВЕРЕ (ОДИН РАЗ)
+        if (currentLevel != null)
+        {
+            SaveProgressToBackend(
+                currentLevel.levelId,
+                stars,
+                completionTime,
+                failedAttempts,
+                hintsUsedCount,
+                codeLines
+            );
         }
         
         if (victoryPanel != null)
             victoryPanel.SetActive(true);
+    }
+
+    int CalculateStars(int attempts, int hints, int time)
+    {
+        int stars = 3;
+        
+        if (attempts > 5) stars = 1;
+        else if (attempts > 2) stars = 2;
+        
+        if (hints > 0 && stars > 1) stars--;
+        
+        if (time > 300 && stars > 1) stars--;
+        
+        return Mathf.Max(1, stars);
+    }
+
+    int CountCodeLines(string code)
+    {
+        if (string.IsNullOrWhiteSpace(code)) return 0;
+        
+        string[] lines = code.Split('\n');
+        int count = 0;
+        
+        foreach (string line in lines)
+        {
+            string trimmed = line.Trim();
+            if (!string.IsNullOrEmpty(trimmed) && !trimmed.StartsWith("//"))
+            {
+                count++;
+            }
+        }
+        
+        return count;
+    }
+
+    void SaveProgressToBackend(
+        string challengeId,
+        int stars,
+        int completionTime,
+        int failedAttempts,
+        int hintsUsed,
+        int codeLines)
+    {
+        Debug.Log($"[LevelManager] Сохранение прогресса на сервер...");
+        Debug.Log($"Challenge: {challengeId}, Stars: {stars}, Time: {completionTime}s");
+        
+        StartCoroutine(ProgressAPIService.Instance.SaveLevelCompletion(
+            challengeId,
+            stars,
+            completionTime,
+            failedAttempts,
+            hintsUsed,
+            codeLines,
+            OnProgressSaved, // ⭐ БЕЗ скобок - передаём метод как делегат
+            OnProgressSaveError
+        ));
+    }
+
+    // ⭐ ПРАВИЛЬНАЯ СИГНАТУРА (с полным путём)
+    void OnProgressSaved(ProgressAPIService.LevelCompletionResponse response)
+    {
+        Debug.Log($"[LevelManager] ✅ Прогресс сохранён!");
+        Debug.Log($"XP получено: +{response.data.xpGained}");
+        Debug.Log($"Уровень: {response.data.stats.level}");
+        int xpGained = response.data.xpGained;
+        
+        if (victoryPanelUI != null)
+        {
+            int completionTime = Mathf.RoundToInt(Time.time - levelStartTime);
+            int attemptsTotal = failedAttempts + 1;
+            int stars = CalculateStars(failedAttempts, hintsUsedCount, completionTime);
+
+            victoryPanelUI.SetStats(completionTime, attemptsTotal, stars, xpGained);
+        }
+
+        if (codeEditorUIToolkit != null)
+        {
+            codeEditorUIToolkit.AddConsoleLog($"💰 +{response.data.xpGained} XP");
+            codeEditorUIToolkit.AddConsoleLog($"🎯 Уровень: {response.data.stats.level}");
+        }
+        
+        if (response.data.achievements != null && response.data.achievements.Length > 0)
+        {
+            foreach (var achievement in response.data.achievements)
+            {
+                if (achievement.isNew)
+                {
+                    Debug.Log($"🏆 Новое достижение: {achievement.name}");
+                    if (codeEditorUIToolkit != null)
+                    {
+                        codeEditorUIToolkit.AddConsoleLog($"🏆 {achievement.name}");
+                    }
+                }
+            }
+        }
+    }
+
+    void OnProgressSaveError(string error)
+    {
+        Debug.LogWarning($"[LevelManager] ⚠️ Не удалось сохранить прогресс: {error}");
+        
+        if (codeEditorUIToolkit != null)
+        {
+            codeEditorUIToolkit.AddConsoleLog("⚠️ Прогресс не сохранён (offline)");
+        }
     }
 
     public void OnNextLevel()
