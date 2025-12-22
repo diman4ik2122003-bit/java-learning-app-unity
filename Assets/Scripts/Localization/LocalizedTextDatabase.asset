@@ -67,4 +67,10 @@ MonoBehaviour:
     en: 'Challenges Solved:'
   - key: 'achievements_count_stats_text '
     ru: "\u0414\u043E\u0441\u0442\u0438\u0436\u0435\u043D\u0438\u0439 \u043F\u043E\u043B\u0443\u0447\u0435\u043D\u043E:"
-    en: 'Achivments:'
+    en: 'Achievments:'
+  - key: data_stats_title
+    ru: "\u0421\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043A\u0430"
+    en: Statistics
+  - key: data_achievements_title
+    ru: "\u0414\u043E\u0441\u0442\u0438\u0436\u0435\u043D\u0438\u044F"
+    en: Achievments

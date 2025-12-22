@@ -1,0 +1,10 @@
+[33m870d504[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{0}: pull --ff --recurse-submodules --progress origin: Fast-forward
+[33m0516ede[m HEAD@{1}: reset: moving to HEAD
+[33m0516ede[m HEAD@{2}: commit: Level2 Transition Added, Sir
+[33m1dde97f[m HEAD@{3}: pull --ff --recurse-submodules --progress origin: Fast-forward
+[33m823d872[m HEAD@{4}: commit: Add Language, Settings Update
+[33m29439c6[m HEAD@{5}: pull --ff --recurse-submodules --progress origin: Fast-forward
+[33mdde030e[m HEAD@{6}: pull --ff --recurse-submodules --progress origin: Fast-forward
+[33m4069444[m HEAD@{7}: commit: Atkarsk's commit
+[33m3ce8c40[m HEAD@{8}: commit: Add Island3 BG
+[33mcb92775[m HEAD@{9}: commit (initial): Initial commit

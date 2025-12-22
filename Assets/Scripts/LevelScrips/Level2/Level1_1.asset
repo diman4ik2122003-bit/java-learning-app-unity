@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db08957ac9d5a1b4596b7e1b5ff67c98, type: 3}
   m_Name: Level1_1
   m_EditorClassIdentifier: Assembly-CSharp::LevelData
-  levelId: 1-1
+  levelId: -OeMegGiyIhiH9mNU6_8
   groupName: "\u041F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u044B\u0435"
   levelName: "\u041F\u0435\u0440\u0432\u044B\u0435 \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u0430\u044F"
   levelPrefab: {fileID: 0}

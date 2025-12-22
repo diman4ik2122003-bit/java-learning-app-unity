@@ -31,12 +31,34 @@ public class LanguageToggleController : MonoBehaviour
     private void OnRuToggleChanged(bool isOn)
     {
         if (isOn && LocalizationManager.Instance != null)
+        {
             LocalizationManager.Instance.SetLanguage("ru");
+            RefreshAchievements();
+        }
     }
 
     private void OnEnToggleChanged(bool isOn)
     {
         if (isOn && LocalizationManager.Instance != null)
+        {
             LocalizationManager.Instance.SetLanguage("en");
+            RefreshAchievements();
+        }
+    }
+
+    // НОВЫЙ МЕТОД
+    private void RefreshAchievements()
+    {
+        if (TokenManager.Instance != null && 
+            TokenManager.Instance.achievementsPanel != null &&
+            TokenManager.Instance.achievementCategories != null &&
+            TokenManager.Instance.achievementsAll != null)
+        {
+            TokenManager.Instance.achievementsPanel.Apply(
+                TokenManager.Instance.achievementCategories,
+                TokenManager.Instance.achievementsAll,
+                TokenManager.Instance.achievementsMine
+            );
+        }
     }
 }

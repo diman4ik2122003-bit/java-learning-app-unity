@@ -42,7 +42,7 @@ public class LocalizedText : MonoBehaviour
             LocalizationManager.Instance.OnLanguageChanged -= UpdateText;
     }
 
-    void UpdateText(string lang)
+    public void UpdateText(string lang)
     {
         if (!database || tmpText == null)
             return;

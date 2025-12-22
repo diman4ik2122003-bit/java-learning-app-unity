@@ -77,11 +77,28 @@ public class CloudTransitionManager : MonoBehaviour
         StartCoroutine(DelayedEndTransition());
     }
 
-    private IEnumerator DelayedEndTransition()
+private IEnumerator DelayedEndTransition()
+{
+    // ждём минимум endTransitionDelay
+    yield return new WaitForSeconds(endTransitionDelay);
+
+    var tm = TokenManager.Instance;
+    if (tm != null)
     {
-        yield return new WaitForSeconds(endTransitionDelay);
-        EndTransition();
+        const float maxWait = 10f;
+        float t = 0f;
+
+        // ждём, пока подгрузятся и сессия, и острова
+        while (!(tm.IsSessionReady && tm.IsIslandsReady) && t < maxWait)
+        {
+            t += Time.unscaledDeltaTime;
+            yield return null;
+        }
     }
+
+    EndTransition();
+}
+
 
     public void EndTransition()
     {

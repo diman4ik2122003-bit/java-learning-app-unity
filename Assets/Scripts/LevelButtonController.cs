@@ -1,39 +1,51 @@
-// Assets/Scripts/LevelScripts/LevelButtonController.cs
 using UnityEngine;
 using UnityEngine.UI;
 
-[RequireComponent(typeof(Button))]
 public class LevelButtonController : MonoBehaviour
 {
-    private LevelData assignedLevelData;
+    public LevelData levelData;
 
-    // Вызывается из IslandSceneManager при создании кнопки
-    public void Initialize(LevelData levelData)
+    [Header("Stars")]
+    public Image star1;
+    public Image star2;
+    public Image star3;
+    public Sprite starEmpty;
+    public Sprite starFull;
+
+    [Header("Lock")]
+    public GameObject lockOverlay;
+    public Button button;
+
+    public void Initialize(LevelData data)
     {
-        assignedLevelData = levelData;
-
-        var button = GetComponent<Button>();
-        if (!levelData)
-        {
-            Debug.LogWarning("[LevelButtonController] LevelData not assigned!", this);
-            if (button) button.interactable = false;
-        }
+        levelData = data;
+        Debug.Log($"[LevelButtonController] Initialize: levelId={levelData?.levelId}");
     }
 
-    // Вызывается из Button.onClick в инспекторе (ДО CloudTransition)
-    public void OnButtonClick()
+    public void SetLocked(bool locked)
     {
-        if (!assignedLevelData)
-        {
-            Debug.LogError("[LevelButtonController] LevelData is null!", this);
-            return;
-        }
+        Debug.Log($"[LevelButtonController] SetLocked: levelId={levelData?.levelId}, locked={locked}");
 
-        // ⭐ Сохраняем выбранный уровень в статическое хранилище
-        LevelSelectionManager.SelectedLevel = assignedLevelData;
-        
-        Debug.Log("[LevelButtonController] Selected level: " + assignedLevelData.levelId);
-        
-        // CloudTransition запустится следующим событием в Button.onClick
+        if (button != null)
+            button.interactable = !locked;
+
+        if (lockOverlay != null)
+            lockOverlay.SetActive(locked);
+    }
+
+    public void SetStars(int stars)
+    {
+        Debug.Log($"[LevelButtonController] SetStars: levelId={levelData?.levelId}, stars={stars}");
+
+        stars = Mathf.Clamp(stars, 0, 3);
+        SetStarImage(star1, stars >= 1);
+        SetStarImage(star2, stars >= 2);
+        SetStarImage(star3, stars >= 3);
+    }
+
+    private void SetStarImage(Image img, bool full)
+    {
+        if (img == null) return;
+        img.sprite = full ? starFull : starEmpty;
     }
 }

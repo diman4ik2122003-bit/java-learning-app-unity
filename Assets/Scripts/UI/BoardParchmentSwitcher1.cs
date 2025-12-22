@@ -9,7 +9,7 @@ public class BoardSlideSwitcher : MonoBehaviour
 
     [Header("Animate THIS (parent board panel)")]
     [SerializeField] private RectTransform boardRect;
-    [SerializeField] private CanvasGroup boardCanvasGroup; // optional
+    [SerializeField] private CanvasGroup boardCanvasGroup;
 
     [Header("Positions (anchoredPosition)")]
     [SerializeField] private Vector2 openAnchoredPos;
@@ -18,6 +18,13 @@ public class BoardSlideSwitcher : MonoBehaviour
     [Header("Content")]
     [SerializeField] private GameObject statsContent;
     [SerializeField] private GameObject achievementsContent;
+
+    [Header("Data Title")]
+    [SerializeField] private LocalizedText dataTitleLocalizedText;
+
+    [Header("Localization Keys for Title")]
+    [SerializeField] private string statsKey = "data_stats_title";
+    [SerializeField] private string achievementsKey = "data_achievements_title";
 
     [Header("Timing")]
     [Min(0f)] [SerializeField] private float moveDownTime = 1.0f;
@@ -76,7 +83,6 @@ public class BoardSlideSwitcher : MonoBehaviour
             return;
         }
 
-        // closed -> open with requested tab
         if (!_isOpen)
         {
             _currentTab = clickedTab;
@@ -89,14 +95,12 @@ public class BoardSlideSwitcher : MonoBehaviour
             return;
         }
 
-        // open + click same tab -> close
         if (_isOpen && _currentTab == clickedTab)
         {
             _routine = StartCoroutine(CloseRoutine());
             return;
         }
 
-        // open + click other tab -> switch
         _routine = StartCoroutine(SwitchTabRoutine(clickedTab));
     }
 
@@ -144,7 +148,28 @@ public class BoardSlideSwitcher : MonoBehaviour
         statsContent.SetActive(showStats);
         achievementsContent.SetActive(!showStats);
 
+        // Обновление заголовка
+        UpdateDataTitle(tab);
+
         if (debugLogs) Debug.Log($"[BoardSlideSwitcher] Tab={tab}", this);
+    }
+
+    // Просто меняем key - LocalizedText сам обновит текст
+private void UpdateDataTitle(Tab tab)
+{
+    if (dataTitleLocalizedText == null) return;
+
+    // Меняем ключ
+    dataTitleLocalizedText.key = tab == Tab.Stats ? statsKey : achievementsKey;
+
+    // Принудительно обновляем текст под текущий язык
+    if (LocalizationManager.Instance != null)
+    {
+        dataTitleLocalizedText.UpdateText(LocalizationManager.Instance.CurrentLang);
+    }
+
+    if (debugLogs)
+        Debug.Log($"[BoardSlideSwitcher] Data title key changed to: {dataTitleLocalizedText.key}");
     }
 
     private IEnumerator Move(Vector2 from, Vector2 to, float duration, float alphaTo, Func<float, float> ease)

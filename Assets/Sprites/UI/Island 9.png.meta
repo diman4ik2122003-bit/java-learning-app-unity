@@ -125,9 +125,9 @@ TextureImporter:
         x: 124
         y: 95
         width: 789
-        height: 838
+        height: 884
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -140,55 +140,11 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
-    - serializedVersion: 2
-      name: Island 9_1
-      rect:
-        serializedVersion: 2
-        x: 258
-        y: 844
-        width: 129
-        height: 129
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 0bf3893d65cb1d080800000000000000
-      internalID: -9164336685619069008
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Island 9_2
-      rect:
-        serializedVersion: 2
-        x: 652
-        y: 765
-        width: 194
-        height: 175
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 23509982895cfc200800000000000000
-      internalID: 202597765561779506
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
     outline: []
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 626382a1f86641c4ebaa6c510b60b11d
     internalID: 0
     vertices: []
     indices: 
