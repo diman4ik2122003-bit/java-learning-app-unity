@@ -15,11 +15,19 @@ public class CloudTransitionActivator : MonoBehaviour
     }
 
     // Этот метод можно вызвать из UI Button onClick
-    public void ActivateTransition()
+public void ActivateTransition()
+{
+    // 1. Обновляем данные
+    if (TokenManager.Instance != null)
     {
-        if (transitionManager != null)
-        {
-            transitionManager.StartTransition(targetSceneName);
-        }
+        TokenManager.Instance.RefreshAll();
     }
+
+    // 2. Стартуем облака
+    if (transitionManager != null)
+    {
+        transitionManager.StartTransition(targetSceneName);
+    }
+}
+
 }
