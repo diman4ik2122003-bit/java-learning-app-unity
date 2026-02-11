@@ -24,6 +24,7 @@ public class TokenManager : MonoBehaviour
     [Header("Binders (optional)")]
     [SerializeField] private StatsPanelBinder statsPanel;
     public AchievementsPanelBinder achievementsPanel;
+    public LeaderboardPanelBinder leaderboardPanel; 
 
     [Header("Debug")]
     [SerializeField] private bool logResponses = true;
@@ -35,6 +36,7 @@ public class TokenManager : MonoBehaviour
     public AchievementCategoryListResponse achievementCategories;
     public AchievementListResponse achievementsAll;
     public UserAchievementListResponse achievementsMine;
+    public LeaderboardResponse cachedLeaderboard;
     public bool IsSessionReady { get; private set; }
     public bool IsIslandsReady { get; private set; }
 
@@ -51,6 +53,7 @@ public class TokenManager : MonoBehaviour
 
         if (!statsPanel) statsPanel = FindFirstObjectByType<StatsPanelBinder>();
         if (!achievementsPanel) achievementsPanel = FindFirstObjectByType<AchievementsPanelBinder>();
+        if (!leaderboardPanel) leaderboardPanel = FindFirstObjectByType<LeaderboardPanelBinder>();
     }
 
     private void Start()
@@ -125,6 +128,19 @@ public class TokenManager : MonoBehaviour
             "/achievements/me/all",
             ok => achievementsMine = ok);
 
+yield return Get<LeaderboardResponse>(
+    "/leaderboard/global?limit=100&offset=0",
+    ok => cachedLeaderboard = ok);
+
+// ДОБАВЬ ПРОВЕРКУ СРАЗУ ПОСЛЕ:
+if (cachedLeaderboard != null && cachedLeaderboard.data != null)
+{
+    Debug.Log($"[TokenManager] Leaderboard loaded: {cachedLeaderboard.data.leaderboard?.Length ?? 0} entries");
+}
+else
+{
+    Debug.LogError("[TokenManager] Leaderboard NOT loaded!");
+}
         // 6. Прогресс островов
         yield return LoadIslandsProgress(uid);
         IsIslandsReady = true;
@@ -140,42 +156,67 @@ public class TokenManager : MonoBehaviour
 
         if (achievementsPanel)
             achievementsPanel.Apply(achievementCategories, achievementsAll, achievementsMine);
-    
+
+        if (leaderboardPanel && cachedLeaderboard != null)
+{
+    string myUid = profile?.data?.uid;
+    Debug.Log($"[TokenManager] Applying leaderboard to panel, entries: {cachedLeaderboard.data?.leaderboard?.Length ?? 0}, myUid: {myUid}");
+    leaderboardPanel.Apply(cachedLeaderboard, myUid);
+}
+else
+{
+    Debug.LogWarning($"[TokenManager] Leaderboard NOT applied - panel: {leaderboardPanel != null}, data: {cachedLeaderboard != null}");
+}
         IsSessionReady = true;
     }
 
-    /// <summary>Универсальный GET с авторизацией и парсингом JSON через JsonUtility</summary>
-    private IEnumerator Get<T>(string path, Action<T> onOk)
+/// <summary>Универсальный GET с авторизацией и парсингом JSON через JsonUtility</summary>
+private IEnumerator Get<T>(string path, Action<T> onOk)
+{
+    string url = apiBaseUrl.TrimEnd('/') + path;
+
+    if (logResponses)
+        Debug.Log($"[TokenManager] GET {path}");
+
+    using (UnityWebRequest www = UnityWebRequest.Get(url))
     {
-        string url = apiBaseUrl.TrimEnd('/') + path;
+        www.downloadHandler = new DownloadHandlerBuffer();
 
-        using (UnityWebRequest www = UnityWebRequest.Get(url))
+        if (!string.IsNullOrEmpty(firebaseIdToken))
+            www.SetRequestHeader("Authorization", "Bearer " + firebaseIdToken);
+
+        www.SetRequestHeader("Accept", "application/json");
+
+        yield return www.SendWebRequest();
+
+        if (www.result != UnityWebRequest.Result.Success)
         {
-            www.downloadHandler = new DownloadHandlerBuffer();
+            Debug.LogError($"[TokenManager] GET {path} FAILED: {www.error} (Code: {www.responseCode})");
+            yield break;
+        }
 
-            if (!string.IsNullOrEmpty(firebaseIdToken))
-                www.SetRequestHeader("Authorization", "Bearer " + firebaseIdToken);
+        string json = www.downloadHandler.text;
 
-            www.SetRequestHeader("Accept", "application/json");
+        if (logResponses)
+        {
+            string preview = json.Length > 200 ? json.Substring(0, 200) + "..." : json;
+            Debug.Log($"[TokenManager] GET {path} SUCCESS: {preview}");
+        }
 
-            yield return www.SendWebRequest();
-
-            if (www.result != UnityWebRequest.Result.Success)
-            {
-                yield break;
-            }
-
-            try
-            {
-                var obj = JsonUtility.FromJson<T>(www.downloadHandler.text);
-                onOk?.Invoke(obj);
-            }
-            catch (Exception)
-            {
-                // парс упал — просто игнорим
-            }
+        try
+        {
+            var obj = JsonUtility.FromJson<T>(json);
+            onOk?.Invoke(obj);
+            
+            if (logResponses)
+                Debug.Log($"[TokenManager] Parsed {typeof(T).Name} successfully");
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[TokenManager] Parse {path} FAILED: {ex.Message}\nJSON: {json}");
         }
     }
+}
 
     public IslandsProgressResponse islandsProgress;
 
@@ -456,5 +497,33 @@ if (islandManager != null)
         public long unlockedAt;
         public bool notified;
     }
+
+    // ========== LEADERBOARD ==========
+[System.Serializable]
+public class LeaderboardEntry
+{
+    public string uid;
+    public string displayName;
+    public string discriminator;
+    public string photoURL;
+    public int level;
+    public int xp;
+    public int rank;
+}
+
+[System.Serializable]
+public class LeaderboardData
+{
+    public LeaderboardEntry[] leaderboard;
+    public int total;
+    public int limit;
+    public int offset;
+}
+
+[System.Serializable]
+public class LeaderboardResponse
+{
+    public LeaderboardData data;
+}
 
 }

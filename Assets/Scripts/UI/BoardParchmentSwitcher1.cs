@@ -5,7 +5,7 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class BoardSlideSwitcher : MonoBehaviour
 {
-    public enum Tab { Stats, Achievements }
+    public enum Tab { Stats, Achievements, Profile, Leaderboard }
 
     [Header("Animate THIS (parent board panel)")]
     [SerializeField] private RectTransform boardRect;
@@ -18,6 +18,8 @@ public class BoardSlideSwitcher : MonoBehaviour
     [Header("Content")]
     [SerializeField] private GameObject statsContent;
     [SerializeField] private GameObject achievementsContent;
+    [SerializeField] private GameObject profileContent;
+    [SerializeField] private GameObject leaderboardContent;
 
     [Header("Data Title")]
     [SerializeField] private LocalizedText dataTitleLocalizedText;
@@ -25,6 +27,8 @@ public class BoardSlideSwitcher : MonoBehaviour
     [Header("Localization Keys for Title")]
     [SerializeField] private string statsKey = "data_stats_title";
     [SerializeField] private string achievementsKey = "data_achievements_title";
+    [SerializeField] private string profileKey = "data_profile_title";
+    [SerializeField] private string leaderboardKey = "data_leaderboard_title";
 
     [Header("Timing")]
     [Min(0f)] [SerializeField] private float moveDownTime = 1.0f;
@@ -72,6 +76,8 @@ public class BoardSlideSwitcher : MonoBehaviour
 
     public void OnStatsClicked() => HandleTabClick(Tab.Stats);
     public void OnAchievementsClicked() => HandleTabClick(Tab.Achievements);
+    public void OnProfileClicked() => HandleTabClick(Tab.Profile);  // НОВОЕ
+    public void OnLeaderboardClicked() => HandleTabClick(Tab.Leaderboard);
 
     private void HandleTabClick(Tab clickedTab)
     {
@@ -142,27 +148,35 @@ public class BoardSlideSwitcher : MonoBehaviour
         _routine = null;
     }
 
-    private void SetTabImmediate(Tab tab)
-    {
-        bool showStats = tab == Tab.Stats;
-        statsContent.SetActive(showStats);
-        achievementsContent.SetActive(!showStats);
+private void SetTabImmediate(Tab tab)
+{
+    statsContent.SetActive(tab == Tab.Stats);
+    achievementsContent.SetActive(tab == Tab.Achievements);
+    profileContent.SetActive(tab == Tab.Profile);
+    leaderboardContent.SetActive(tab == Tab.Leaderboard);  // НОВОЕ
 
-        // Обновление заголовка
-        UpdateDataTitle(tab);
+    UpdateDataTitle(tab);
 
-        if (debugLogs) Debug.Log($"[BoardSlideSwitcher] Tab={tab}", this);
-    }
+    if (debugLogs) Debug.Log($"[BoardSlideSwitcher] Tab={tab}", this);
+}
+
 
     // Просто меняем key - LocalizedText сам обновит текст
 private void UpdateDataTitle(Tab tab)
 {
     if (dataTitleLocalizedText == null) return;
 
-    // Меняем ключ
-    dataTitleLocalizedText.key = tab == Tab.Stats ? statsKey : achievementsKey;
+    string key = tab switch
+    {
+        Tab.Stats => statsKey,
+        Tab.Achievements => achievementsKey,
+        Tab.Profile => profileKey,
+        Tab.Leaderboard => leaderboardKey,  // НОВОЕ
+        _ => statsKey
+    };
+    
+    dataTitleLocalizedText.key = key;
 
-    // Принудительно обновляем текст под текущий язык
     if (LocalizationManager.Instance != null)
     {
         dataTitleLocalizedText.UpdateText(LocalizationManager.Instance.CurrentLang);
@@ -170,7 +184,8 @@ private void UpdateDataTitle(Tab tab)
 
     if (debugLogs)
         Debug.Log($"[BoardSlideSwitcher] Data title key changed to: {dataTitleLocalizedText.key}");
-    }
+}
+
 
     private IEnumerator Move(Vector2 from, Vector2 to, float duration, float alphaTo, Func<float, float> ease)
     {
