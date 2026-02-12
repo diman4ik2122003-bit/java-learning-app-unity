@@ -14,8 +14,27 @@ public class AchievementItemView : MonoBehaviour
     [Header("Loading")]
     [SerializeField] private CanvasGroup loadingSpinner;
 
-    public void Bind(string title, string description, string imageUrl, bool unlocked = true)
+    [Header("Pin")]
+    [SerializeField] private GameObject pinIcon;  // 📌 image, hidden when unpinned
+
+    private Button _button;
+    private string _achievementId;
+    private bool _isPinned;
+    private bool _unlocked;
+    private bool _isProcessing;
+
+    private void Awake()
     {
+        _button = GetComponent<Button>();
+    }
+
+    public void Bind(string achievementId, string title, string description,
+                     string imageUrl, bool unlocked, bool isPinned, bool canPin)
+    {
+        _achievementId = achievementId;
+        _isPinned = isPinned;
+        _unlocked = unlocked;
+
         if (titleText)
             titleText.text = title ?? "";
 
@@ -25,9 +44,7 @@ public class AchievementItemView : MonoBehaviour
         if (iconImage)
         {
             if (!string.IsNullOrEmpty(imageUrl))
-            {
                 StartCoroutine(LoadImageFromUrl(imageUrl));
-            }
             else
             {
                 iconImage.sprite = null;
@@ -35,7 +52,97 @@ public class AchievementItemView : MonoBehaviour
             }
         }
 
-        Debug.Log($"[AchievementItemView] Bound: title='{title}', description='{description}', imageUrl='{imageUrl}', unlocked={unlocked}");
+        // Show pin icon only when pinned
+        if (pinIcon)
+            pinIcon.SetActive(isPinned);
+
+        // Whole item is clickable for pin/unpin (only for unlocked achievements)
+        if (_button)
+        {
+            _button.onClick.RemoveAllListeners();
+
+            if (unlocked)
+            {
+                _button.interactable = isPinned || canPin;
+                _button.onClick.AddListener(OnItemClicked);
+            }
+            else
+            {
+                _button.interactable = false;
+            }
+        }
+
+        Debug.Log($"[AchievementItemView] Bound: id='{achievementId}', title='{title}', unlocked={unlocked}, isPinned={isPinned}, canPin={canPin}");
+    }
+
+    // Backward-compatible overload
+    public void Bind(string title, string description, string imageUrl, bool unlocked = true)
+    {
+        Bind(null, title, description, imageUrl, unlocked, false, false);
+    }
+
+    private void OnItemClicked()
+    {
+        if (_isProcessing || !_unlocked || string.IsNullOrEmpty(_achievementId)) return;
+        if (TokenManager.Instance == null) return;
+
+        _isProcessing = true;
+        if (_button) _button.interactable = false;
+
+        if (_isPinned)
+            StartCoroutine(DoUnpin());
+        else
+            StartCoroutine(DoPin());
+    }
+
+    private IEnumerator DoPin()
+    {
+        bool success = false;
+        string error = null;
+
+        yield return TokenManager.Instance.PinAchievement(_achievementId, (ok, err) =>
+        {
+            success = ok;
+            error = err;
+        });
+
+        _isProcessing = false;
+
+        if (success)
+        {
+            Debug.Log($"[AchievementItemView] Pinned {_achievementId}");
+            TokenManager.Instance.RefreshUserAchievements();
+        }
+        else
+        {
+            Debug.LogWarning($"[AchievementItemView] Pin failed: {error}");
+            if (_button) _button.interactable = true;
+        }
+    }
+
+    private IEnumerator DoUnpin()
+    {
+        bool success = false;
+        string error = null;
+
+        yield return TokenManager.Instance.UnpinAchievement(_achievementId, (ok, err) =>
+        {
+            success = ok;
+            error = err;
+        });
+
+        _isProcessing = false;
+
+        if (success)
+        {
+            Debug.Log($"[AchievementItemView] Unpinned {_achievementId}");
+            TokenManager.Instance.RefreshUserAchievements();
+        }
+        else
+        {
+            Debug.LogWarning($"[AchievementItemView] Unpin failed: {error}");
+            if (_button) _button.interactable = true;
+        }
     }
 
     private IEnumerator LoadImageFromUrl(string url)
