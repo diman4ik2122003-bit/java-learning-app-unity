@@ -26,11 +26,16 @@ public class AchievementItemView : MonoBehaviour
     private void Awake()
     {
         _button = GetComponent<Button>();
+        Debug.Log($"[AchievementItemView] Awake: button={(_button != null ? "FOUND" : "NULL")}, gameObject={gameObject.name}");
     }
 
     public void Bind(string achievementId, string title, string description,
                      string imageUrl, bool unlocked, bool isPinned, bool canPin)
     {
+        // Fallback: get button if Awake hasn't run yet
+        if (_button == null)
+            _button = GetComponent<Button>();
+
         _achievementId = achievementId;
         _isPinned = isPinned;
         _unlocked = unlocked;
@@ -65,11 +70,16 @@ public class AchievementItemView : MonoBehaviour
             {
                 _button.interactable = isPinned || canPin;
                 _button.onClick.AddListener(OnItemClicked);
+                Debug.Log($"[AchievementItemView] Listener ADDED: id='{achievementId}', interactable={_button.interactable}");
             }
             else
             {
                 _button.interactable = false;
             }
+        }
+        else
+        {
+            Debug.LogError($"[AchievementItemView] NO BUTTON found on '{gameObject.name}' — clicks won't work!");
         }
 
         Debug.Log($"[AchievementItemView] Bound: id='{achievementId}', title='{title}', unlocked={unlocked}, isPinned={isPinned}, canPin={canPin}");
@@ -83,8 +93,28 @@ public class AchievementItemView : MonoBehaviour
 
     private void OnItemClicked()
     {
-        if (_isProcessing || !_unlocked || string.IsNullOrEmpty(_achievementId)) return;
-        if (TokenManager.Instance == null) return;
+        Debug.Log($"[AchievementItemView] CLICKED: id='{_achievementId}', unlocked={_unlocked}, isPinned={_isPinned}, processing={_isProcessing}");
+
+        if (_isProcessing)
+        {
+            Debug.LogWarning("[AchievementItemView] Click ignored: already processing");
+            return;
+        }
+        if (!_unlocked)
+        {
+            Debug.LogWarning("[AchievementItemView] Click ignored: not unlocked");
+            return;
+        }
+        if (string.IsNullOrEmpty(_achievementId))
+        {
+            Debug.LogWarning("[AchievementItemView] Click ignored: achievementId is null/empty");
+            return;
+        }
+        if (TokenManager.Instance == null)
+        {
+            Debug.LogWarning("[AchievementItemView] Click ignored: TokenManager.Instance is null");
+            return;
+        }
 
         _isProcessing = true;
         if (_button) _button.interactable = false;
