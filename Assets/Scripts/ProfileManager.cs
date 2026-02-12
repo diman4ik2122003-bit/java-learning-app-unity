@@ -31,6 +31,7 @@ public class ProfileManager : MonoBehaviour
     [SerializeField] private bool debugLogs = true;
 
     private string currentProfileUid; // null = мой профиль, иначе UID друга
+    private string cachedBio; // Кешируем био без префикса
 
     // Локализация для "О себе:" / "Bio:"
     private string GetBioPrefix()
@@ -41,8 +42,50 @@ public class ProfileManager : MonoBehaviour
 
     private void OnEnable()
     {
+        // Подписываемся на изменение языка
+        if (LocalizationManager.Instance != null)
+        {
+            LocalizationManager.Instance.OnLanguageChanged += OnLanguageChanged;
+        }
+
         // Когда Profile Content активируется — загружаем профиль
         LoadProfile(null); // null = мой профиль
+    }
+
+    private void OnDisable()
+    {
+        // Отписываемся от события при отключении
+        if (LocalizationManager.Instance != null)
+        {
+            LocalizationManager.Instance.OnLanguageChanged -= OnLanguageChanged;
+        }
+    }
+
+    /// <summary>
+    /// Вызывается при смене языка
+    /// </summary>
+    private void OnLanguageChanged(string newLang)
+    {
+        if (debugLogs)
+            Debug.Log($"[ProfileManager] Language changed to: {newLang}");
+
+        // Обновляем только био с новым префиксом
+        UpdateBioText();
+    }
+
+    /// <summary>
+    /// Обновляет текст био с актуальным префиксом
+    /// </summary>
+    private void UpdateBioText()
+    {
+        if (bioText != null && !string.IsNullOrEmpty(cachedBio))
+        {
+            string bioPrefix = GetBioPrefix();
+            bioText.text = bioPrefix + cachedBio;
+
+            if (debugLogs)
+                Debug.Log($"[ProfileManager] Bio updated: {bioText.text}");
+        }
     }
 
     /// <summary>
@@ -150,14 +193,12 @@ public class ProfileManager : MonoBehaviour
         if (debugLogs)
             Debug.Log($"[ProfileManager] Level: {level}");
 
-        // 3. Био с локализованным префиксом "О себе: " или "Bio: "
-        string bio = profile.bio ?? "...";
-        string bioPrefix = GetBioPrefix(); // Получаем локализованный префикс
-        string bioWithPrefix = bioPrefix + bio;
-        bioText.text = bioWithPrefix;
+        // 3. Био - сохраняем без префикса и обновляем с актуальным префиксом
+        cachedBio = profile.bio ?? "...";
+        UpdateBioText();
 
         if (debugLogs)
-            Debug.Log($"[ProfileManager] Bio: {bioWithPrefix}");
+            Debug.Log($"[ProfileManager] Bio cached: {cachedBio}");
 
         // 4. Аватар
         if (!string.IsNullOrEmpty(profile.photoURL))
