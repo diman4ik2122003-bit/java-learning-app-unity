@@ -26,6 +26,9 @@ public class LeaderboardPanelBinder : MonoBehaviour
 
         currentUserUid = myUid;
 
+        if (debugLogs)
+            Debug.Log($"[LeaderboardPanelBinder] Apply START - myUid: '{myUid}'");
+
         // Очистка старого контента
         for (int i = verticalContent.childCount - 1; i >= 0; i--)
             Destroy(verticalContent.GetChild(i).gameObject);
@@ -49,6 +52,9 @@ public class LeaderboardPanelBinder : MonoBehaviour
             
             bool isMe = entry.uid == currentUserUid;
             
+            if (debugLogs)
+                Debug.Log($"[LeaderboardPanelBinder] Entry #{i+1}: uid='{entry.uid}' vs myUid='{currentUserUid}' => isMe={isMe}");
+            
             view.Bind(
                 rank: entry.rank,
                 displayName: entry.displayName ?? "Player",
@@ -59,11 +65,15 @@ public class LeaderboardPanelBinder : MonoBehaviour
                 isCurrentUser: isMe
             );
 
-            Debug.Log($"[LeaderboardPanelBinder] Bind called for {entry.displayName}, photoURL='{entry.photoURL}', active={view.gameObject.activeSelf}");
+            if (debugLogs)
+                Debug.Log($"[LeaderboardPanelBinder] Bind called for {entry.displayName}, photoURL='{entry.photoURL}', active={view.gameObject.activeSelf}");
             
             // Автопрокрутка к своей позиции
             if (isMe && scrollRect != null)
             {
+                if (debugLogs)
+                    Debug.Log($"[LeaderboardPanelBinder] Found current user at rank {entry.rank}, scheduling scroll");
+                
                 Canvas.ForceUpdateCanvases();
                 StartCoroutine(ScrollToItem(view.transform as RectTransform));
             }
@@ -73,20 +83,21 @@ public class LeaderboardPanelBinder : MonoBehaviour
         LayoutRebuilder.ForceRebuildLayoutImmediate(verticalContent as RectTransform);
 
         if (debugLogs)
-            Debug.Log($"[LeaderboardPanelBinder] Build done. Items={verticalContent.childCount}", this);
+            Debug.Log($"[LeaderboardPanelBinder] Build done. Items={verticalContent.childCount}");
     }
 
     private LeaderboardItemView CreateItem(Transform parent)
-{
-    var view = Instantiate(itemPrefab, parent, false); 
-    view.gameObject.SetActive(true); 
-    
-    NormalizeRect(view.transform);
+    {
+        var view = Instantiate(itemPrefab, parent, false); 
+        view.gameObject.SetActive(true); 
+        
+        NormalizeRect(view.transform);
 
-    if (debugLogs) LogRect("[Item]", view.transform);
+        if (debugLogs) 
+            LogRect("[LeaderboardPanelBinder] Item created", view.transform);
 
-    return view;
-}
+        return view;
+    }
 
     private static void NormalizeRect(Transform t)
     {
@@ -112,7 +123,12 @@ public class LeaderboardPanelBinder : MonoBehaviour
     {
         yield return new WaitForEndOfFrame();
         
-        if (scrollRect == null || item == null) yield break;
+        if (scrollRect == null || item == null) 
+        {
+            if (debugLogs)
+                Debug.LogWarning("[LeaderboardPanelBinder] ScrollToItem failed - scrollRect or item is null");
+            yield break;
+        }
 
         Canvas.ForceUpdateCanvases();
         
@@ -124,6 +140,9 @@ public class LeaderboardPanelBinder : MonoBehaviour
         var scrollPos = itemPos / (contentHeight - viewportHeight);
         
         scrollRect.verticalNormalizedPosition = 1f - Mathf.Clamp01(scrollPos);
+
+        if (debugLogs)
+            Debug.Log($"[LeaderboardPanelBinder] Scrolled to position: {scrollRect.verticalNormalizedPosition}");
     }
 
     // ========== ТЕСТОВЫЙ МЕТОД ==========
@@ -226,7 +245,7 @@ public class LeaderboardPanelBinder : MonoBehaviour
         
         Apply(testData, "current_user");
         
-        Debug.Log("<color=green>[LeaderboardPanelBinder] ✓ Test data filled with 8 players!</color>");
+        Debug.Log("[LeaderboardPanelBinder] Test data filled with 8 players!");
     }
 #endif
 }

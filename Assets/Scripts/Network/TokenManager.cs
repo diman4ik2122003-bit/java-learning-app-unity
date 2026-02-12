@@ -526,6 +526,8 @@ if (islandManager != null)
         public string uid;
         public string email;
         public string displayName;
+        public string discriminator; 
+        public string bio;     
         public string photoURL;
         public string role;
         public UserProfileStats stats;
