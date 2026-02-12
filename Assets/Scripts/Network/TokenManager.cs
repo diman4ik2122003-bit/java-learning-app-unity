@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -154,8 +155,7 @@ else
         if (statsPanel)
             statsPanel.Apply(profile, userStats);
 
-        if (achievementsPanel)
-            achievementsPanel.Apply(achievementCategories, achievementsAll, achievementsMine);
+        ApplyAchievementsToPanel();
 
         if (leaderboardPanel && cachedLeaderboard != null)
 {
@@ -217,6 +217,146 @@ private IEnumerator Get<T>(string path, Action<T> onOk)
         }
     }
 }
+
+    // ========== ACHIEVEMENTS PANEL HELPER ==========
+
+    public void ApplyAchievementsToPanel()
+    {
+        if (achievementsPanel)
+            achievementsPanel.Apply(achievementCategories, achievementsAll, achievementsMine);
+    }
+
+    /// <summary>Re-fetch user achievements and re-apply to panel</summary>
+    public void RefreshUserAchievements()
+    {
+        StartCoroutine(RefreshUserAchievementsRoutine());
+    }
+
+    private IEnumerator RefreshUserAchievementsRoutine()
+    {
+        yield return Get<UserAchievementListResponse>(
+            "/achievements/me/all",
+            ok => achievementsMine = ok);
+
+        ApplyAchievementsToPanel();
+    }
+
+    // ========== PIN / UNPIN / REORDER ==========
+
+    public IEnumerator PinAchievement(string achievementId, Action<bool, string> onResult)
+    {
+        yield return PostEmpty(
+            $"/achievements/{achievementId}/pin",
+            onResult);
+    }
+
+    public IEnumerator UnpinAchievement(string achievementId, Action<bool, string> onResult)
+    {
+        yield return DeleteRequest(
+            $"/achievements/{achievementId}/pin",
+            onResult);
+    }
+
+    public IEnumerator ReorderPinnedAchievements(string[] achievementIds, Action<bool, string> onResult)
+    {
+        string body = JsonUtility.ToJson(new ReorderPinnedRequest { achievementIds = achievementIds });
+        yield return PutJson(
+            "/achievements/pinned/order",
+            body,
+            onResult);
+    }
+
+    [Serializable]
+    private class ReorderPinnedRequest
+    {
+        public string[] achievementIds;
+    }
+
+    // ========== GENERIC HTTP HELPERS (POST empty, DELETE, PUT json) ==========
+
+    private IEnumerator PostEmpty(string path, Action<bool, string> onResult)
+    {
+        string url = apiBaseUrl.TrimEnd('/') + path;
+        using (UnityWebRequest www = UnityWebRequest.PostWwwForm(url, ""))
+        {
+            www.downloadHandler = new DownloadHandlerBuffer();
+            if (!string.IsNullOrEmpty(firebaseIdToken))
+                www.SetRequestHeader("Authorization", "Bearer " + firebaseIdToken);
+            www.SetRequestHeader("Accept", "application/json");
+
+            yield return www.SendWebRequest();
+
+            if (www.result != UnityWebRequest.Result.Success)
+            {
+                string errMsg = "";
+                try
+                {
+                    var errJson = JsonUtility.FromJson<ErrorMsg>(www.downloadHandler.text);
+                    errMsg = errJson?.message ?? www.error;
+                }
+                catch { errMsg = www.error; }
+
+                Debug.LogError($"[TokenManager] POST {path} FAILED: {errMsg}");
+                onResult?.Invoke(false, errMsg);
+                yield break;
+            }
+
+            if (logResponses) Debug.Log($"[TokenManager] POST {path} OK");
+            onResult?.Invoke(true, null);
+        }
+    }
+
+    private IEnumerator DeleteRequest(string path, Action<bool, string> onResult)
+    {
+        string url = apiBaseUrl.TrimEnd('/') + path;
+        using (UnityWebRequest www = UnityWebRequest.Delete(url))
+        {
+            www.downloadHandler = new DownloadHandlerBuffer();
+            if (!string.IsNullOrEmpty(firebaseIdToken))
+                www.SetRequestHeader("Authorization", "Bearer " + firebaseIdToken);
+            www.SetRequestHeader("Accept", "application/json");
+
+            yield return www.SendWebRequest();
+
+            if (www.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogError($"[TokenManager] DELETE {path} FAILED: {www.error}");
+                onResult?.Invoke(false, www.error);
+                yield break;
+            }
+
+            if (logResponses) Debug.Log($"[TokenManager] DELETE {path} OK");
+            onResult?.Invoke(true, null);
+        }
+    }
+
+    private IEnumerator PutJson(string path, string jsonBody, Action<bool, string> onResult)
+    {
+        string url = apiBaseUrl.TrimEnd('/') + path;
+        using (UnityWebRequest www = UnityWebRequest.Put(url, Encoding.UTF8.GetBytes(jsonBody)))
+        {
+            www.downloadHandler = new DownloadHandlerBuffer();
+            www.SetRequestHeader("Content-Type", "application/json");
+            if (!string.IsNullOrEmpty(firebaseIdToken))
+                www.SetRequestHeader("Authorization", "Bearer " + firebaseIdToken);
+            www.SetRequestHeader("Accept", "application/json");
+
+            yield return www.SendWebRequest();
+
+            if (www.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogError($"[TokenManager] PUT {path} FAILED: {www.error}");
+                onResult?.Invoke(false, www.error);
+                yield break;
+            }
+
+            if (logResponses) Debug.Log($"[TokenManager] PUT {path} OK");
+            onResult?.Invoke(true, null);
+        }
+    }
+
+    [Serializable]
+    private class ErrorMsg { public string message; }
 
     public IslandsProgressResponse islandsProgress;
 
@@ -496,6 +636,8 @@ if (islandManager != null)
         public string id;
         public long unlockedAt;
         public bool notified;
+        public bool isPinned;
+        public int pinOrder;
     }
 
     // ========== LEADERBOARD ==========

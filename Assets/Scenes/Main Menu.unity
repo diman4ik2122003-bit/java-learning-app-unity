@@ -2085,7 +2085,7 @@ MonoBehaviour:
   m_Elasticity: 0.1
   m_Inertia: 1
   m_DecelerationRate: 0.135
-  m_ScrollSensitivity: 1
+  m_ScrollSensitivity: 20
   m_Viewport: {fileID: 750709001}
   m_HorizontalScrollbar: {fileID: 0}
   m_VerticalScrollbar: {fileID: 183069076}
@@ -6187,6 +6187,7 @@ MonoBehaviour:
   categorySectionPrefab: {fileID: 7132134458608464013, guid: e1aa24dd1b5ff324baf10d55ed21cba0, type: 3}
   achievementItemPrefab: {fileID: 8669720680536399964, guid: 9cfb430cedea2d74cab8b25425221f1a, type: 3}
   verticalContent: {fileID: 185525892}
+  pinnedContainer: {fileID: 0}
   debugLogs: 0
 --- !u!1001 &1140542409
 PrefabInstance:

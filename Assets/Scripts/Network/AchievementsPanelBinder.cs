@@ -13,6 +13,9 @@ public class AchievementsPanelBinder : MonoBehaviour
     [Header("Root")]
     [SerializeField] private Transform verticalContent;
 
+    [Header("Pinned Section (optional)")]
+    [SerializeField] private Transform pinnedContainer;
+
     [Header("Debug")]
     [SerializeField] private bool debugLogs = true;
 
@@ -27,12 +30,11 @@ public class AchievementsPanelBinder : MonoBehaviour
             return;
         }
 
-        // Получаем текущий язык из LocalizationManager
         string currentLang = LocalizationManager.Instance != null 
             ? LocalizationManager.Instance.CurrentLang 
             : "ru";
 
-        // Очистка старого контента
+        // Clear old content
         for (int i = verticalContent.childCount - 1; i >= 0; i--)
             Destroy(verticalContent.GetChild(i).gameObject);
 
@@ -41,21 +43,58 @@ public class AchievementsPanelBinder : MonoBehaviour
         var mine = mineResp?.data ?? Array.Empty<TokenManager.UserAchievement>();
 
         if (debugLogs)
-        {
             Debug.Log($"[AchievementsPanelBinder] Categories: {categories.Length}, Achievements: {all.Length}, My: {mine.Length}, Lang: {currentLang}");
+
+        // Build lookup maps
+        var unlockedIds = new HashSet<string>(mine.Select(x => x.id));
+        var mineMap = mine.ToDictionary(x => x.id, x => x);
+
+        int pinnedCount = mine.Count(x => x.isPinned);
+
+        // ---- Pinned section (optional separate container) ----
+        if (pinnedContainer)
+        {
+            for (int i = pinnedContainer.childCount - 1; i >= 0; i--)
+                Destroy(pinnedContainer.GetChild(i).gameObject);
+
+            var pinnedAchs = mine
+                .Where(ua => ua.isPinned)
+                .OrderBy(ua => ua.pinOrder)
+                .ToList();
+
+            foreach (var ua in pinnedAchs)
+            {
+                var achDef = all.FirstOrDefault(a => a.id == ua.id);
+                if (achDef == null) continue;
+
+                var view = CreateItem(pinnedContainer);
+                string title = achDef.title?.GetText(currentLang) ?? "Unknown";
+                string description = achDef.description?.GetText(currentLang) ?? "";
+                string imageUrl = achDef.iconUnlocked;
+
+                view.Bind(
+                    achievementId: achDef.id,
+                    title: title,
+                    description: description,
+                    imageUrl: imageUrl,
+                    unlocked: true,
+                    isPinned: true,
+                    canPin: true  // already pinned, so unpin is always allowed
+                );
+            }
+
+            pinnedContainer.gameObject.SetActive(pinnedAchs.Count > 0);
         }
 
-        var unlockedIds = new HashSet<string>(mine.Select(x => x.id));
-
+        // ---- Category sections ----
         var byCategory = all
             .GroupBy(a => string.IsNullOrEmpty(a.categoryId) ? "__no_category__" : a.categoryId)
             .ToDictionary(g => g.Key, g => g.ToList());
 
         foreach (var cat in categories.OrderBy(c => c.order))
         {
-            // Передаем текущий язык в GetText
             string categoryTitle = cat.name?.GetText(currentLang) ?? "Категория";
-            
+
             if (debugLogs)
                 Debug.Log($"[AchievementsPanelBinder] Processing category: id={cat.id}, title={categoryTitle}");
 
@@ -68,31 +107,38 @@ public class AchievementsPanelBinder : MonoBehaviour
                     Debug.Log($"[AchievementsPanelBinder] No achievements for category {cat.id}");
             }
 
-            // Сортировка по order
             foreach (var ach in items.OrderBy(a => a.order))
             {
                 var view = CreateItem(section.ItemsParent);
                 bool unlocked = unlockedIds.Contains(ach.id);
 
-                // Передаем текущий язык в GetText
+                bool isPinned = false;
+                if (unlocked && mineMap.TryGetValue(ach.id, out var ua))
+                    isPinned = ua.isPinned;
+
+                bool canPin = unlocked && !isPinned && pinnedCount < 3;
+
                 string title = ach.title?.GetText(currentLang) ?? "Неизвестно";
                 string description = ach.description?.GetText(currentLang) ?? "";
                 string imageUrl = unlocked ? ach.iconUnlocked : ach.iconLocked;
 
                 if (debugLogs)
-                    Debug.Log($"[AchievementsPanelBinder] Binding achievement: id={ach.id}, order={ach.order}, title={title}, unlocked={unlocked}, imageUrl={imageUrl}");
+                    Debug.Log($"[AchievementsPanelBinder] Binding: id={ach.id}, title={title}, unlocked={unlocked}, isPinned={isPinned}, canPin={canPin}");
 
                 view.Bind(
+                    achievementId: ach.id,
                     title: title,
                     description: description,
                     imageUrl: imageUrl,
-                    unlocked: unlocked
+                    unlocked: unlocked,
+                    isPinned: isPinned,
+                    canPin: canPin
                 );
             }
             section.OnItemsAdded();
         }
 
-        // Достижения без категории
+        // Achievements without category
         if (byCategory.TryGetValue("__no_category__", out var noCat) && noCat.Count > 0)
         {
             var section = CreateSection(verticalContent, "Без категории");
@@ -102,16 +148,24 @@ public class AchievementsPanelBinder : MonoBehaviour
                 var view = CreateItem(section.ItemsParent);
                 bool unlocked = unlockedIds.Contains(ach.id);
 
-                // Передаем текущий язык в GetText
+                bool isPinned = false;
+                if (unlocked && mineMap.TryGetValue(ach.id, out var ua))
+                    isPinned = ua.isPinned;
+
+                bool canPin = unlocked && !isPinned && pinnedCount < 3;
+
                 string title = ach.title?.GetText(currentLang) ?? "Неизвестно";
                 string description = ach.description?.GetText(currentLang) ?? "";
                 string imageUrl = unlocked ? ach.iconUnlocked : ach.iconLocked;
 
                 view.Bind(
+                    achievementId: ach.id,
                     title: title,
                     description: description,
                     imageUrl: imageUrl,
-                    unlocked: unlocked
+                    unlocked: unlocked,
+                    isPinned: isPinned,
+                    canPin: canPin
                 );
             }
         }
@@ -120,7 +174,7 @@ public class AchievementsPanelBinder : MonoBehaviour
         LayoutRebuilder.ForceRebuildLayoutImmediate(verticalContent as RectTransform);
 
         if (debugLogs)
-            Debug.Log($"[AchievementsPanelBinder] Build done. Sections={verticalContent.childCount}", this);
+            Debug.Log($"[AchievementsPanelBinder] Build done. Sections={verticalContent.childCount}, Pinned={pinnedCount}", this);
     }
 
     private CategorySectionView CreateSection(Transform parent, string title)
