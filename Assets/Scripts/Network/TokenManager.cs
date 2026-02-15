@@ -53,8 +53,15 @@ public class TokenManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
 
         if (!statsPanel) statsPanel = FindFirstObjectByType<StatsPanelBinder>();
-        if (!achievementsPanel) achievementsPanel = FindFirstObjectByType<AchievementsPanelBinder>();
-        if (!leaderboardPanel) leaderboardPanel = FindFirstObjectByType<LeaderboardPanelBinder>();
+if (!achievementsPanel)
+    {
+        achievementsPanel = FindFirstObjectByType<AchievementsPanelBinder>();
+        Debug.LogError($"[TokenManager.Awake] FindFirstObjectByType result: {achievementsPanel != null}");
+    }
+    else
+    {
+        Debug.LogError($"[TokenManager.Awake] achievementsPanel ALREADY assigned in Inspector!");
+    }        if (!leaderboardPanel) leaderboardPanel = FindFirstObjectByType<LeaderboardPanelBinder>();
     }
 
     private void Start()
@@ -220,11 +227,24 @@ private IEnumerator Get<T>(string path, Action<T> onOk)
 
     // ========== ACHIEVEMENTS PANEL HELPER ==========
 
-    public void ApplyAchievementsToPanel()
+public void ApplyAchievementsToPanel()
+{
+    Debug.LogError($"[TokenManager] ApplyAchievementsToPanel CALLED!");
+    Debug.LogError($"achievementsPanel={achievementsPanel != null}");
+    Debug.LogError($"achievementCategories={achievementCategories != null}");
+    Debug.LogError($"achievementsAll={achievementsAll != null}");
+    Debug.LogError($"achievementsMine={achievementsMine != null}");
+    
+    if (achievementsPanel)
     {
-        if (achievementsPanel)
-            achievementsPanel.Apply(achievementCategories, achievementsAll, achievementsMine);
+        Debug.LogError("[TokenManager] Calling achievementsPanel.Apply()...");
+        achievementsPanel.Apply(achievementCategories, achievementsAll, achievementsMine);
     }
+    else
+    {
+        Debug.LogError("[TokenManager] achievementsPanel is NULL!");
+    }
+}
 
     /// <summary>Re-fetch user achievements and re-apply to panel</summary>
     public void RefreshUserAchievements()
