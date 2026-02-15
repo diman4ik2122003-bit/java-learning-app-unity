@@ -3,7 +3,8 @@ using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.UI;
 using System.Collections;
-
+using System.Collections.Generic;
+using System.Linq;
 
 public class AchievementItemView : MonoBehaviour
 {
@@ -20,17 +21,16 @@ public class AchievementItemView : MonoBehaviour
     [Header("Pin")]
     [SerializeField] private GameObject pinIcon;  // 📌 image, hidden when unpinned
 
-
-    [Header("Debug")]
-    [SerializeField] private bool enableDebugLogs = true;
-
+    // Static sprite cache — survives item destruction, makes re-render instant
+    private static readonly Dictionary<string, Sprite> _spriteCache = new();
 
     private Button _button;
     private string _achievementId;
     private bool _isPinned;
     private bool _unlocked;
     private bool _isProcessing;
-
+    private string _lastLoadedUrl;
+    private Coroutine _loadCoroutine;
 
     private void Awake()
     {
@@ -39,33 +39,37 @@ public class AchievementItemView : MonoBehaviour
 
 
         _button = GetComponent<Button>();
-        
-        if (_button == null)
-        {
-            Debug.LogError($"[AchievementItemView] ❌ NO BUTTON COMPONENT on '{gameObject.name}'! Add Button component to prefab!");
-        }
-        else
-        {
-            if (enableDebugLogs)
-                Debug.Log($"[AchievementItemView] ✅ Button FOUND on '{gameObject.name}'");
-        }
-
-
-        if (pinIcon == null)
-        {
-            Debug.LogWarning($"[AchievementItemView] ⚠️ pinIcon is NULL on '{gameObject.name}'! Assign PinImage in Inspector!");
-        }
-        else
-        {
-            if (enableDebugLogs)
-                Debug.Log($"[AchievementItemView] ✅ pinIcon assigned: {pinIcon.name}, active={pinIcon.activeSelf}");
-        }
-
-
-        if (enableDebugLogs)
-            Debug.Log($"[AchievementItemView] ========== AWAKE END ==========");
+        EnsureClickableArea();
     }
 
+    /// <summary>
+    /// Ensures the root GameObject has a transparent Image that covers the full area
+    /// so the Button can receive clicks everywhere, not just on child graphics.
+    /// Also disables raycastTarget on child graphics to prevent them from blocking.
+    /// </summary>
+    private void EnsureClickableArea()
+    {
+        // Add transparent Image on root if none exists
+        var rootImage = GetComponent<Image>();
+        if (rootImage == null)
+        {
+            rootImage = gameObject.AddComponent<Image>();
+            rootImage.color = new Color(0, 0, 0, 0); // fully transparent
+        }
+        rootImage.raycastTarget = true;
+
+        // Set this as the Button's target graphic
+        if (_button != null)
+            _button.targetGraphic = rootImage;
+
+        // Disable raycast on all CHILD graphics so they don't block the root
+        var childGraphics = GetComponentsInChildren<Graphic>(true);
+        foreach (var g in childGraphics)
+        {
+            if (g.transform == transform) continue; // skip root
+            g.raycastTarget = false;
+        }
+    }
 
     public void Bind(string achievementId, string title, string description,
                      string imageUrl, bool unlocked, bool isPinned, bool canPin)
@@ -81,18 +85,9 @@ public class AchievementItemView : MonoBehaviour
         // Fallback: get button if Awake hasn't run yet
         if (_button == null)
         {
-            if (enableDebugLogs)
-                Debug.Log($"[AchievementItemView] Button was null, trying GetComponent...");
-            
             _button = GetComponent<Button>();
-            
-            if (_button == null)
-                Debug.LogError($"[AchievementItemView] ❌ Still no Button after GetComponent!");
-            else
-                if (enableDebugLogs)
-                    Debug.Log($"[AchievementItemView] ✅ Button found via GetComponent");
+            EnsureClickableArea();
         }
-
 
         _achievementId = achievementId;
         _isPinned = isPinned;
@@ -115,24 +110,17 @@ public class AchievementItemView : MonoBehaviour
             Debug.LogWarning($"[AchievementItemView] descriptionText is NULL!");
 
 
-        // ========== ИСПРАВЛЕННЫЙ БЛОК! ⬇️⬇️⬇️ ==========
-        if (iconImage)
+        // Load icon — skip if same URL already loaded
+        if (iconImage && !string.IsNullOrEmpty(imageUrl) && imageUrl != _lastLoadedUrl)
         {
-            if (!string.IsNullOrEmpty(imageUrl))
-            {
-                if (enableDebugLogs)
-                    Debug.Log($"[AchievementItemView] Starting to load image from: {imageUrl}");
-                
-                StartCoroutine(LoadImageFromUrl(imageUrl));
-            }
-            else
-            {
-                if (enableDebugLogs)
-                    Debug.Log($"[AchievementItemView] No imageUrl, keeping prefab sprite");
-                
-                // НЕ ТРОГАЕМ iconImage.sprite и iconImage.color!
-                // Останется дефолтный спрайт из префаба ✅
-            }
+            if (_loadCoroutine != null)
+                StopCoroutine(_loadCoroutine);
+            _loadCoroutine = StartCoroutine(LoadImageFromUrl(imageUrl));
+        }
+        else if (iconImage && string.IsNullOrEmpty(imageUrl))
+        {
+            iconImage.sprite = null;
+            iconImage.color = new Color(1, 1, 1, 0.3f);
         }
         else
         {
@@ -160,9 +148,6 @@ public class AchievementItemView : MonoBehaviour
             {
                 _button.interactable = isPinned || canPin;
                 _button.onClick.AddListener(OnItemClicked);
-                
-                if (enableDebugLogs)
-                    Debug.Log($"[AchievementItemView] ✅ Listener ADDED! interactable={_button.interactable} (isPinned={isPinned} || canPin={canPin})");
             }
             else
             {
@@ -171,14 +156,6 @@ public class AchievementItemView : MonoBehaviour
                     Debug.Log($"[AchievementItemView] Button disabled (not unlocked)");
             }
         }
-        else
-        {
-            Debug.LogError($"[AchievementItemView] ❌ NO BUTTON found on '{gameObject.name}' — clicks won't work!");
-        }
-
-
-        if (enableDebugLogs)
-            Debug.Log($"[AchievementItemView] ========== BIND END ==========");
     }
 
 
@@ -194,49 +171,20 @@ public class AchievementItemView : MonoBehaviour
 
     private void OnItemClicked()
     {
-        Debug.Log($"[AchievementItemView] ========== CLICKED! ==========");
-        Debug.Log($"[AchievementItemView] id='{_achievementId}', unlocked={_unlocked}, isPinned={_isPinned}, processing={_isProcessing}");
-
-
-        if (_isProcessing)
-        {
-            Debug.LogWarning("[AchievementItemView] ⚠️ Click IGNORED: already processing");
-            return;
-        }
-        if (!_unlocked)
-        {
-            Debug.LogWarning("[AchievementItemView] ⚠️ Click IGNORED: not unlocked");
-            return;
-        }
-        if (string.IsNullOrEmpty(_achievementId))
-        {
-            Debug.LogWarning("[AchievementItemView] ⚠️ Click IGNORED: achievementId is null/empty");
-            return;
-        }
-        if (TokenManager.Instance == null)
-        {
-            Debug.LogWarning("[AchievementItemView] ⚠️ Click IGNORED: TokenManager.Instance is null");
-            return;
-        }
-
+        if (_isProcessing || !_unlocked || string.IsNullOrEmpty(_achievementId)) return;
+        if (TokenManager.Instance == null) return;
 
         _isProcessing = true;
         if (_button) _button.interactable = false;
 
-
-        Debug.Log($"[AchievementItemView] Processing click... isPinned={_isPinned}");
-
+        // Optimistic visual update — toggle pin icon immediately
+        _isPinned = !_isPinned;
+        if (pinIcon) pinIcon.SetActive(_isPinned);
 
         if (_isPinned)
-        {
-            Debug.Log($"[AchievementItemView] Starting UNPIN coroutine...");
-            StartCoroutine(DoUnpin());
-        }
-        else
-        {
-            Debug.Log($"[AchievementItemView] Starting PIN coroutine...");
             StartCoroutine(DoPin());
-        }
+        else
+            StartCoroutine(DoUnpin());
     }
 
 
@@ -265,44 +213,17 @@ public class AchievementItemView : MonoBehaviour
 
         if (success)
         {
-            Debug.Log($"[AchievementItemView] ✅ PIN SUCCESS!");
-            
-            // ✅ ОБНОВЛЯЕМ ЛОКАЛЬНО!
-            Debug.Log($"[AchievementItemView] Setting _isPinned = true");
-            _isPinned = true;
-            
-            Debug.Log($"[AchievementItemView] Calling UpdatePinIcon()...");
-            UpdatePinIcon();
-            
-            // Обновляем данные в TokenManager
-            Debug.Log($"[AchievementItemView] Calling RefreshUserAchievements...");
-            TokenManager.Instance.RefreshUserAchievements();
-            
-            // Можно оставить кнопку активной для unpin
-            if (_button)
-            {
-                _button.interactable = true;
-                Debug.Log($"[AchievementItemView] Button re-enabled");
-            }
-
-
-            Debug.Log($"[AchievementItemView] ========== DoPin END (SUCCESS) ==========");
+            Debug.Log($"[AchievementItemView] Pinned {_achievementId}");
+            UpdateLocalPinState(true);
         }
         else
         {
-            Debug.LogWarning($"[AchievementItemView] ❌ PIN FAILED: {error}");
-            
-            if (_button)
-            {
-                _button.interactable = true;
-                Debug.Log($"[AchievementItemView] Button re-enabled after failure");
-            }
-
-
-            Debug.Log($"[AchievementItemView] ========== DoPin END (FAILED) ==========");
+            Debug.LogWarning($"[AchievementItemView] Pin failed: {error}");
+            _isPinned = false;
+            if (pinIcon) pinIcon.SetActive(false);
+            if (_button) _button.interactable = true;
         }
     }
-
 
     private IEnumerator DoUnpin()
     {
@@ -330,83 +251,64 @@ public class AchievementItemView : MonoBehaviour
 
         if (success)
         {
-            Debug.Log($"[AchievementItemView] ✅ UNPIN SUCCESS!");
-            
-            // ✅ ОБНОВЛЯЕМ ЛОКАЛЬНО!
-            Debug.Log($"[AchievementItemView] Setting _isPinned = false");
-            _isPinned = false;
-            
-            Debug.Log($"[AchievementItemView] Calling UpdatePinIcon()...");
-            UpdatePinIcon();
-            
-            // Обновляем данные в TokenManager
-            Debug.Log($"[AchievementItemView] Calling RefreshUserAchievements...");
-            TokenManager.Instance.RefreshUserAchievements();
-            
-            if (_button)
-            {
-                _button.interactable = true;
-                Debug.Log($"[AchievementItemView] Button re-enabled");
-            }
-
-
-            Debug.Log($"[AchievementItemView] ========== DoUnpin END (SUCCESS) ==========");
+            Debug.Log($"[AchievementItemView] Unpinned {_achievementId}");
+            UpdateLocalPinState(false);
         }
         else
         {
-            Debug.LogWarning($"[AchievementItemView] ❌ UNPIN FAILED: {error}");
-            
-            if (_button)
-            {
-                _button.interactable = true;
-                Debug.Log($"[AchievementItemView] Button re-enabled after failure");
-            }
-
-
-            Debug.Log($"[AchievementItemView] ========== DoUnpin END (FAILED) ==========");
+            Debug.LogWarning($"[AchievementItemView] Unpin failed: {error}");
+            _isPinned = true;
+            if (pinIcon) pinIcon.SetActive(true);
+            if (_button) _button.interactable = true;
         }
     }
-
 
     /// <summary>
-    /// Обновляет видимость булавки
+    /// Update achievementsMine locally and re-render without server round-trip.
     /// </summary>
-    private void UpdatePinIcon()
+    private void UpdateLocalPinState(bool pinned)
     {
-        Debug.Log($"[AchievementItemView] ========== UpdatePinIcon START ==========");
-        Debug.Log($"[AchievementItemView] _isPinned = {_isPinned}");
-        
-        if (pinIcon == null)
+        var tm = TokenManager.Instance;
+        if (tm == null || tm.achievementsMine?.data == null) return;
+
+        var mine = tm.achievementsMine.data;
+        var entry = mine.FirstOrDefault(x => x.id == _achievementId);
+
+        if (entry != null)
         {
-            Debug.LogError($"[AchievementItemView] ❌ pinIcon is NULL! Cannot update visibility!");
-            Debug.Log($"[AchievementItemView] ========== UpdatePinIcon END (FAILED) ==========");
-            return;
+            entry.isPinned = pinned;
+
+            if (pinned)
+            {
+                // Assign next pinOrder
+                int maxOrder = mine.Where(x => x.isPinned).Select(x => x.pinOrder).DefaultIfEmpty(0).Max();
+                entry.pinOrder = maxOrder + 1;
+            }
+            else
+            {
+                entry.pinOrder = 0;
+            }
         }
 
-
-        Debug.Log($"[AchievementItemView] pinIcon exists: {pinIcon.name}");
-        Debug.Log($"[AchievementItemView] pinIcon.activeSelf BEFORE: {pinIcon.activeSelf}");
-        
-        pinIcon.SetActive(_isPinned);
-        
-        Debug.Log($"[AchievementItemView] pinIcon.SetActive({_isPinned}) called");
-        Debug.Log($"[AchievementItemView] pinIcon.activeSelf AFTER: {pinIcon.activeSelf}");
-        
-        if (_isPinned)
-            Debug.Log($"[AchievementItemView] ✅ PinIcon should be VISIBLE now!");
-        else
-            Debug.Log($"[AchievementItemView] ❌ PinIcon should be HIDDEN now!");
-
-
-        Debug.Log($"[AchievementItemView] ========== UpdatePinIcon END ==========");
+        // Re-render the panel with updated local data (no server fetch)
+        tm.ApplyAchievementsToPanel();
     }
-
 
     private IEnumerator LoadImageFromUrl(string url)
     {
-        if (enableDebugLogs)
-            Debug.Log($"[AchievementItemView] LoadImageFromUrl START: {url}");
-
+        // Check static cache first — instant render, no flicker
+        if (_spriteCache.TryGetValue(url, out var cached) && cached != null)
+        {
+            if (iconImage != null)
+            {
+                iconImage.sprite = cached;
+                iconImage.color = Color.white;
+            }
+            if (loadingSpinner) loadingSpinner.alpha = 0f;
+            _lastLoadedUrl = url;
+            _loadCoroutine = null;
+            yield break;
+        }
 
         if (loadingSpinner)
         {
@@ -442,17 +344,10 @@ public class AchievementItemView : MonoBehaviour
                         new Vector2(0.5f, 0.5f)
                     );
 
-
+                    _spriteCache[url] = sprite; // Cache for future use
                     iconImage.sprite = sprite;
                     iconImage.color = Color.white;
-
-
-                    if (enableDebugLogs)
-                        Debug.Log($"[AchievementItemView] ✅ Image loaded successfully: {texture.width}x{texture.height}");
-                }
-                else
-                {
-                    Debug.LogWarning($"[AchievementItemView] texture or iconImage is null after download");
+                    _lastLoadedUrl = url;
                 }
             }
             else
@@ -465,8 +360,6 @@ public class AchievementItemView : MonoBehaviour
             }
         }
 
-
-        if (enableDebugLogs)
-            Debug.Log($"[AchievementItemView] LoadImageFromUrl END");
+        _loadCoroutine = null;
     }
 }
