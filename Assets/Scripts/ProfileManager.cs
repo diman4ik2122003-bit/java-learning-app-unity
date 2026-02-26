@@ -15,25 +15,19 @@ public class ProfileManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI bioText;
 
     [Header("UI References - Achievements")]
-    [SerializeField] private ScrollRect achievementsScrollView; // Scroll View для ачивок
-    [SerializeField] private GameObject achievementRowPrefab;    // Префаб строки (3 ачивки)
-    [SerializeField] private GameObject achievementItemPrefab;  // Префаб одной ачивки
-
-    [Header("UI References - Friends")]
-    [SerializeField] private ScrollRect friendsScrollView;      // Scroll View для друзей
-    [SerializeField] private TextMeshProUGUI friendsCountText;  // Текст количества друзей
-    [SerializeField] private GameObject friendItemPrefab;       // Префаб друга (TODO)
+    [SerializeField] private ScrollRect achievementsScrollView;
+    [SerializeField] private GameObject achievementRowPrefab;
+    [SerializeField] private GameObject achievementItemPrefab;
 
     [Header("Settings")]
-    [SerializeField] private int achievementsPerRow = 3;        // Сколько ачивок в строке
+    [SerializeField] private int achievementsPerRow = 3;
 
     [Header("Debug")]
     [SerializeField] private bool debugLogs = true;
 
-    private string currentProfileUid; // null = мой профиль, иначе UID друга
-    private string cachedBio; // Кешируем био без префикса
+    private string currentProfileUid;
+    private string cachedBio;
 
-    // Локализация для "О себе:" / "Bio:"
     private string GetBioPrefix()
     {
         string lang = LocalizationManager.Instance?.CurrentLang ?? "ru";
@@ -42,40 +36,30 @@ public class ProfileManager : MonoBehaviour
 
     private void OnEnable()
     {
-        // Подписываемся на изменение языка
         if (LocalizationManager.Instance != null)
         {
             LocalizationManager.Instance.OnLanguageChanged += OnLanguageChanged;
         }
 
-        // Когда Profile Content активируется — загружаем профиль
-        LoadProfile(null); // null = мой профиль
+        LoadProfile(null);
     }
 
     private void OnDisable()
     {
-        // Отписываемся от события при отключении
         if (LocalizationManager.Instance != null)
         {
             LocalizationManager.Instance.OnLanguageChanged -= OnLanguageChanged;
         }
     }
 
-    /// <summary>
-    /// Вызывается при смене языка
-    /// </summary>
     private void OnLanguageChanged(string newLang)
     {
         if (debugLogs)
             Debug.Log($"[ProfileManager] Language changed to: {newLang}");
 
-        // Обновляем только био с новым префиксом
         UpdateBioText();
     }
 
-    /// <summary>
-    /// Обновляет текст био с актуальным префиксом
-    /// </summary>
     private void UpdateBioText()
     {
         if (bioText != null && !string.IsNullOrEmpty(cachedBio))
@@ -126,7 +110,6 @@ public class ProfileManager : MonoBehaviour
             return;
         }
 
-        // Получаем данные из TokenManager
         var profileResponse = TokenManager.Instance.profile;
         var statsResponse = TokenManager.Instance.userStats;
         var achievementsResponse = TokenManager.Instance.achievementsMine;
@@ -139,7 +122,6 @@ public class ProfileManager : MonoBehaviour
 
         UpdateUI(profileResponse.data, statsResponse?.data);
         LoadPinnedAchievements(achievementsResponse);
-        LoadFriends(); // TODO: загрузка списка друзей
     }
 
     private IEnumerator WaitForSessionAndLoad()
@@ -154,7 +136,6 @@ public class ProfileManager : MonoBehaviour
 
     private void LoadFriendProfile(string friendUid)
     {
-        // TODO: Загрузка профиля друга через API
         if (debugLogs)
             Debug.Log($"[ProfileManager] Loading friend profile: {friendUid}");
         
@@ -163,7 +144,10 @@ public class ProfileManager : MonoBehaviour
 
     private IEnumerator LoadFriendProfileCoroutine(string friendUid)
     {
-        // TODO: Реализовать загрузку через API
+        // TODO: Реализовать загрузку профиля друга через API
+        // GET /gamification/stats/{uid}
+        // GET /auth/profile/{uid} (если такой эндпоинт есть)
+        
         yield return null;
         Debug.LogWarning("[ProfileManager] Friend profile loading not implemented yet!");
     }
@@ -193,7 +177,7 @@ public class ProfileManager : MonoBehaviour
         if (debugLogs)
             Debug.Log($"[ProfileManager] Level: {level}");
 
-        // 3. Био - сохраняем без префикса и обновляем с актуальным префиксом
+        // 3. Био
         cachedBio = profile.bio ?? "...";
         UpdateBioText();
 
@@ -229,7 +213,6 @@ public class ProfileManager : MonoBehaviour
         {
             Texture2D texture = DownloadHandlerTexture.GetContent(request);
             
-            // Конвертируем Texture2D → Sprite для Image
             Sprite sprite = Sprite.Create(
                 texture,
                 new Rect(0, 0, texture.width, texture.height),
@@ -259,10 +242,7 @@ public class ProfileManager : MonoBehaviour
             return;
         }
 
-        // Получаем Content из ScrollView
         Transform achievementsContainer = achievementsScrollView.content;
-
-        // Очищаем контейнер
         ClearContainer(achievementsContainer);
 
         if (achievementsResponse?.data == null || achievementsResponse.data.Length == 0)
@@ -272,7 +252,6 @@ public class ProfileManager : MonoBehaviour
             return;
         }
 
-        // Фильтруем только закрепленные и сортируем по pinOrder
         var pinnedAchievements = achievementsResponse.data
             .Where(a => a.isPinned)
             .OrderBy(a => a.pinOrder)
@@ -288,7 +267,6 @@ public class ProfileManager : MonoBehaviour
         if (debugLogs)
             Debug.Log($"[ProfileManager] Found {pinnedAchievements.Count} pinned achievements");
 
-        // Получаем полные данные достижений
         var allAchievements = TokenManager.Instance.achievementsAll?.data;
         if (allAchievements == null)
         {
@@ -296,7 +274,6 @@ public class ProfileManager : MonoBehaviour
             return;
         }
 
-        // Группируем по строкам (по 3 ачивки в строке)
         for (int i = 0; i < pinnedAchievements.Count; i += achievementsPerRow)
         {
             var rowAchievements = pinnedAchievements.Skip(i).Take(achievementsPerRow).ToList();
@@ -315,15 +292,11 @@ public class ProfileManager : MonoBehaviour
             return;
         }
 
-        // Создаем строку
         GameObject rowObj = Instantiate(achievementRowPrefab, container);
-
-        // Находим контейнер для ачивок внутри строки
         Transform rowContainer = rowObj.transform;
 
         foreach (var userAch in userAchievements)
         {
-            // Находим полные данные достижения
             var achievement = allAchievements.FirstOrDefault(a => a.id == userAch.id);
             if (achievement == null)
             {
@@ -349,13 +322,11 @@ public class ProfileManager : MonoBehaviour
 
         GameObject itemObj = Instantiate(achievementItemPrefab, parent);
 
-        // Находим компоненты внутри префаба
         Image iconImage = itemObj.transform.Find("Icon")?.GetComponent<Image>();
         TextMeshProUGUI titleText = itemObj.transform.Find("Title")?.GetComponent<TextMeshProUGUI>();
 
         if (titleText != null)
         {
-            // Используем локализацию
             string currentLang = LocalizationManager.Instance?.CurrentLang ?? "ru";
             titleText.text = achievement.title?.GetText(currentLang) ?? "Achievement";
         }
@@ -390,38 +361,6 @@ public class ProfileManager : MonoBehaviour
         {
             Debug.LogError($"[ProfileManager] Failed to load icon: {request.error}");
         }
-    }
-
-    /// <summary>
-    /// Загружает список друзей
-    /// </summary>
-    private void LoadFriends()
-    {
-        if (friendsScrollView == null)
-        {
-            Debug.LogError("[ProfileManager] FriendsScrollView is null!");
-            return;
-        }
-
-        // Получаем Content из ScrollView
-        Transform friendsContainer = friendsScrollView.content;
-
-        // Очищаем контейнер
-        ClearContainer(friendsContainer);
-
-        // TODO: Загрузка друзей из API
-        // GET /friends → получить список друзей
-        // Создать префабы для каждого друга
-
-        // Пример обновления количества друзей с скобочками (5)
-        if (friendsCountText != null)
-        {
-            int friendsCount = 0; // TODO: получить реальное количество из API
-            friendsCountText.text = $"({friendsCount})"; // ← СКОБОЧКИ!
-        }
-
-        if (debugLogs)
-            Debug.Log("[ProfileManager] Friends loading not implemented yet");
     }
 
     /// <summary>

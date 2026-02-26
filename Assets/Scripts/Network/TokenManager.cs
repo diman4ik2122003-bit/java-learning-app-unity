@@ -25,7 +25,8 @@ public class TokenManager : MonoBehaviour
     [Header("Binders (optional)")]
     [SerializeField] private StatsPanelBinder statsPanel;
     public AchievementsPanelBinder achievementsPanel;
-    public LeaderboardPanelBinder leaderboardPanel; 
+    public LeaderboardPanelBinder leaderboardPanel;
+    public FriendsPanelBinder friendsPanel; // ← ДОБАВЛЕНО
 
     [Header("Debug")]
     [SerializeField] private bool logResponses = true;
@@ -38,6 +39,7 @@ public class TokenManager : MonoBehaviour
     public AchievementListResponse achievementsAll;
     public UserAchievementListResponse achievementsMine;
     public LeaderboardResponse cachedLeaderboard;
+    public FriendsResponse cachedFriends; // ← ДОБАВЛЕНО
     public bool IsSessionReady { get; private set; }
     public bool IsIslandsReady { get; private set; }
 
@@ -53,15 +55,17 @@ public class TokenManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
 
         if (!statsPanel) statsPanel = FindFirstObjectByType<StatsPanelBinder>();
-if (!achievementsPanel)
-    {
-        achievementsPanel = FindFirstObjectByType<AchievementsPanelBinder>();
-        Debug.LogError($"[TokenManager.Awake] FindFirstObjectByType result: {achievementsPanel != null}");
-    }
-    else
-    {
-        Debug.LogError($"[TokenManager.Awake] achievementsPanel ALREADY assigned in Inspector!");
-    }        if (!leaderboardPanel) leaderboardPanel = FindFirstObjectByType<LeaderboardPanelBinder>();
+        if (!achievementsPanel)
+        {
+            achievementsPanel = FindFirstObjectByType<AchievementsPanelBinder>();
+            Debug.LogError($"[TokenManager.Awake] FindFirstObjectByType result: {achievementsPanel != null}");
+        }
+        else
+        {
+            Debug.LogError($"[TokenManager.Awake] achievementsPanel ALREADY assigned in Inspector!");
+        }
+        if (!leaderboardPanel) leaderboardPanel = FindFirstObjectByType<LeaderboardPanelBinder>();
+        if (!friendsPanel) friendsPanel = FindFirstObjectByType<FriendsPanelBinder>(); // ← ДОБАВЛЕНО
     }
 
     private void Start()
@@ -95,7 +99,7 @@ if (!achievementsPanel)
         StartCoroutine(LoadAllSessionData());
     }
 
-    /// <summary>Главная корутина: профиль, статы, ачивки, прогресс уровней</summary>
+    /// <summary>Главная корутина: профиль, статы, ачивки, прогресс уровней, друзья</summary>
     private IEnumerator LoadAllSessionData()
     {
         IsSessionReady = false;
@@ -136,115 +140,130 @@ if (!achievementsPanel)
             "/achievements/me/all",
             ok => achievementsMine = ok);
 
-yield return Get<LeaderboardResponse>(
-    "/leaderboard/global?limit=100&offset=0",
-    ok => cachedLeaderboard = ok);
+        // 6. Leaderboard
+        yield return Get<LeaderboardResponse>(
+            "/leaderboard/global?limit=100&offset=0",
+            ok => cachedLeaderboard = ok);
 
-// ДОБАВЬ ПРОВЕРКУ СРАЗУ ПОСЛЕ:
-if (cachedLeaderboard != null && cachedLeaderboard.data != null)
-{
-    Debug.Log($"[TokenManager] Leaderboard loaded: {cachedLeaderboard.data.leaderboard?.Length ?? 0} entries");
-}
-else
-{
-    Debug.LogError("[TokenManager] Leaderboard NOT loaded!");
-}
-        // 6. Прогресс островов
+        if (cachedLeaderboard != null && cachedLeaderboard.data != null)
+        {
+            Debug.Log($"[TokenManager] Leaderboard loaded: {cachedLeaderboard.data.leaderboard?.Length ?? 0} entries");
+        }
+        else
+        {
+            Debug.LogError("[TokenManager] Leaderboard NOT loaded!");
+        }
+
+        // 7. Друзья ← ДОБАВЛЕНО
+        yield return Get<FriendsResponse>(
+            "/friends",
+            ok =>
+            {
+                cachedFriends = ok;
+                if (friendsPanel)
+                {
+                    friendsPanel.Apply(ok, uid);
+                    Debug.Log($"[TokenManager] Friends panel updated with {ok?.data?.Length ?? 0} friends");
+                }
+            });
+
+        // 8. Прогресс островов
         yield return LoadIslandsProgress(uid);
         IsIslandsReady = true;
-        
-        // 7. Прогресс уровней (челленджей) для карты островов
+
+        // 9. Прогресс уровней (челленджей) для карты островов
         Debug.Log("[TokenManager] Before LoadChallengesProgress");
         yield return LoadChallengesProgress(uid);
         Debug.Log("[TokenManager] After LoadChallengesProgress");
 
-        // 8. Применяем данные к панелям
+        // 10. Применяем данные к панелям
         if (statsPanel)
             statsPanel.Apply(profile, userStats);
 
         ApplyAchievementsToPanel();
 
         if (leaderboardPanel && cachedLeaderboard != null)
-{
-    string myUid = profile?.data?.uid;
-    Debug.Log($"[TokenManager] Applying leaderboard to panel, entries: {cachedLeaderboard.data?.leaderboard?.Length ?? 0}, myUid: {myUid}");
-    leaderboardPanel.Apply(cachedLeaderboard, myUid);
-}
-else
-{
-    Debug.LogWarning($"[TokenManager] Leaderboard NOT applied - panel: {leaderboardPanel != null}, data: {cachedLeaderboard != null}");
-}
+        {
+            string myUid = profile?.data?.uid;
+            Debug.Log($"[TokenManager] Applying leaderboard to panel, entries: {cachedLeaderboard.data?.leaderboard?.Length ?? 0}, myUid: {myUid}");
+            leaderboardPanel.Apply(cachedLeaderboard, myUid);
+        }
+        else
+        {
+            Debug.LogWarning($"[TokenManager] Leaderboard NOT applied - panel: {leaderboardPanel != null}, data: {cachedLeaderboard != null}");
+        }
+
         IsSessionReady = true;
     }
 
-/// <summary>Универсальный GET с авторизацией и парсингом JSON через JsonUtility</summary>
-private IEnumerator Get<T>(string path, Action<T> onOk)
-{
-    string url = apiBaseUrl.TrimEnd('/') + path;
-
-    if (logResponses)
-        Debug.Log($"[TokenManager] GET {path}");
-
-    using (UnityWebRequest www = UnityWebRequest.Get(url))
+    /// <summary>Универсальный GET с авторизацией и парсингом JSON через JsonUtility</summary>
+    private IEnumerator Get<T>(string path, Action<T> onOk)
     {
-        www.downloadHandler = new DownloadHandlerBuffer();
-
-        if (!string.IsNullOrEmpty(firebaseIdToken))
-            www.SetRequestHeader("Authorization", "Bearer " + firebaseIdToken);
-
-        www.SetRequestHeader("Accept", "application/json");
-
-        yield return www.SendWebRequest();
-
-        if (www.result != UnityWebRequest.Result.Success)
-        {
-            Debug.LogError($"[TokenManager] GET {path} FAILED: {www.error} (Code: {www.responseCode})");
-            yield break;
-        }
-
-        string json = www.downloadHandler.text;
+        string url = apiBaseUrl.TrimEnd('/') + path;
 
         if (logResponses)
-        {
-            string preview = json.Length > 200 ? json.Substring(0, 200) + "..." : json;
-            Debug.Log($"[TokenManager] GET {path} SUCCESS: {preview}");
-        }
+            Debug.Log($"[TokenManager] GET {path}");
 
-        try
+        using (UnityWebRequest www = UnityWebRequest.Get(url))
         {
-            var obj = JsonUtility.FromJson<T>(json);
-            onOk?.Invoke(obj);
-            
+            www.downloadHandler = new DownloadHandlerBuffer();
+
+            if (!string.IsNullOrEmpty(firebaseIdToken))
+                www.SetRequestHeader("Authorization", "Bearer " + firebaseIdToken);
+
+            www.SetRequestHeader("Accept", "application/json");
+
+            yield return www.SendWebRequest();
+
+            if (www.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogError($"[TokenManager] GET {path} FAILED: {www.error} (Code: {www.responseCode})");
+                yield break;
+            }
+
+            string json = www.downloadHandler.text;
+
             if (logResponses)
-                Debug.Log($"[TokenManager] Parsed {typeof(T).Name} successfully");
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"[TokenManager] Parse {path} FAILED: {ex.Message}\nJSON: {json}");
+            {
+                string preview = json.Length > 200 ? json.Substring(0, 200) + "..." : json;
+                Debug.Log($"[TokenManager] GET {path} SUCCESS: {preview}");
+            }
+
+            try
+            {
+                var obj = JsonUtility.FromJson<T>(json);
+                onOk?.Invoke(obj);
+
+                if (logResponses)
+                    Debug.Log($"[TokenManager] Parsed {typeof(T).Name} successfully");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[TokenManager] Parse {path} FAILED: {ex.Message}\nJSON: {json}");
+            }
         }
     }
-}
 
     // ========== ACHIEVEMENTS PANEL HELPER ==========
 
-public void ApplyAchievementsToPanel()
-{
-    Debug.LogError($"[TokenManager] ApplyAchievementsToPanel CALLED!");
-    Debug.LogError($"achievementsPanel={achievementsPanel != null}");
-    Debug.LogError($"achievementCategories={achievementCategories != null}");
-    Debug.LogError($"achievementsAll={achievementsAll != null}");
-    Debug.LogError($"achievementsMine={achievementsMine != null}");
-    
-    if (achievementsPanel)
+    public void ApplyAchievementsToPanel()
     {
-        Debug.LogError("[TokenManager] Calling achievementsPanel.Apply()...");
-        achievementsPanel.Apply(achievementCategories, achievementsAll, achievementsMine);
+        Debug.LogError($"[TokenManager] ApplyAchievementsToPanel CALLED!");
+        Debug.LogError($"achievementsPanel={achievementsPanel != null}");
+        Debug.LogError($"achievementCategories={achievementCategories != null}");
+        Debug.LogError($"achievementsAll={achievementsAll != null}");
+        Debug.LogError($"achievementsMine={achievementsMine != null}");
+
+        if (achievementsPanel)
+        {
+            Debug.LogError("[TokenManager] Calling achievementsPanel.Apply()...");
+            achievementsPanel.Apply(achievementCategories, achievementsAll, achievementsMine);
+        }
+        else
+        {
+            Debug.LogError("[TokenManager] achievementsPanel is NULL!");
+        }
     }
-    else
-    {
-        Debug.LogError("[TokenManager] achievementsPanel is NULL!");
-    }
-}
 
     /// <summary>Re-fetch user achievements and re-apply to panel</summary>
     public void RefreshUserAchievements()
@@ -259,6 +278,34 @@ public void ApplyAchievementsToPanel()
             ok => achievementsMine = ok);
 
         ApplyAchievementsToPanel();
+    }
+
+    // ========== FRIENDS PANEL HELPER ========== ← ДОБАВЛЕНО
+
+    /// <summary>Обновить список друзей</summary>
+    public void RefreshFriends()
+    {
+        StartCoroutine(RefreshFriendsRoutine());
+    }
+
+    private IEnumerator RefreshFriendsRoutine()
+    {
+        string uid = profile?.data?.uid;
+        if (string.IsNullOrEmpty(uid))
+        {
+            Debug.LogError("[TokenManager] Cannot refresh friends - no user UID");
+            yield break;
+        }
+
+        yield return Get<FriendsResponse>("/friends", ok =>
+        {
+            cachedFriends = ok;
+            if (friendsPanel)
+            {
+                friendsPanel.Apply(ok, uid);
+                Debug.Log($"[TokenManager] Friends refreshed: {ok?.data?.Length ?? 0} friends");
+            }
+        });
     }
 
     // ========== PIN / UNPIN / REORDER ==========
@@ -375,52 +422,125 @@ public void ApplyAchievementsToPanel()
         }
     }
 
+    // ========== FRIENDS HTTP METHODS ========== ← ДОБАВЛЕНО
+
+    /// <summary>Получить список друзей GET /friends</summary>
+    public IEnumerator GetFriends(Action<FriendsResponse> onResult)
+    {
+        yield return Get<FriendsResponse>("/friends", onResult);
+    }
+
+    /// <summary>Отправить запрос в друзья POST /friends/request</summary>
+    public IEnumerator SendFriendRequest(string username, string discriminator, Action<bool, string> onResult)
+    {
+        string body = JsonUtility.ToJson(new FriendRequestData
+        {
+            username = username,
+            discriminator = discriminator
+        });
+
+        yield return PostJson("/friends/request", body, onResult);
+    }
+
+    /// <summary>Принять запрос в друзья POST /friends/accept</summary>
+    public IEnumerator AcceptFriendRequest(string friendUid, Action<bool, string> onResult)
+    {
+        string body = JsonUtility.ToJson(new FriendActionData { friendUid = friendUid });
+        yield return PostJson("/friends/accept", body, onResult);
+    }
+
+    /// <summary>Удалить друга / отклонить запрос DELETE /friends/{friendId}</summary>
+    public IEnumerator RemoveFriend(string friendId, Action<bool, string> onResult)
+    {
+        yield return DeleteRequest($"/friends/{friendId}", onResult);
+    }
+
+    // Вспомогательный метод для POST с JSON
+    private IEnumerator PostJson(string path, string jsonBody, Action<bool, string> onResult)
+    {
+        string url = apiBaseUrl.TrimEnd('/') + path;
+
+        using (UnityWebRequest www = new UnityWebRequest(url, "POST"))
+        {
+            byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonBody);
+            www.uploadHandler = new UploadHandlerRaw(bodyRaw);
+            www.downloadHandler = new DownloadHandlerBuffer();
+
+            www.SetRequestHeader("Content-Type", "application/json");
+            if (!string.IsNullOrEmpty(firebaseIdToken))
+                www.SetRequestHeader("Authorization", "Bearer " + firebaseIdToken);
+            www.SetRequestHeader("Accept", "application/json");
+
+            yield return www.SendWebRequest();
+
+            if (www.result != UnityWebRequest.Result.Success)
+            {
+                string errMsg = "";
+                try
+                {
+                    var errJson = JsonUtility.FromJson<ErrorMsg>(www.downloadHandler.text);
+                    errMsg = errJson?.message ?? www.error;
+                }
+                catch { errMsg = www.error; }
+
+                Debug.LogError($"[TokenManager] POST {path} FAILED: {errMsg}");
+                onResult?.Invoke(false, errMsg);
+                yield break;
+            }
+
+            if (logResponses)
+                Debug.Log($"[TokenManager] POST {path} OK");
+
+            onResult?.Invoke(true, null);
+        }
+    }
+
     [Serializable]
     private class ErrorMsg { public string message; }
 
     public IslandsProgressResponse islandsProgress;
 
-private IEnumerator LoadIslandsProgress(string uid)
-{
-    string url = apiBaseUrl.TrimEnd('/') + "/progress/islands";
-
-    using (var www = UnityWebRequest.Get(url))
+    private IEnumerator LoadIslandsProgress(string uid)
     {
-        www.downloadHandler = new DownloadHandlerBuffer();
-        if (!string.IsNullOrEmpty(firebaseIdToken))
-            www.SetRequestHeader("Authorization", "Bearer " + firebaseIdToken);
-        www.SetRequestHeader("Accept", "application/json");
+        string url = apiBaseUrl.TrimEnd('/') + "/progress/islands";
 
-        yield return www.SendWebRequest();
-
-        if (www.result != UnityWebRequest.Result.Success)
+        using (var www = UnityWebRequest.Get(url))
         {
-            Debug.LogError("[TokenManager] LoadIslandsProgress error: " + www.error);
-            yield break;
-        }
+            www.downloadHandler = new DownloadHandlerBuffer();
+            if (!string.IsNullOrEmpty(firebaseIdToken))
+                www.SetRequestHeader("Authorization", "Bearer " + firebaseIdToken);
+            www.SetRequestHeader("Accept", "application/json");
 
-        string json = www.downloadHandler.text;
-        Debug.Log("[TokenManager] Islands progress body: " + json);
+            yield return www.SendWebRequest();
 
-        islandsProgress = JsonUtility.FromJson<IslandsProgressResponse>(json);
-
-        if (islandsProgress == null || islandsProgress.data == null)
-        {
-            Debug.LogWarning("[TokenManager] IslandsProgressResponse is null or has no data");
-        }
-        else
-        {
-            Debug.Log("[TokenManager] Islands count = " + islandsProgress.data.Length);
-            foreach (var p in islandsProgress.data)
+            if (www.result != UnityWebRequest.Result.Success)
             {
-                Debug.Log($"[TokenManager] Island id={p.id}, unlocked={p.unlocked}, " +
-                          $"completed={p.completedChallenges}/{p.totalChallenges}, stars={p.stars}");
+                Debug.LogError("[TokenManager] LoadIslandsProgress error: " + www.error);
+                yield break;
             }
-        }
 
-        IslandsProgressManager.Instance?.Apply(islandsProgress?.data);
+            string json = www.downloadHandler.text;
+            Debug.Log("[TokenManager] Islands progress body: " + json);
+
+            islandsProgress = JsonUtility.FromJson<IslandsProgressResponse>(json);
+
+            if (islandsProgress == null || islandsProgress.data == null)
+            {
+                Debug.LogWarning("[TokenManager] IslandsProgressResponse is null or has no data");
+            }
+            else
+            {
+                Debug.Log("[TokenManager] Islands count = " + islandsProgress.data.Length);
+                foreach (var p in islandsProgress.data)
+                {
+                    Debug.Log($"[TokenManager] Island id={p.id}, unlocked={p.unlocked}, " +
+                              $"completed={p.completedChallenges}/{p.totalChallenges}, stars={p.stars}");
+                }
+            }
+
+            IslandsProgressManager.Instance?.Apply(islandsProgress?.data);
+        }
     }
-}
 
     /// <summary>Загрузка прогресса по всем челленджам и передача в LevelProgressManager</summary>
     private IEnumerator LoadChallengesProgress(string uid)
@@ -466,7 +586,6 @@ private IEnumerator LoadIslandsProgress(string uid)
                 yield break;
             }
 
-            // Собираем словарь по id
             var dict = new Dictionary<string, ChallengeProgressDto>();
             foreach (var entry in resp.data)
             {
@@ -478,12 +597,12 @@ private IEnumerator LoadIslandsProgress(string uid)
 
                 var dto = new ChallengeProgressDto
                 {
-                    completed      = entry.completed,
-                    stars          = entry.stars,
-                    totalAttempts  = entry.totalAttempts,
+                    completed = entry.completed,
+                    stars = entry.stars,
+                    totalAttempts = entry.totalAttempts,
                     failedAttempts = entry.failedAttempts,
-                    hintsUsed      = entry.hintsUsed,
-                    bestTime       = entry.bestTime
+                    hintsUsed = entry.hintsUsed,
+                    bestTime = entry.bestTime
                 };
 
                 dict[entry.id] = dto;
@@ -491,22 +610,20 @@ private IEnumerator LoadIslandsProgress(string uid)
 
             Debug.Log("[TokenManager] Parsed challenges progress, count=" + dict.Count);
             LevelProgressManager.Instance?.SetChallengesProgress(dict);
-            // обновляем остров, если сцена уже загружена
-var islandManager = FindFirstObjectByType<IslandSceneManager>();
-if (islandManager != null)
-{
-    Debug.Log("[TokenManager] Refresh island after progress load");
-    islandManager.RefreshCurrentIsland();
-}
+
+            var islandManager = FindFirstObjectByType<IslandSceneManager>();
+            if (islandManager != null)
+            {
+                Debug.Log("[TokenManager] Refresh island after progress load");
+                islandManager.RefreshCurrentIsland();
+            }
 
             Debug.Log("[TokenManager] Challenges progress body: " + json);
-        Debug.Log("[TokenManager] resp == null: " + (resp == null));
-        Debug.Log("[TokenManager] resp.data == null: " + (resp != null && resp.data == null));
-        Debug.Log("[TokenManager] resp.data.Length: " + (resp != null && resp.data != null ? resp.data.Length : -1));
-        Debug.Log("[TokenManager] dict keys: " + string.Join(",", dict.Keys));
+            Debug.Log("[TokenManager] resp == null: " + (resp == null));
+            Debug.Log("[TokenManager] resp.data == null: " + (resp != null && resp.data == null));
+            Debug.Log("[TokenManager] resp.data.Length: " + (resp != null && resp.data != null ? resp.data.Length : -1));
+            Debug.Log("[TokenManager] dict keys: " + string.Join(",", dict.Keys));
         }
-        
-
     }
 
     // ==== Вспомогательные DTO для парсинга ответа прогресса ====
@@ -520,7 +637,7 @@ if (islandManager != null)
     [Serializable]
     private class ChallengeProgressEntry
     {
-        public string id;              // challengeId / levelId
+        public string id;
         public float bestTime;
         public int codeLines;
         public bool completed;
@@ -546,8 +663,8 @@ if (islandManager != null)
         public string uid;
         public string email;
         public string displayName;
-        public string discriminator; 
-        public string bio;     
+        public string discriminator;
+        public string bio;
         public string photoURL;
         public string role;
         public UserProfileStats stats;
@@ -663,31 +780,65 @@ if (islandManager != null)
     }
 
     // ========== LEADERBOARD ==========
-[System.Serializable]
-public class LeaderboardEntry
-{
-    public string uid;
-    public string displayName;
-    public string discriminator;
-    public string photoURL;
-    public int level;
-    public int xp;
-    public int rank;
-}
+    [System.Serializable]
+    public class LeaderboardEntry
+    {
+        public string uid;
+        public string displayName;
+        public string discriminator;
+        public string photoURL;
+        public int level;
+        public int xp;
+        public int rank;
+    }
 
-[System.Serializable]
-public class LeaderboardData
-{
-    public LeaderboardEntry[] leaderboard;
-    public int total;
-    public int limit;
-    public int offset;
-}
+    [System.Serializable]
+    public class LeaderboardData
+    {
+        public LeaderboardEntry[] leaderboard;
+        public int total;
+        public int limit;
+        public int offset;
+    }
 
-[System.Serializable]
-public class LeaderboardResponse
-{
-    public LeaderboardData data;
-}
+    [System.Serializable]
+    public class LeaderboardResponse
+    {
+        public LeaderboardData data;
+    }
 
+    // ========== FRIENDS ========== ← ДОБАВЛЕНО
+
+    [Serializable]
+    public class FriendData
+    {
+        public string uid;
+        public string displayName;
+        public string discriminator;
+        public string photoURL;
+        public string status; // "active", "pending_sent", "pending_received"
+        public int level;
+        public string bio;
+    }
+
+    [Serializable]
+    public class FriendsResponse
+    {
+        public bool success;
+        public FriendData[] data;
+        public string message;
+    }
+
+    [Serializable]
+    public class FriendRequestData
+    {
+        public string username;
+        public string discriminator;
+    }
+
+    [Serializable]
+    public class FriendActionData
+    {
+        public string friendUid;
+    }
 }
