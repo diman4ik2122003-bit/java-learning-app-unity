@@ -45,6 +45,14 @@ public class FriendsPanelBinder : MonoBehaviour
     {
         Debug.Log($"[FriendsPanelBinder] Apply called with {friendsResp?.data?.Length ?? -1} friends");
         
+        // Защита от двойной подписки - переподписываемся
+        if (tabController != null)
+        {
+            tabController.OnTabChanged -= OnTabChanged; // отписываемся
+            tabController.OnTabChanged += OnTabChanged; // подписываемся заново
+            Debug.Log("[FriendsPanelBinder] Re-subscribed to OnTabChanged in Apply");
+        }
+        
         if (!verticalContent || !itemPrefab)
         {
             Debug.LogError("[FriendsPanelBinder] References not set.");
