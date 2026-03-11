@@ -243,50 +243,81 @@ public class AchievementsPanelBinder : MonoBehaviour
         {
             data = new TokenManager.AchievementCategory[]
             {
-                new TokenManager.AchievementCategory { id = "cat1", name = new TokenManager.LocalizedString { ru = "Все достижения", en = "All Achievements" }, order = 0 }
+                new TokenManager.AchievementCategory { id = "cat1", name = new TokenManager.LocalizedString { ru = "Обучение", en = "Learning" }, order = 0 },
+                new TokenManager.AchievementCategory { id = "cat2", name = new TokenManager.LocalizedString { ru = "Задания", en = "Challenges" }, order = 1 }
             }
         };
 
-        var achList = new System.Collections.Generic.List<TokenManager.Achievement>();
-        var userAchList = new System.Collections.Generic.List<TokenManager.UserAchievement>();
-
-        // Ограничение/раскладка по 3 в ряд заложено в скрипте/префабе,
-        // поэтому мы просто генерируем 10 элементов (3х3 + 1)
-        for (int i = 1; i <= 10; i++)
-        {
-            achList.Add(new TokenManager.Achievement
-            {
-                id = $"ach{i}",
-                categoryId = "cat1",
-                order = i,
-                title = new TokenManager.LocalizedString { ru = $"Достижение {i}", en = $"Achievement {i}" },
-                description = new TokenManager.LocalizedString { ru = $"Описание {i}", en = $"Description {i}" },
-                iconUnlocked = "",
-                iconLocked = "",
-                rewardXp = 10 * i
-            });
-
-            // Для теста сделаем несколько ачивок разблокированными (например, первые 6)
-            if (i <= 6)
-            {
-                userAchList.Add(new TokenManager.UserAchievement
-                {
-                    id = $"ach{i}",
-                    isPinned = (i <= 2), // Первые две сделаем закрепленными для теста
-                    pinOrder = i,
-                    unlockedAt = 1234567890 + i
-                });
-            }
-        }
-
         var testAchievements = new TokenManager.AchievementListResponse
         {
-            data = achList.ToArray()
+            data = new TokenManager.Achievement[]
+            {
+                new TokenManager.Achievement
+                {
+                    id = "ach1",
+                    categoryId = "cat1",
+                    order = 0,
+                    title = new TokenManager.LocalizedString { ru = "Первые шаги", en = "First Steps" },
+                    description = new TokenManager.LocalizedString { ru = "Завершите первый урок", en = "Complete first lesson" },
+                    iconUnlocked = "",
+                    iconLocked = "",
+                    rewardXp = 10
+                },
+                new TokenManager.Achievement
+                {
+                    id = "ach2",
+                    categoryId = "cat2",
+                    order = 0,
+                    title = new TokenManager.LocalizedString { ru = "Код-мастер", en = "Code Master" },
+                    description = new TokenManager.LocalizedString { ru = "Решите 10 задач", en = "Solve 10 challenges" },
+                    iconUnlocked = "",
+                    iconLocked = "",
+                    rewardXp = 50
+                },
+                new TokenManager.Achievement
+                {
+                    id = "ach3",
+                    categoryId = "cat1",
+                    order = 1,
+                    title = new TokenManager.LocalizedString { ru = "Стример знаний", en = "Knowledge Streaker" },
+                    description = new TokenManager.LocalizedString { ru = "Учитесь 7 дней подряд", en = "Study 7 days in a row" },
+                    iconUnlocked = "",
+                    iconLocked = "",
+                    rewardXp = 100
+                },
+                new TokenManager.Achievement
+                {
+                    id = "ach4",
+                    categoryId = "", // Без категории
+                    order = 0,
+                    title = new TokenManager.LocalizedString { ru = "Секрет", en = "Secret" },
+                    description = new TokenManager.LocalizedString { ru = "Найдена пасхалка", en = "Easter egg found" },
+                    iconUnlocked = "",
+                    iconLocked = "",
+                    rewardXp = 500
+                }
+            }
         };
 
         var testUserAchievements = new TokenManager.UserAchievementListResponse
         {
-            data = userAchList.ToArray()
+            data = new TokenManager.UserAchievement[]
+            {
+                new TokenManager.UserAchievement
+                {
+                    id = "ach1",
+                    isPinned = true,
+                    pinOrder = 0,
+                    unlockedAt = 1234567890
+                },
+                new TokenManager.UserAchievement
+                {
+                    id = "ach2",
+                    isPinned = false,
+                    pinOrder = 0,
+                    unlockedAt = 1234567891
+                }
+            }
         };
 
         Apply(testCategories, testAchievements, testUserAchievements);
