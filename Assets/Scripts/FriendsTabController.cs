@@ -26,6 +26,9 @@ public class FriendsTabController : MonoBehaviour
     [SerializeField] private TextMeshProUGUI tabPendingSentText;
     [SerializeField] private TextMeshProUGUI tabPendingReceivedText;
 
+    [Header("Localization")]
+    [SerializeField] private LocalizedTextDatabase database;
+
     [Header("Colors")]
     [SerializeField] private Color activeBorderColor = new Color(0.3f, 0.8f, 0.3f);
     [SerializeField] private Color inactiveBorderColor = Color.clear;
@@ -33,8 +36,28 @@ public class FriendsTabController : MonoBehaviour
     [SerializeField] private Color inactiveTextColor = new Color(0.6f, 0.6f, 0.6f);
 
     private FriendTab currentTab = FriendTab.AllFriends;
+    private int _friendsCount;
+    private int _sentCount;
+    private int _receivedCount;
 
     public System.Action<FriendTab> OnTabChanged;
+
+    private void OnEnable()
+    {
+        if (LocalizationManager.Instance != null)
+            LocalizationManager.Instance.OnLanguageChanged += OnLanguageChanged;
+    }
+
+    private void OnDisable()
+    {
+        if (LocalizationManager.Instance != null)
+            LocalizationManager.Instance.OnLanguageChanged -= OnLanguageChanged;
+    }
+
+    private void OnLanguageChanged(string lang)
+    {
+        RefreshTabTexts();
+    }
 
     private void Start()
     {
@@ -42,7 +65,7 @@ public class FriendsTabController : MonoBehaviour
         tabPendingSentButton.onClick.AddListener(() => SwitchTab(FriendTab.PendingSent));
         tabPendingReceivedButton.onClick.AddListener(() => SwitchTab(FriendTab.PendingReceived));
 
-        // Устанавливаем визуал первой вкладки без вызова события
+        RefreshTabTexts();
         UpdateTabVisuals(FriendTab.AllFriends, tabFriendsBorder, tabFriendsText);
         UpdateTabVisuals(FriendTab.PendingSent, tabPendingSentBorder, tabPendingSentText);
         UpdateTabVisuals(FriendTab.PendingReceived, tabPendingReceivedBorder, tabPendingReceivedText);
@@ -57,7 +80,6 @@ public class FriendsTabController : MonoBehaviour
         UpdateTabVisuals(FriendTab.PendingReceived, tabPendingReceivedBorder, tabPendingReceivedText);
 
         OnTabChanged?.Invoke(currentTab);
-
         Debug.Log($"[FriendsTabController] Switched to tab: {currentTab}");
     }
 
@@ -66,9 +88,7 @@ public class FriendsTabController : MonoBehaviour
         bool isActive = (currentTab == tab);
 
         if (border != null)
-        {
             border.color = isActive ? activeBorderColor : inactiveBorderColor;
-        }
 
         if (text != null)
         {
@@ -78,20 +98,30 @@ public class FriendsTabController : MonoBehaviour
         }
     }
 
+    // Вызывай после получения данных с сервера
     public void UpdateTabCounts(int friendsCount, int sentCount, int receivedCount)
     {
-        if (tabFriendsText != null)
-            tabFriendsText.text = $"Друзья ({friendsCount})";
-        
-        if (tabPendingSentText != null)
-            tabPendingSentText.text = $"Отправлено ({sentCount})";
-        
-        if (tabPendingReceivedText != null)
-            tabPendingReceivedText.text = $"Входящие ({receivedCount})";
+        _friendsCount   = friendsCount;
+        _sentCount      = sentCount;
+        _receivedCount  = receivedCount;
+        RefreshTabTexts();
     }
 
-    public FriendTab GetCurrentTab()
+    private void RefreshTabTexts()
     {
-        return currentTab;
+        string lang = LocalizationManager.Instance?.CurrentLang ?? "ru";
+
+        string friends  = database != null ? database.Get("friends_tab_friends", lang) : (lang == "ru" ? "Друзья"     : "Friends");
+        string sent     = database != null ? database.Get("friends_tab_sent",    lang) : (lang == "ru" ? "Отправлено" : "Sent");
+        string received = database != null ? database.Get("friends_tab_received",lang) : (lang == "ru" ? "Входящие"   : "Incoming");
+
+        if (tabFriendsText != null)
+            tabFriendsText.text     = $"{friends} ({_friendsCount})";
+        if (tabPendingSentText != null)
+            tabPendingSentText.text = $"{sent} ({_sentCount})";
+        if (tabPendingReceivedText != null)
+            tabPendingReceivedText.text = $"{received} ({_receivedCount})";
     }
+
+    public FriendTab GetCurrentTab() => currentTab;
 }

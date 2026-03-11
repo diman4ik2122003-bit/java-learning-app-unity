@@ -89,3 +89,16 @@ MonoBehaviour:
   - key: profile_friends_title
     ru: "\u0414\u0440\u0443\u0437\u044C\u044F"
     en: Friends
+  - key: empty_state_text
+    ru: "\u041D\u0435\u0442 \u0437\u0430\u043A\u0440\u0435\u043F\u043B\u0435\u043D\u043D\u044B\u0445
+      \u0430\u0447\u0438\u0432\u043E\u043A"
+    en: No pinned achievements yet
+  - key: friends_tab_friends
+    ru: "\u0414\u0440\u0443\u0437\u044C\u044F"
+    en: Friends
+  - key: friends_tab_sent
+    ru: "\u041E\u0442\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u043E"
+    en: Sent
+  - key: friends_tab_received
+    ru: "\u0412\u0445\u043E\u0434\u044F\u0449\u0438\u0435"
+    en: Incoming

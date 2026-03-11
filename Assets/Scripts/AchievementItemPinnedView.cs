@@ -5,11 +5,6 @@ using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 
-/// <summary>
-/// Вешается на префаб AchievementItemPinned.
-/// Заполняет иконку и название закреплённой ачивки.
-/// Аналог AchievementItemView, но без кнопки пина — только отображение.
-/// </summary>
 public class AchievementItemPinnedView : MonoBehaviour
 {
     [Header("UI References")]
@@ -19,15 +14,12 @@ public class AchievementItemPinnedView : MonoBehaviour
     [Header("Debug")]
     [SerializeField] private bool enableDebugLogs = false;
 
-    // Общий кэш спрайтов — не грузит одно изображение дважды
     private static readonly Dictionary<string, Sprite> _spriteCache = new();
 
     private Coroutine _loadCoroutine;
     private string _lastLoadedUrl;
+    private TokenManager.Achievement _cachedAchievement;
 
-    /// <summary>
-    /// Заполняет элемент данными ачивки.
-    /// </summary>
     public void Bind(TokenManager.Achievement achievement, TokenManager.UserAchievement userAchievement)
     {
         if (achievement == null)
@@ -36,10 +28,9 @@ public class AchievementItemPinnedView : MonoBehaviour
             return;
         }
 
-        string lang = LocalizationManager.Instance?.CurrentLang ?? "ru";
+        _cachedAchievement = achievement;
 
-        if (titleText != null)
-            titleText.text = achievement.title?.GetText(lang) ?? "";
+        UpdateTitle(LocalizationManager.Instance?.CurrentLang ?? "ru");
 
         if (iconImage != null && !string.IsNullOrEmpty(achievement.iconUnlocked))
         {
@@ -52,13 +43,35 @@ public class AchievementItemPinnedView : MonoBehaviour
             }
         }
 
+        if (LocalizationManager.Instance != null)
+        {
+            LocalizationManager.Instance.OnLanguageChanged -= OnLanguageChanged;
+            LocalizationManager.Instance.OnLanguageChanged += OnLanguageChanged;
+        }
+
         if (enableDebugLogs)
             Debug.Log($"[AchievementItemPinnedView] Bound: {achievement.id}");
     }
 
+    private void OnDisable()
+    {
+        if (LocalizationManager.Instance != null)
+            LocalizationManager.Instance.OnLanguageChanged -= OnLanguageChanged;
+    }
+
+    private void OnLanguageChanged(string lang)
+    {
+        UpdateTitle(lang);
+    }
+
+    private void UpdateTitle(string lang)
+    {
+        if (titleText == null || _cachedAchievement == null) return;
+        titleText.text = _cachedAchievement.title?.GetText(lang) ?? "";
+    }
+
     private IEnumerator LoadIcon(string url)
     {
-        // Сначала проверяем кэш — мгновенный рендер без мигания
         if (_spriteCache.TryGetValue(url, out var cached) && cached != null)
         {
             iconImage.sprite = cached;
