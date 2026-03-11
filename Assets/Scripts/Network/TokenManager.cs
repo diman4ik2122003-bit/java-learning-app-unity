@@ -26,7 +26,8 @@ public class TokenManager : MonoBehaviour
     [SerializeField] private StatsPanelBinder statsPanel;
     public AchievementsPanelBinder achievementsPanel;
     public LeaderboardPanelBinder leaderboardPanel;
-    public FriendsPanelBinder friendsPanel; // ← ДОБАВЛЕНО
+    public FriendsPanelBinder friendsPanel;
+    public PinnedAchievementsPanelBinder pinnedAchievementsPanel;
 
     [Header("Debug")]
     [SerializeField] private bool logResponses = true;
@@ -65,7 +66,8 @@ public class TokenManager : MonoBehaviour
             Debug.LogError($"[TokenManager.Awake] achievementsPanel ALREADY assigned in Inspector!");
         }
         if (!leaderboardPanel) leaderboardPanel = FindFirstObjectByType<LeaderboardPanelBinder>();
-        if (!friendsPanel) friendsPanel = FindFirstObjectByType<FriendsPanelBinder>(); // ← ДОБАВЛЕНО
+        if (!friendsPanel) friendsPanel = FindFirstObjectByType<FriendsPanelBinder>();
+        if (!pinnedAchievementsPanel) pinnedAchievementsPanel = FindFirstObjectByType<PinnedAchievementsPanelBinder>();
     }
 
     private void Start()
@@ -181,6 +183,12 @@ public class TokenManager : MonoBehaviour
             statsPanel.Apply(profile, userStats);
 
         ApplyAchievementsToPanel();
+
+        if (pinnedAchievementsPanel && achievementsAll != null && achievementsMine != null)
+        {
+            pinnedAchievementsPanel.Apply(achievementsAll, achievementsMine);
+            Debug.Log("[TokenManager] Pinned achievements panel updated");
+        }
 
         if (leaderboardPanel && cachedLeaderboard != null)
         {
