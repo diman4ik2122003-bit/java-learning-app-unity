@@ -232,4 +232,66 @@ public class AchievementsPanelBinder : MonoBehaviour
         else
             t.localPosition = Vector3.zero;
     }
+
+#if UNITY_EDITOR
+    [ContextMenu("Test Fill Achievements")]
+    private void TestFillAchievements()
+    {
+        Debug.Log("[AchievementsPanelBinder] ========== TEST START ==========");
+
+        var testCategories = new TokenManager.AchievementCategoryListResponse
+        {
+            data = new TokenManager.AchievementCategory[]
+            {
+                new TokenManager.AchievementCategory { id = "cat1", name = new TokenManager.LocalizedString { ru = "Все достижения", en = "All Achievements" }, order = 0 }
+            }
+        };
+
+        var achList = new System.Collections.Generic.List<TokenManager.Achievement>();
+        var userAchList = new System.Collections.Generic.List<TokenManager.UserAchievement>();
+
+        // Ограничение/раскладка по 3 в ряд заложено в скрипте/префабе,
+        // поэтому мы просто генерируем 10 элементов (3х3 + 1)
+        for (int i = 1; i <= 10; i++)
+        {
+            achList.Add(new TokenManager.Achievement
+            {
+                id = $"ach{i}",
+                categoryId = "cat1",
+                order = i,
+                title = new TokenManager.LocalizedString { ru = $"Достижение {i}", en = $"Achievement {i}" },
+                description = new TokenManager.LocalizedString { ru = $"Описание {i}", en = $"Description {i}" },
+                iconUnlocked = "",
+                iconLocked = "",
+                rewardXp = 10 * i
+            });
+
+            // Для теста сделаем несколько ачивок разблокированными (например, первые 6)
+            if (i <= 6)
+            {
+                userAchList.Add(new TokenManager.UserAchievement
+                {
+                    id = $"ach{i}",
+                    isPinned = (i <= 2), // Первые две сделаем закрепленными для теста
+                    pinOrder = i,
+                    unlockedAt = 1234567890 + i
+                });
+            }
+        }
+
+        var testAchievements = new TokenManager.AchievementListResponse
+        {
+            data = achList.ToArray()
+        };
+
+        var testUserAchievements = new TokenManager.UserAchievementListResponse
+        {
+            data = userAchList.ToArray()
+        };
+
+        Apply(testCategories, testAchievements, testUserAchievements);
+
+        Debug.Log("[AchievementsPanelBinder] ========== TEST END ==========");
+    }
+#endif
 }
