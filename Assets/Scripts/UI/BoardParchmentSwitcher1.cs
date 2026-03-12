@@ -103,7 +103,6 @@ public class BoardSlideSwitcher : MonoBehaviour
         if (debugLogs)
             Debug.Log($"[BoardSlideSwitcher] ForceOpenProfileRoutine START, _isOpen={_isOpen}");
 
-        // Сохраняем uid локально сразу — чтобы повторный вызов не затёр _pendingFriendUid
         string uidToLoad = _pendingFriendUid;
         _pendingFriendUid = null;
 
@@ -112,7 +111,7 @@ public class BoardSlideSwitcher : MonoBehaviour
         if (profileManager == null)
             Debug.LogWarning("[BoardSlideSwitcher] ProfileManager not found!");
 
-        // Если панель открыта — закрываем с анимацией
+        // Сначала закрываем — ПОТОМ трогаем ProfileManager
         if (_isOpen)
         {
             yield return Move(boardRect.anchoredPosition, closedAnchoredPos, moveUpTime, alphaWhenClosed, EaseInCubic);
@@ -122,18 +121,16 @@ public class BoardSlideSwitcher : MonoBehaviour
                 yield return new WaitForSecondsRealtime(topPauseSeconds);
         }
 
+        // Только после закрытия говорим ProfileManager что грузить
         if (profileManager != null)
         {
             if (profileManager.gameObject.activeInHierarchy)
             {
-                // profileContent уже активен (панель была на вкладке Profile)
-                // OnEnable не сработает — грузим напрямую, минуя guard
                 if (debugLogs) Debug.Log($"[BoardSlideSwitcher] ProfileManager active → ForceLoadProfile({uidToLoad})");
                 profileManager.ForceLoadProfile(uidToLoad);
             }
             else
             {
-                // profileContent неактивен — ставим uid в очередь для OnEnable
                 if (debugLogs) Debug.Log($"[BoardSlideSwitcher] ProfileManager inactive → queuing LoadProfile({uidToLoad})");
                 profileManager.ResetCurrentProfile();
                 profileManager.LoadProfile(uidToLoad);
@@ -141,7 +138,7 @@ public class BoardSlideSwitcher : MonoBehaviour
         }
 
         _currentTab = Tab.Profile;
-        SetTabImmediate(_currentTab); // активирует profileContent → OnEnable если был неактивен
+        SetTabImmediate(_currentTab);
         yield return null;
 
         yield return Move(boardRect.anchoredPosition, openAnchoredPos, moveDownTime, 1f, EaseOutCubic);
@@ -273,6 +270,8 @@ public class BoardSlideSwitcher : MonoBehaviour
 
     private IEnumerator Move(Vector2 from, Vector2 to, float duration, float alphaTo, Func<float, float> ease)
     {
+        if (debugLogs) Debug.Log($"[BoardSlideSwitcher] Move from={from} to={to} dur={duration}");
+
         if (duration <= 0.0001f)
         {
             boardRect.anchoredPosition = to;
