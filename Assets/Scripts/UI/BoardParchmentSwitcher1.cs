@@ -52,6 +52,7 @@ public class BoardSlideSwitcher : MonoBehaviour
     private Coroutine _routine;
     private bool _isOpen = false;
     [SerializeField] private Tab _currentTab = Tab.Stats;
+    private string _pendingFriendUid = null;
 
     private void Reset()
     {
@@ -81,31 +82,17 @@ public class BoardSlideSwitcher : MonoBehaviour
     public void OnProfileClicked()      => HandleTabClick(Tab.Profile);
     public void OnLeaderboardClicked()  => HandleTabClick(Tab.Leaderboard);
 
-    /// <summary>
-    /// Принудительно открывает панель на вкладке Profile с анимацией.
-    /// Вызывается из FriendsPanelBinder при клике на профиль друга.
-    /// ProfileManager.LoadProfile() должен быть вызван ДО этого метода.
-    /// </summary>
-    public void ForceOpenProfile()
+    public void ForceOpenProfile(string friendUid)
     {
         if (debugLogs)
-            Debug.Log($"[BoardSlideSwitcher] ForceOpenProfile called, _isOpen={_isOpen}, _currentTab={_currentTab}, _routine running={_routine != null}", this);
+            Debug.Log($"[BoardSlideSwitcher] ForceOpenProfile uid={friendUid}, _isOpen={_isOpen}, _currentTab={_currentTab}");
 
-        // Останавливаем любую текущую анимацию
+        _pendingFriendUid = friendUid;
+
         if (_routine != null)
         {
             StopCoroutine(_routine);
             _routine = null;
-            if (debugLogs)
-                Debug.Log("[BoardSlideSwitcher] ForceOpenProfile: stopped ongoing routine", this);
-        }
-
-        // Уже открыта на Profile — просто обновляем контент без анимации
-        if (_isOpen && _currentTab == Tab.Profile)
-        {
-            if (debugLogs)
-                Debug.Log("[BoardSlideSwitcher] ForceOpenProfile: already open on Profile, skipping animation", this);
-            return;
         }
 
         _routine = StartCoroutine(ForceOpenProfileRoutine());
@@ -113,12 +100,21 @@ public class BoardSlideSwitcher : MonoBehaviour
 
     private IEnumerator ForceOpenProfileRoutine()
     {
-        // Если панель открыта на другой вкладке — сначала закрываем
+        if (debugLogs)
+            Debug.Log($"[BoardSlideSwitcher] ForceOpenProfileRoutine START, _isOpen={_isOpen}");
+
+        // Сохраняем uid локально сразу — чтобы повторный вызов не затёр _pendingFriendUid
+        string uidToLoad = _pendingFriendUid;
+        _pendingFriendUid = null;
+
+        ProfileManager profileManager = FindFirstObjectByType<ProfileManager>(FindObjectsInactive.Include);
+
+        if (profileManager == null)
+            Debug.LogWarning("[BoardSlideSwitcher] ProfileManager not found!");
+
+        // Если панель открыта — закрываем с анимацией
         if (_isOpen)
         {
-            if (debugLogs)
-                Debug.Log("[BoardSlideSwitcher] ForceOpenProfile: closing current tab before switching", this);
-
             yield return Move(boardRect.anchoredPosition, closedAnchoredPos, moveUpTime, alphaWhenClosed, EaseInCubic);
             _isOpen = false;
 
@@ -126,12 +122,28 @@ public class BoardSlideSwitcher : MonoBehaviour
                 yield return new WaitForSecondsRealtime(topPauseSeconds);
         }
 
-        // Переключаем на Profile
+        if (profileManager != null)
+        {
+            if (profileManager.gameObject.activeInHierarchy)
+            {
+                // profileContent уже активен (панель была на вкладке Profile)
+                // OnEnable не сработает — грузим напрямую, минуя guard
+                if (debugLogs) Debug.Log($"[BoardSlideSwitcher] ProfileManager active → ForceLoadProfile({uidToLoad})");
+                profileManager.ForceLoadProfile(uidToLoad);
+            }
+            else
+            {
+                // profileContent неактивен — ставим uid в очередь для OnEnable
+                if (debugLogs) Debug.Log($"[BoardSlideSwitcher] ProfileManager inactive → queuing LoadProfile({uidToLoad})");
+                profileManager.ResetCurrentProfile();
+                profileManager.LoadProfile(uidToLoad);
+            }
+        }
+
         _currentTab = Tab.Profile;
-        SetTabImmediate(_currentTab);
+        SetTabImmediate(_currentTab); // активирует profileContent → OnEnable если был неактивен
         yield return null;
 
-        // Открываем
         yield return Move(boardRect.anchoredPosition, openAnchoredPos, moveDownTime, 1f, EaseOutCubic);
         _isOpen = true;
 
@@ -140,8 +152,17 @@ public class BoardSlideSwitcher : MonoBehaviour
         _routine = null;
 
         if (debugLogs)
-            Debug.Log("[BoardSlideSwitcher] ForceOpenProfile: animation done", this);
+            Debug.Log("[BoardSlideSwitcher] ForceOpenProfileRoutine DONE");
     }
+
+#if UNITY_EDITOR
+    [ContextMenu("TEST ForceOpenProfile")]
+    private void TestForceOpen()
+    {
+        Debug.Log($"[BSS] TEST CALL: _isOpen={_isOpen}, _routine={_routine != null}, pos={boardRect.anchoredPosition}");
+        ForceOpenProfile("test_uid");
+    }
+#endif
 
     // ========== СТАНДАРТНАЯ ЛОГИКА ==========
 

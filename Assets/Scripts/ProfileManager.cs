@@ -21,6 +21,9 @@ public class ProfileManager : MonoBehaviour
     private string currentProfileUid = "NOT_SET";
     private string cachedBio;
 
+    private string _pendingFriendUid = null;
+    private bool   _hasPendingFriend = false;
+
     private string GetBioPrefix()
     {
         string lang = LocalizationManager.Instance?.CurrentLang ?? "ru";
@@ -32,15 +35,30 @@ public class ProfileManager : MonoBehaviour
         if (LocalizationManager.Instance != null)
             LocalizationManager.Instance.OnLanguageChanged += OnLanguageChanged;
 
-        // При открытии панели — сбрасываем uid чтобы всегда грузить мой профиль заново
-        currentProfileUid = "NOT_SET";
-        LoadProfile(null);
+        if (_hasPendingFriend)
+        {
+            _hasPendingFriend = false;
+            currentProfileUid = "NOT_SET";
+            string uid        = _pendingFriendUid;
+            _pendingFriendUid = null;
+            if (debugLogs) Debug.Log($"[ProfileManager] OnEnable: loading pending friend uid={uid}");
+            LoadProfile(uid);
+        }
+        else
+        {
+            if (debugLogs) Debug.Log("[ProfileManager] OnEnable: loading my profile");
+            currentProfileUid = "NOT_SET";
+            LoadProfile(null);
+        }
     }
 
     private void OnDisable()
     {
         if (LocalizationManager.Instance != null)
             LocalizationManager.Instance.OnLanguageChanged -= OnLanguageChanged;
+
+        _hasPendingFriend = false;
+        _pendingFriendUid = null;
     }
 
     private void OnLanguageChanged(string newLang)
@@ -52,25 +70,42 @@ public class ProfileManager : MonoBehaviour
     private void UpdateBioText()
     {
         if (bioText != null && !string.IsNullOrEmpty(cachedBio))
-        {
             bioText.text = GetBioPrefix() + cachedBio;
-            if (debugLogs) Debug.Log($"[ProfileManager] Bio updated: {bioText.text}");
-        }
     }
 
-    /// <summary>
-    /// Сбросить guard чтобы следующий LoadProfile гарантированно перезагрузил данные.
-    /// Вызывается из FriendsPanelBinder перед LoadProfile(friendUid).
-    /// </summary>
     public void ResetCurrentProfile()
     {
         currentProfileUid = "NOT_SET";
+        _hasPendingFriend = false;
+        _pendingFriendUid = null;
         if (debugLogs) Debug.Log("[ProfileManager] ResetCurrentProfile called");
+    }
+
+    /// <summary>
+    /// Загружает профиль без guard-проверки.
+    /// Вызывать из BoardSlideSwitcher когда объект уже активен.
+    /// </summary>
+    public void ForceLoadProfile(string uid)
+    {
+        if (debugLogs) Debug.Log($"[ProfileManager] ForceLoadProfile uid={uid ?? "null (my profile)"}");
+        currentProfileUid = "NOT_SET";
+        _hasPendingFriend = false;
+        _pendingFriendUid = null;
+        LoadProfile(uid);
     }
 
     public void LoadProfile(string uid)
     {
-        // Защита от повторной загрузки того же профиля
+        if (debugLogs) Debug.Log($"[ProfileManager] LoadProfile uid={uid ?? "null"}, activeInHierarchy={gameObject.activeInHierarchy}");
+
+        if (!gameObject.activeInHierarchy)
+        {
+            _pendingFriendUid = uid;
+            _hasPendingFriend = uid != null;
+            if (debugLogs) Debug.Log($"[ProfileManager] Object inactive, queued uid={uid}");
+            return;
+        }
+
         if (uid == currentProfileUid)
         {
             if (debugLogs) Debug.Log($"[ProfileManager] Profile '{uid}' already loaded, skipping");
@@ -78,8 +113,6 @@ public class ProfileManager : MonoBehaviour
         }
 
         currentProfileUid = uid;
-
-        if (debugLogs) Debug.Log($"[ProfileManager] LoadProfile called with uid: {uid ?? "null (my profile)"}");
 
         if (uid == null) LoadMyProfile();
         else             StartCoroutine(LoadFriendProfileCoroutine(uid));
@@ -97,7 +130,6 @@ public class ProfileManager : MonoBehaviour
 
         if (!TokenManager.Instance.IsSessionReady)
         {
-            if (debugLogs) Debug.LogWarning("[ProfileManager] Session not ready yet, waiting...");
             StartCoroutine(WaitForSessionAndLoad());
             return;
         }
@@ -133,7 +165,6 @@ public class ProfileManager : MonoBehaviour
     {
         if (debugLogs) Debug.Log($"[ProfileManager] Loading friend profile: {friendUid}");
 
-        // Ждём сессию
         while (TokenManager.Instance != null && !TokenManager.Instance.IsSessionReady)
             yield return new WaitForSeconds(0.1f);
 
@@ -143,7 +174,6 @@ public class ProfileManager : MonoBehaviour
             yield break;
         }
 
-        // Ищем в кеше друзей
         TokenManager.FriendData friendData = FindFriendInCache(friendUid);
 
         if (friendData != null)
@@ -162,14 +192,10 @@ public class ProfileManager : MonoBehaviour
 
             UpdateUI(profile, null);
 
-            // Ачивки друга не показываем — очищаем панель
-            // pinnedBinder?.Clear(); // раскомментируй если добавишь метод Clear()
-
             if (debugLogs) Debug.Log("[ProfileManager] Friend profile loaded from cache");
             yield break;
         }
 
-        // Не нашли в кеше — показываем заглушку
         Debug.LogWarning($"[ProfileManager] Friend {friendUid} not found in cachedFriends, showing fallback");
         ShowFallbackProfile(friendUid);
     }
@@ -187,10 +213,10 @@ public class ProfileManager : MonoBehaviour
 
     private void ShowFallbackProfile(string uid)
     {
-        if (nameText    != null) nameText.text         = "Unknown #0000";
-        if (levelText   != null) levelText.text        = "lvl ?";
-        if (bioText     != null) bioText.text          = "";
-        if (avatarImage != null) avatarImage.sprite    = null;
+        if (nameText    != null) nameText.text      = "Unknown #0000";
+        if (levelText   != null) levelText.text     = "lvl ?";
+        if (bioText     != null) bioText.text       = "";
+        if (avatarImage != null) avatarImage.sprite = null;
         Debug.LogWarning($"[ProfileManager] Fallback profile shown for uid={uid}");
     }
 
@@ -216,7 +242,6 @@ public class ProfileManager : MonoBehaviour
 
         cachedBio = profile.bio ?? "...";
         UpdateBioText();
-        if (debugLogs) Debug.Log($"[ProfileManager] Bio cached: {cachedBio}");
 
         if (!string.IsNullOrEmpty(profile.photoURL))
             StartCoroutine(LoadAvatar(profile.photoURL));

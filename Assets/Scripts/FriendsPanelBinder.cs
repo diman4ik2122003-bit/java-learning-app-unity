@@ -26,30 +26,24 @@ public class FriendsPanelBinder : MonoBehaviour
     private void OnEnable()
     {
         if (tabController != null)
-        {
             tabController.OnTabChanged += OnTabChanged;
-            Debug.Log("[FriendsPanelBinder] OnEnable - subscribed to OnTabChanged");
-        }
     }
 
     private void OnDisable()
     {
         if (tabController != null)
-        {
             tabController.OnTabChanged -= OnTabChanged;
-            Debug.Log("[FriendsPanelBinder] OnDisable - unsubscribed from OnTabChanged");
-        }
     }
 
     public void Apply(TokenManager.FriendsResponse friendsResp, string myUid)
     {
-        Debug.Log($"[FriendsPanelBinder] Apply called with {friendsResp?.data?.Length ?? -1} friends");
+        if (debugLogs)
+            Debug.Log($"[FriendsPanelBinder] Apply called with {friendsResp?.data?.Length ?? -1} friends");
 
         if (tabController != null)
         {
             tabController.OnTabChanged -= OnTabChanged;
             tabController.OnTabChanged += OnTabChanged;
-            Debug.Log("[FriendsPanelBinder] Re-subscribed to OnTabChanged in Apply");
         }
 
         if (!verticalContent || !itemPrefab)
@@ -60,26 +54,15 @@ public class FriendsPanelBinder : MonoBehaviour
 
         currentUserUid = myUid;
 
-        if (debugLogs)
-            Debug.Log($"[FriendsPanelBinder] Apply START - myUid: '{myUid}'");
-
         if (friendsResp?.data == null || friendsResp.data.Length == 0)
         {
             allFriendsData = new TokenManager.FriendData[0];
-
-            if (debugLogs)
-                Debug.Log("[FriendsPanelBinder] No friends data.");
-
             UpdateTabCounts();
             ClearContent();
             return;
         }
 
         allFriendsData = friendsResp.data;
-
-        if (debugLogs)
-            Debug.Log($"[FriendsPanelBinder] Loaded {allFriendsData.Length} friends total");
-
         UpdateTabCounts();
         OnTabChanged(tabController?.GetCurrentTab() ?? FriendTab.AllFriends);
     }
@@ -103,23 +86,16 @@ public class FriendsPanelBinder : MonoBehaviour
         }
 
         tabController.UpdateTabCounts(friendsCount, sentCount, receivedCount);
-
-        if (debugLogs)
-            Debug.Log($"[FriendsPanelBinder] Tab counts: friends={friendsCount}, sent={sentCount}, received={receivedCount}");
     }
 
     private void OnTabChanged(FriendTab tab)
     {
         if (debugLogs)
-            Debug.Log($"[FriendsPanelBinder] Tab changed to: {tab}, data count={allFriendsData?.Length.ToString() ?? "NULL"}");
+            Debug.Log($"[FriendsPanelBinder] Tab changed to: {tab}");
 
         ClearContent();
 
-        if (allFriendsData == null || allFriendsData.Length == 0)
-        {
-            if (debugLogs) Debug.Log("[FriendsPanelBinder] No friends to display");
-            return;
-        }
+        if (allFriendsData == null || allFriendsData.Length == 0) return;
 
         string statusFilter   = GetStatusForTab(tab);
         int    displayedCount = 0;
@@ -153,19 +129,10 @@ public class FriendsPanelBinder : MonoBehaviour
 
     private void CreateFriendItem(TokenManager.FriendData friend)
     {
-        if (itemPrefab == null)
-        {
-            Debug.LogError("[FriendsPanelBinder] itemPrefab is NULL!");
-            return;
-        }
+        if (itemPrefab == null) return;
 
         var view = Instantiate(itemPrefab, verticalContent, false);
-
-        if (view == null)
-        {
-            Debug.LogError("[FriendsPanelBinder] Failed to instantiate item!");
-            return;
-        }
+        if (view == null) return;
 
         view.gameObject.SetActive(true);
         NormalizeRect(view.transform);
@@ -182,9 +149,6 @@ public class FriendsPanelBinder : MonoBehaviour
         view.OnProfileClicked += OpenFriendProfile;
         view.OnRemoveClicked  += RemoveFriend;
         view.OnAcceptClicked  += AcceptFriendRequest;
-
-        if (debugLogs)
-            Debug.Log($"[FriendsPanelBinder] Created item for {friend.displayName}#{friend.discriminator}");
     }
 
     private void ClearContent()
@@ -219,68 +183,34 @@ public class FriendsPanelBinder : MonoBehaviour
     private void OpenFriendProfile(string uid)
     {
         if (debugLogs)
-            Debug.Log($"[FriendsPanelBinder] OpenFriendProfile for uid: {uid}");
-
-        // Сбрасываем guard в ProfileManager чтобы форсировать перезагрузку
-        ProfileManager profileManager = FindFirstObjectByType<ProfileManager>();
-        if (profileManager != null)
-        {
-            profileManager.ResetCurrentProfile(); // ← сбрасываем guard
-            profileManager.LoadProfile(uid);
-            if (debugLogs) Debug.Log($"[FriendsPanelBinder] ProfileManager.LoadProfile({uid}) called");
-        }
-        else
-        {
-            Debug.LogWarning("[FriendsPanelBinder] ProfileManager not found!");
-        }
+            Debug.Log($"[FriendsPanelBinder] OpenFriendProfile uid={uid}");
 
         if (boardSlideSwitcher != null)
-        {
-            boardSlideSwitcher.ForceOpenProfile();
-            if (debugLogs) Debug.Log("[FriendsPanelBinder] boardSlideSwitcher.ForceOpenProfile() called");
-        }
+            boardSlideSwitcher.ForceOpenProfile(uid);
         else
-        {
             Debug.LogWarning("[FriendsPanelBinder] BoardSlideSwitcher not set!");
-        }
     }
 
     private void RemoveFriend(string friendId)
     {
-        if (debugLogs) Debug.Log($"[FriendsPanelBinder] Removing friend: {friendId}");
         StartCoroutine(TokenManager.Instance.RemoveFriend(friendId, OnFriendRemoved));
     }
 
     private void OnFriendRemoved(bool success, string error)
     {
-        if (success)
-        {
-            if (debugLogs) Debug.Log("[FriendsPanelBinder] Friend removed successfully");
-            TokenManager.Instance.RefreshFriends();
-        }
-        else
-        {
-            Debug.LogError($"[FriendsPanelBinder] Error removing friend: {error}");
-        }
+        if (success) TokenManager.Instance.RefreshFriends();
+        else Debug.LogError($"[FriendsPanelBinder] Error removing friend: {error}");
     }
 
     private void AcceptFriendRequest(string friendId)
     {
-        if (debugLogs) Debug.Log($"[FriendsPanelBinder] Accepting friend request from: {friendId}");
         StartCoroutine(TokenManager.Instance.AcceptFriendRequest(friendId, OnFriendRequestAccepted));
     }
 
     private void OnFriendRequestAccepted(bool success, string error)
     {
-        if (success)
-        {
-            if (debugLogs) Debug.Log("[FriendsPanelBinder] Friend request accepted");
-            TokenManager.Instance.RefreshFriends();
-        }
-        else
-        {
-            Debug.LogError($"[FriendsPanelBinder] Error accepting friend request: {error}");
-        }
+        if (success) TokenManager.Instance.RefreshFriends();
+        else Debug.LogError($"[FriendsPanelBinder] Error accepting friend request: {error}");
     }
 
 #if UNITY_EDITOR
@@ -292,12 +222,12 @@ public class FriendsPanelBinder : MonoBehaviour
             success = true,
             data = new TokenManager.FriendData[]
             {
-                new TokenManager.FriendData { uid="friend1",   displayName="CodeMaster",   discriminator="1234", level=15, status="active",           photoURL="", bio="Java expert"       },
-                new TokenManager.FriendData { uid="friend2",   displayName="DragonSlayer",  discriminator="5678", level=22, status="active",           photoURL="", bio="Pro gamer"         },
-                new TokenManager.FriendData { uid="friend3",   displayName="JavaGuru",      discriminator="9999", level=18, status="active",           photoURL="", bio="Loves coffee"      },
-                new TokenManager.FriendData { uid="pending1",  displayName="NewPlayer",     discriminator="1111", level=5,  status="pending_sent",     photoURL="", bio="Just started"      },
-                new TokenManager.FriendData { uid="incoming1", displayName="BugHunter",     discriminator="3333", level=12, status="pending_received", photoURL="", bio="Found all bugs"    },
-                new TokenManager.FriendData { uid="incoming2", displayName="AlgoMaster",    discriminator="6666", level=20, status="pending_received", photoURL="", bio="O(1) everything"   },
+                new TokenManager.FriendData { uid="friend1",   displayName="CodeMaster",   discriminator="1234", level=15, status="active",           photoURL="", bio="Java expert"    },
+                new TokenManager.FriendData { uid="friend2",   displayName="DragonSlayer",  discriminator="5678", level=22, status="active",           photoURL="", bio="Pro gamer"      },
+                new TokenManager.FriendData { uid="friend3",   displayName="JavaGuru",      discriminator="9999", level=18, status="active",           photoURL="", bio="Loves coffee"   },
+                new TokenManager.FriendData { uid="pending1",  displayName="NewPlayer",     discriminator="1111", level=5,  status="pending_sent",     photoURL="", bio="Just started"   },
+                new TokenManager.FriendData { uid="incoming1", displayName="BugHunter",     discriminator="3333", level=12, status="pending_received", photoURL="", bio="Found all bugs" },
+                new TokenManager.FriendData { uid="incoming2", displayName="AlgoMaster",    discriminator="6666", level=20, status="pending_received", photoURL="", bio="O(1) everything"},
             }
         };
         Apply(testData, "current_user");
