@@ -25,22 +25,22 @@ public class BoardSlideSwitcher : MonoBehaviour
     [SerializeField] private LocalizedText dataTitleLocalizedText;
 
     [Header("Localization Keys for Title")]
-    [SerializeField] private string statsKey = "data_stats_title";
+    [SerializeField] private string statsKey        = "data_stats_title";
     [SerializeField] private string achievementsKey = "data_achievements_title";
-    [SerializeField] private string profileKey = "data_profile_title";
-    [SerializeField] private string leaderboardKey = "data_leaderboard_title";
+    [SerializeField] private string profileKey      = "data_profile_title";
+    [SerializeField] private string leaderboardKey  = "data_leaderboard_title";
 
     [Header("Timing")]
     [Min(0f)] [SerializeField] private float moveDownTime = 1.0f;
-    [Min(0f)] [SerializeField] private float moveUpTime = 1.0f;
+    [Min(0f)] [SerializeField] private float moveUpTime   = 1.0f;
 
     [Header("Pause at top (only when switching tab)")]
     [Min(0f)] [SerializeField] private float topPauseSeconds = 0.25f;
 
     [Header("Swing after opening")]
-    [Min(0f)] [SerializeField] private float swingAmplitude = 12f;
-    [Min(0f)] [SerializeField] private float swingDuration = 0.85f;
-    [Min(0)]  [SerializeField] private int swingOscillations = 1;
+    [Min(0f)] [SerializeField] private float swingAmplitude    = 12f;
+    [Min(0f)] [SerializeField] private float swingDuration     = 0.85f;
+    [Min(0)]  [SerializeField] private int   swingOscillations = 1;
 
     [Header("Fade (optional)")]
     [Range(0f, 1f)]
@@ -55,7 +55,7 @@ public class BoardSlideSwitcher : MonoBehaviour
 
     private void Reset()
     {
-        boardRect = GetComponent<RectTransform>();
+        boardRect        = GetComponent<RectTransform>();
         boardCanvasGroup = GetComponent<CanvasGroup>();
     }
 
@@ -74,10 +74,76 @@ public class BoardSlideSwitcher : MonoBehaviour
             Debug.Log($"[BoardSlideSwitcher] Awake open={openAnchoredPos} closed={closedAnchoredPos}", this);
     }
 
-    public void OnStatsClicked() => HandleTabClick(Tab.Stats);
+    // ========== ПУБЛИЧНЫЕ МЕТОДЫ ВКЛАДОК ==========
+
+    public void OnStatsClicked()        => HandleTabClick(Tab.Stats);
     public void OnAchievementsClicked() => HandleTabClick(Tab.Achievements);
-    public void OnProfileClicked() => HandleTabClick(Tab.Profile);  // НОВОЕ
-    public void OnLeaderboardClicked() => HandleTabClick(Tab.Leaderboard);
+    public void OnProfileClicked()      => HandleTabClick(Tab.Profile);
+    public void OnLeaderboardClicked()  => HandleTabClick(Tab.Leaderboard);
+
+    /// <summary>
+    /// Принудительно открывает панель на вкладке Profile с анимацией.
+    /// Вызывается из FriendsPanelBinder при клике на профиль друга.
+    /// ProfileManager.LoadProfile() должен быть вызван ДО этого метода.
+    /// </summary>
+    public void ForceOpenProfile()
+    {
+        if (debugLogs)
+            Debug.Log($"[BoardSlideSwitcher] ForceOpenProfile called, _isOpen={_isOpen}, _currentTab={_currentTab}, _routine running={_routine != null}", this);
+
+        // Останавливаем любую текущую анимацию
+        if (_routine != null)
+        {
+            StopCoroutine(_routine);
+            _routine = null;
+            if (debugLogs)
+                Debug.Log("[BoardSlideSwitcher] ForceOpenProfile: stopped ongoing routine", this);
+        }
+
+        // Уже открыта на Profile — просто обновляем контент без анимации
+        if (_isOpen && _currentTab == Tab.Profile)
+        {
+            if (debugLogs)
+                Debug.Log("[BoardSlideSwitcher] ForceOpenProfile: already open on Profile, skipping animation", this);
+            return;
+        }
+
+        _routine = StartCoroutine(ForceOpenProfileRoutine());
+    }
+
+    private IEnumerator ForceOpenProfileRoutine()
+    {
+        // Если панель открыта на другой вкладке — сначала закрываем
+        if (_isOpen)
+        {
+            if (debugLogs)
+                Debug.Log("[BoardSlideSwitcher] ForceOpenProfile: closing current tab before switching", this);
+
+            yield return Move(boardRect.anchoredPosition, closedAnchoredPos, moveUpTime, alphaWhenClosed, EaseInCubic);
+            _isOpen = false;
+
+            if (topPauseSeconds > 0f)
+                yield return new WaitForSecondsRealtime(topPauseSeconds);
+        }
+
+        // Переключаем на Profile
+        _currentTab = Tab.Profile;
+        SetTabImmediate(_currentTab);
+        yield return null;
+
+        // Открываем
+        yield return Move(boardRect.anchoredPosition, openAnchoredPos, moveDownTime, 1f, EaseOutCubic);
+        _isOpen = true;
+
+        yield return Swing(openAnchoredPos);
+
+        _routine = null;
+
+        if (debugLogs)
+            Debug.Log("[BoardSlideSwitcher] ForceOpenProfile: animation done", this);
+    }
+
+    // ========== СТАНДАРТНАЯ ЛОГИКА ==========
 
     private void HandleTabClick(Tab clickedTab)
     {
@@ -148,44 +214,41 @@ public class BoardSlideSwitcher : MonoBehaviour
         _routine = null;
     }
 
-private void SetTabImmediate(Tab tab)
-{
-    statsContent.SetActive(tab == Tab.Stats);
-    achievementsContent.SetActive(tab == Tab.Achievements);
-    profileContent.SetActive(tab == Tab.Profile);
-    leaderboardContent.SetActive(tab == Tab.Leaderboard);  // НОВОЕ
+    // ========== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ==========
 
-    UpdateDataTitle(tab);
-
-    if (debugLogs) Debug.Log($"[BoardSlideSwitcher] Tab={tab}", this);
-}
-
-
-    // Просто меняем key - LocalizedText сам обновит текст
-private void UpdateDataTitle(Tab tab)
-{
-    if (dataTitleLocalizedText == null) return;
-
-    string key = tab switch
+    private void SetTabImmediate(Tab tab)
     {
-        Tab.Stats => statsKey,
-        Tab.Achievements => achievementsKey,
-        Tab.Profile => profileKey,
-        Tab.Leaderboard => leaderboardKey,  // НОВОЕ
-        _ => statsKey
-    };
-    
-    dataTitleLocalizedText.key = key;
+        statsContent.SetActive(tab == Tab.Stats);
+        achievementsContent.SetActive(tab == Tab.Achievements);
+        profileContent.SetActive(tab == Tab.Profile);
+        leaderboardContent.SetActive(tab == Tab.Leaderboard);
 
-    if (LocalizationManager.Instance != null)
-    {
-        dataTitleLocalizedText.UpdateText(LocalizationManager.Instance.CurrentLang);
+        UpdateDataTitle(tab);
+
+        if (debugLogs) Debug.Log($"[BoardSlideSwitcher] Tab={tab}", this);
     }
 
-    if (debugLogs)
-        Debug.Log($"[BoardSlideSwitcher] Data title key changed to: {dataTitleLocalizedText.key}");
-}
+    private void UpdateDataTitle(Tab tab)
+    {
+        if (dataTitleLocalizedText == null) return;
 
+        string key = tab switch
+        {
+            Tab.Stats        => statsKey,
+            Tab.Achievements => achievementsKey,
+            Tab.Profile      => profileKey,
+            Tab.Leaderboard  => leaderboardKey,
+            _                => statsKey
+        };
+
+        dataTitleLocalizedText.key = key;
+
+        if (LocalizationManager.Instance != null)
+            dataTitleLocalizedText.UpdateText(LocalizationManager.Instance.CurrentLang);
+
+        if (debugLogs)
+            Debug.Log($"[BoardSlideSwitcher] Data title key changed to: {dataTitleLocalizedText.key}");
+    }
 
     private IEnumerator Move(Vector2 from, Vector2 to, float duration, float alphaTo, Func<float, float> ease)
     {
@@ -196,8 +259,8 @@ private void UpdateDataTitle(Tab tab)
             yield break;
         }
 
-        float t = 0f;
-        float startAlpha = boardCanvasGroup ? boardCanvasGroup.alpha : 1f;
+        float t           = 0f;
+        float startAlpha  = boardCanvasGroup ? boardCanvasGroup.alpha : 1f;
         float targetAlpha = boardCanvasGroup ? alphaTo : 1f;
 
         while (t < duration)
@@ -229,9 +292,9 @@ private void UpdateDataTitle(Tab tab)
             t += Time.unscaledDeltaTime;
             float p = Mathf.Clamp01(t / swingDuration);
 
-            float damp = 1f - p;
+            float damp  = 1f - p;
             float phase = p * Mathf.PI * 2f * swingOscillations;
-            float y = Mathf.Sin(phase) * swingAmplitude * damp;
+            float y     = Mathf.Sin(phase) * swingAmplitude * damp;
 
             boardRect.anchoredPosition = basePos + new Vector2(0f, y);
             yield return null;
@@ -241,5 +304,5 @@ private void UpdateDataTitle(Tab tab)
     }
 
     private float EaseOutCubic(float x) => 1f - Mathf.Pow(1f - x, 3f);
-    private float EaseInCubic(float x) => x * x * x;
+    private float EaseInCubic(float x)  => x * x * x;
 }

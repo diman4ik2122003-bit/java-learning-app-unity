@@ -18,7 +18,7 @@ public class ProfileManager : MonoBehaviour
     [Header("Debug")]
     [SerializeField] private bool debugLogs = true;
 
-    private string currentProfileUid;
+    private string currentProfileUid = "NOT_SET";
     private string cachedBio;
 
     private string GetBioPrefix()
@@ -32,7 +32,8 @@ public class ProfileManager : MonoBehaviour
         if (LocalizationManager.Instance != null)
             LocalizationManager.Instance.OnLanguageChanged += OnLanguageChanged;
 
-        // При открытии панели — загружаем мой профиль
+        // При открытии панели — сбрасываем uid чтобы всегда грузить мой профиль заново
+        currentProfileUid = "NOT_SET";
         LoadProfile(null);
     }
 
@@ -57,14 +58,34 @@ public class ProfileManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Сбросить guard чтобы следующий LoadProfile гарантированно перезагрузил данные.
+    /// Вызывается из FriendsPanelBinder перед LoadProfile(friendUid).
+    /// </summary>
+    public void ResetCurrentProfile()
+    {
+        currentProfileUid = "NOT_SET";
+        if (debugLogs) Debug.Log("[ProfileManager] ResetCurrentProfile called");
+    }
+
     public void LoadProfile(string uid)
     {
+        // Защита от повторной загрузки того же профиля
+        if (uid == currentProfileUid)
+        {
+            if (debugLogs) Debug.Log($"[ProfileManager] Profile '{uid}' already loaded, skipping");
+            return;
+        }
+
         currentProfileUid = uid;
+
         if (debugLogs) Debug.Log($"[ProfileManager] LoadProfile called with uid: {uid ?? "null (my profile)"}");
 
         if (uid == null) LoadMyProfile();
-        else LoadFriendProfile(uid);
+        else             StartCoroutine(LoadFriendProfileCoroutine(uid));
     }
+
+    // ========== МОЙ ПРОФИЛЬ ==========
 
     private void LoadMyProfile()
     {
@@ -92,7 +113,6 @@ public class ProfileManager : MonoBehaviour
 
         UpdateUI(profileResponse.data, statsResponse?.data);
 
-        // Передаём оба списка в биндер — он сам всё отрисует
         pinnedBinder?.Apply(
             TokenManager.Instance.achievementsAll,
             TokenManager.Instance.achievementsMine
@@ -107,71 +127,74 @@ public class ProfileManager : MonoBehaviour
         LoadMyProfile();
     }
 
-    private void LoadFriendProfile(string friendUid)
-    {
-        if (debugLogs) Debug.Log($"[ProfileManager] Loading friend profile: {friendUid}");
-        StartCoroutine(LoadFriendProfileCoroutine(friendUid));
-    }
+    // ========== ПРОФИЛЬ ДРУГА ==========
 
     private IEnumerator LoadFriendProfileCoroutine(string friendUid)
     {
-        // Ждём готовности сессии, как для своего профиля
+        if (debugLogs) Debug.Log($"[ProfileManager] Loading friend profile: {friendUid}");
+
+        // Ждём сессию
         while (TokenManager.Instance != null && !TokenManager.Instance.IsSessionReady)
             yield return new WaitForSeconds(0.1f);
 
         if (TokenManager.Instance == null)
         {
-            Debug.LogError("[ProfileManager] TokenManager.Instance is null while loading friend profile!");
+            Debug.LogError("[ProfileManager] TokenManager.Instance is null!");
             yield break;
         }
 
-        // Используем кеш друзей из TokenManager
-        var friendsResp = TokenManager.Instance.cachedFriends;
-        if (friendsResp?.data == null || friendsResp.data.Length == 0)
-        {
-            Debug.LogError("[ProfileManager] cachedFriends is null or empty, cannot find friend profile!");
-            yield break;
-        }
+        // Ищем в кеше друзей
+        TokenManager.FriendData friendData = FindFriendInCache(friendUid);
 
-        TokenManager.FriendData friendData = null;
-        foreach (var f in friendsResp.data)
+        if (friendData != null)
         {
-            if (f.uid == friendUid)
+            if (debugLogs) Debug.Log($"[ProfileManager] Found friend {friendUid} in cache");
+
+            var profile = new TokenManager.UserProfileData
             {
-                friendData = f;
-                break;
-            }
-        }
+                uid           = friendData.uid,
+                displayName   = friendData.displayName,
+                discriminator = friendData.discriminator,
+                bio           = friendData.bio,
+                photoURL      = friendData.photoURL,
+                stats         = new TokenManager.UserProfileStats { level = friendData.level }
+            };
 
-        if (friendData == null)
-        {
-            Debug.LogError($"[ProfileManager] Friend with uid={friendUid} not found in cachedFriends!");
+            UpdateUI(profile, null);
+
+            // Ачивки друга не показываем — очищаем панель
+            // pinnedBinder?.Clear(); // раскомментируй если добавишь метод Clear()
+
+            if (debugLogs) Debug.Log("[ProfileManager] Friend profile loaded from cache");
             yield break;
         }
 
-        // Собираем временные структуры под уже существующий UpdateUI
-        var profile = new TokenManager.UserProfileData
-        {
-            uid          = friendData.uid,
-            displayName  = friendData.displayName,
-            discriminator = friendData.discriminator,
-            bio          = friendData.bio,
-            photoURL     = friendData.photoURL,
-            stats        = new TokenManager.UserProfileStats
-            {
-                level = friendData.level
-            }
-        };
-
-        // Для друга нам достаточно уровня; UserStatsData можно не собирать
-        UpdateUI(profile, null);
-
-        // Пиннутые ачивки друга: пока ничего не делаем или можно очистить панель,
-        // если не хочешь показывать свои ачивки в чужом профиле.
-        // pinnedBinder?.Clear(); // если есть такой метод
-
-        if (debugLogs) Debug.Log("[ProfileManager] Friend profile loaded successfully from cachedFriends");
+        // Не нашли в кеше — показываем заглушку
+        Debug.LogWarning($"[ProfileManager] Friend {friendUid} not found in cachedFriends, showing fallback");
+        ShowFallbackProfile(friendUid);
     }
+
+    private TokenManager.FriendData FindFriendInCache(string friendUid)
+    {
+        var friendsResp = TokenManager.Instance?.cachedFriends;
+        if (friendsResp?.data == null) return null;
+
+        foreach (var f in friendsResp.data)
+            if (f.uid == friendUid) return f;
+
+        return null;
+    }
+
+    private void ShowFallbackProfile(string uid)
+    {
+        if (nameText    != null) nameText.text         = "Unknown #0000";
+        if (levelText   != null) levelText.text        = "lvl ?";
+        if (bioText     != null) bioText.text          = "";
+        if (avatarImage != null) avatarImage.sprite    = null;
+        Debug.LogWarning($"[ProfileManager] Fallback profile shown for uid={uid}");
+    }
+
+    // ========== UI ==========
 
     private void UpdateUI(TokenManager.UserProfileData profile, TokenManager.UserStatsData stats)
     {
@@ -181,13 +204,14 @@ public class ProfileManager : MonoBehaviour
             return;
         }
 
-        string displayName   = profile.displayName ?? "Unknown";
+        string displayName   = profile.displayName   ?? "Unknown";
         string discriminator = profile.discriminator ?? "0000";
-        nameText.text = $"{displayName} #{discriminator}";
-        if (debugLogs) Debug.Log($"[ProfileManager] Name: {nameText.text}");
+
+        if (nameText  != null) nameText.text  = $"{displayName} #{discriminator}";
+        if (debugLogs) Debug.Log($"[ProfileManager] Name: {nameText?.text}");
 
         int level = stats?.level ?? profile.stats?.level ?? 1;
-        levelText.text = $"lvl {level}";
+        if (levelText != null) levelText.text = $"lvl {level}";
         if (debugLogs) Debug.Log($"[ProfileManager] Level: {level}");
 
         cachedBio = profile.bio ?? "...";
@@ -196,33 +220,36 @@ public class ProfileManager : MonoBehaviour
 
         if (!string.IsNullOrEmpty(profile.photoURL))
             StartCoroutine(LoadAvatar(profile.photoURL));
-        else
+        else if (avatarImage != null)
             avatarImage.sprite = null;
 
-        if (debugLogs) Debug.Log("[ProfileManager] Profile loaded successfully");
+        if (debugLogs) Debug.Log("[ProfileManager] UpdateUI done");
     }
 
     private IEnumerator LoadAvatar(string url)
     {
         if (debugLogs) Debug.Log($"[ProfileManager] Loading avatar from: {url}");
 
-        UnityWebRequest request = UnityWebRequestTexture.GetTexture(url);
-        yield return request.SendWebRequest();
+        using (UnityWebRequest request = UnityWebRequestTexture.GetTexture(url))
+        {
+            yield return request.SendWebRequest();
 
-        if (request.result == UnityWebRequest.Result.Success)
-        {
-            Texture2D texture = DownloadHandlerTexture.GetContent(request);
-            avatarImage.sprite = Sprite.Create(
-                texture,
-                new Rect(0, 0, texture.width, texture.height),
-                new Vector2(0.5f, 0.5f)
-            );
-            if (debugLogs) Debug.Log("[ProfileManager] Avatar loaded successfully");
-        }
-        else
-        {
-            Debug.LogError($"[ProfileManager] Failed to load avatar: {request.error}");
-            avatarImage.sprite = null;
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                Texture2D texture = DownloadHandlerTexture.GetContent(request);
+                if (avatarImage != null)
+                    avatarImage.sprite = Sprite.Create(
+                        texture,
+                        new Rect(0, 0, texture.width, texture.height),
+                        new Vector2(0.5f, 0.5f)
+                    );
+                if (debugLogs) Debug.Log("[ProfileManager] Avatar loaded successfully");
+            }
+            else
+            {
+                Debug.LogError($"[ProfileManager] Failed to load avatar: {request.error}");
+                if (avatarImage != null) avatarImage.sprite = null;
+            }
         }
     }
 }
