@@ -14,6 +14,9 @@ public class FriendsPanelBinder : MonoBehaviour
     [Header("Tab Controller")]
     [SerializeField] private FriendsTabController tabController;
 
+    [Header("Board Switcher (profile panel animation)")]
+    [SerializeField] private BoardSlideSwitcher boardSlideSwitcher; // НОВОЕ
+
     [Header("Debug")]
     [SerializeField] private bool debugLogs = true;
 
@@ -225,6 +228,9 @@ public class FriendsPanelBinder : MonoBehaviour
         view.OnRemoveClicked += RemoveFriend;
         view.OnAcceptClicked += AcceptFriendRequest;
 
+        // НОВОЕ: клик по всей строке
+        view.OnRowClicked += HandleFriendRowClicked;
+
         if (debugLogs)
             Debug.Log($"[FriendsPanelBinder] Created item for {friend.displayName}#{friend.discriminator}, status={friend.status}");
     }
@@ -281,7 +287,6 @@ public class FriendsPanelBinder : MonoBehaviour
         if (debugLogs)
             Debug.Log($"[FriendsPanelBinder] Opening profile for: {uid}");
 
-        // TODO: Открыть профиль друга
         ProfileManager profileManager = FindFirstObjectByType<ProfileManager>();
         if (profileManager != null)
         {
@@ -290,6 +295,45 @@ public class FriendsPanelBinder : MonoBehaviour
         else
         {
             Debug.LogWarning("[FriendsPanelBinder] ProfileManager not found!");
+        }
+
+        // Дополнительно можно сразу переключать панель на профиль
+        if (boardSlideSwitcher != null)
+        {
+            boardSlideSwitcher.OnProfileClicked();
+        }
+        else
+        {
+            if (debugLogs)
+                Debug.LogWarning("[FriendsPanelBinder] BoardSlideSwitcher not set, profile panel won't animate.");
+        }
+    }
+
+    private void HandleFriendRowClicked(string friendUid)
+    {
+        if (debugLogs)
+            Debug.Log($"[FriendsPanelBinder] Row clicked for friend: {friendUid}");
+
+        // 1) Загружаем профиль друга
+        ProfileManager profileManager = FindFirstObjectByType<ProfileManager>();
+        if (profileManager != null)
+        {
+            profileManager.LoadProfile(friendUid);
+        }
+        else
+        {
+            Debug.LogWarning("[FriendsPanelBinder] ProfileManager not found!");
+        }
+
+        // 2) Переключаем анимированную панель на вкладку Profile
+        if (boardSlideSwitcher != null)
+        {
+            boardSlideSwitcher.OnProfileClicked();
+        }
+        else
+        {
+            if (debugLogs)
+                Debug.LogWarning("[FriendsPanelBinder] BoardSlideSwitcher not set, profile panel won't animate.");
         }
     }
 

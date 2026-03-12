@@ -14,10 +14,13 @@ public class FriendItemView : MonoBehaviour
     [SerializeField] private Button actionButton;
     [SerializeField] private Image actionButtonIcon;
 
+    // НОВОЕ: кнопка на всю строку (Button на корневом FriendRowItem)
+    [SerializeField] private Button rowButton;
+
     [Header("Button Icons")]
-    [SerializeField] private Sprite profileIcon;    // → для активных друзей
-    [SerializeField] private Sprite cancelIcon;     // ✕ для отправленных запросов
-    [SerializeField] private Sprite acceptIcon;     // ✓ для входящих запросов
+    [SerializeField] private Sprite profileIcon;
+    [SerializeField] private Sprite cancelIcon;
+    [SerializeField] private Sprite acceptIcon;
 
     [Header("Colors")]
     [SerializeField] private Color normalBackgroundColor = new Color(0.17f, 0.17f, 0.17f);
@@ -28,16 +31,24 @@ public class FriendItemView : MonoBehaviour
     private string friendUid;
     private string friendStatus;
 
+    // Уже было:
     public event Action<string> OnProfileClicked;
     public event Action<string> OnRemoveClicked;
     public event Action<string> OnAcceptClicked;
 
+    // НОВОЕ: событие клика по строке (отлично подойдет под "открыть профиль")
+    public event Action<string> OnRowClicked;
+
     private void Awake()
     {
+        Debug.Log($"[FriendItemView] Awake, rowButton={rowButton}, actionButton={actionButton}");
+
         if (actionButton != null)
-        {
             actionButton.onClick.AddListener(HandleButtonClick);
-        }
+
+        // НОВОЕ: подписка на клик по всей строке
+        if (rowButton != null)
+            rowButton.onClick.AddListener(HandleRowClick);
     }
 
     public void Bind(string uid, string displayName, string discriminator, int level, string photoURL, string status)
@@ -45,27 +56,19 @@ public class FriendItemView : MonoBehaviour
         friendUid = uid;
         friendStatus = status;
 
-        // Устанавливаем текст
         if (nameText != null)
             nameText.text = $"{displayName}#{discriminator}";
 
         if (levelText != null)
             levelText.text = $"lvl {level}";
 
-        // Настраиваем кнопку в зависимости от статуса
         SetupActionButton(status);
 
-        // Загружаем аватар
         if (!string.IsNullOrEmpty(photoURL))
-        {
             StartCoroutine(LoadAvatar(photoURL));
-        }
         else
-        {
             SetDefaultAvatar();
-        }
 
-        // Устанавливаем фон
         if (background != null)
             background.color = normalBackgroundColor;
 
@@ -96,6 +99,17 @@ public class FriendItemView : MonoBehaviour
                 actionButtonIcon.color = acceptIconColor;
                 break;
         }
+    }
+
+    // НОВОЕ: клик по всей строке
+    private void HandleRowClick()
+    {
+        Debug.Log($"[FriendItemView] Row clicked, friendUid={friendUid}");
+        // можно просто использовать отдельное событие
+        OnRowClicked?.Invoke(friendUid);
+
+        // или, если хочешь, чтобы клик по строке тоже считался "открыть профиль":
+        // OnProfileClicked?.Invoke(friendUid);
     }
 
     private void HandleButtonClick()
@@ -150,8 +164,9 @@ public class FriendItemView : MonoBehaviour
     private void OnDestroy()
     {
         if (actionButton != null)
-        {
             actionButton.onClick.RemoveAllListeners();
-        }
+
+        if (rowButton != null)
+            rowButton.onClick.RemoveAllListeners();
     }
 }

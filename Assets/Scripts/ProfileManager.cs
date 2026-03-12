@@ -32,6 +32,7 @@ public class ProfileManager : MonoBehaviour
         if (LocalizationManager.Instance != null)
             LocalizationManager.Instance.OnLanguageChanged += OnLanguageChanged;
 
+        // При открытии панели — загружаем мой профиль
         LoadProfile(null);
     }
 
@@ -114,8 +115,62 @@ public class ProfileManager : MonoBehaviour
 
     private IEnumerator LoadFriendProfileCoroutine(string friendUid)
     {
-        yield return null;
-        Debug.LogWarning("[ProfileManager] Friend profile loading not implemented yet!");
+        // Ждём готовности сессии, как для своего профиля
+        while (TokenManager.Instance != null && !TokenManager.Instance.IsSessionReady)
+            yield return new WaitForSeconds(0.1f);
+
+        if (TokenManager.Instance == null)
+        {
+            Debug.LogError("[ProfileManager] TokenManager.Instance is null while loading friend profile!");
+            yield break;
+        }
+
+        // Используем кеш друзей из TokenManager
+        var friendsResp = TokenManager.Instance.cachedFriends;
+        if (friendsResp?.data == null || friendsResp.data.Length == 0)
+        {
+            Debug.LogError("[ProfileManager] cachedFriends is null or empty, cannot find friend profile!");
+            yield break;
+        }
+
+        TokenManager.FriendData friendData = null;
+        foreach (var f in friendsResp.data)
+        {
+            if (f.uid == friendUid)
+            {
+                friendData = f;
+                break;
+            }
+        }
+
+        if (friendData == null)
+        {
+            Debug.LogError($"[ProfileManager] Friend with uid={friendUid} not found in cachedFriends!");
+            yield break;
+        }
+
+        // Собираем временные структуры под уже существующий UpdateUI
+        var profile = new TokenManager.UserProfileData
+        {
+            uid          = friendData.uid,
+            displayName  = friendData.displayName,
+            discriminator = friendData.discriminator,
+            bio          = friendData.bio,
+            photoURL     = friendData.photoURL,
+            stats        = new TokenManager.UserProfileStats
+            {
+                level = friendData.level
+            }
+        };
+
+        // Для друга нам достаточно уровня; UserStatsData можно не собирать
+        UpdateUI(profile, null);
+
+        // Пиннутые ачивки друга: пока ничего не делаем или можно очистить панель,
+        // если не хочешь показывать свои ачивки в чужом профиле.
+        // pinnedBinder?.Clear(); // если есть такой метод
+
+        if (debugLogs) Debug.Log("[ProfileManager] Friend profile loaded successfully from cachedFriends");
     }
 
     private void UpdateUI(TokenManager.UserProfileData profile, TokenManager.UserStatsData stats)
@@ -126,7 +181,7 @@ public class ProfileManager : MonoBehaviour
             return;
         }
 
-        string displayName  = profile.displayName ?? "Unknown";
+        string displayName   = profile.displayName ?? "Unknown";
         string discriminator = profile.discriminator ?? "0000";
         nameText.text = $"{displayName} #{discriminator}";
         if (debugLogs) Debug.Log($"[ProfileManager] Name: {nameText.text}");
