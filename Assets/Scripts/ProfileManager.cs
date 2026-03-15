@@ -15,10 +15,9 @@ public class ProfileManager : MonoBehaviour
     [Header("Pinned Achievements")]
     [SerializeField] private PinnedAchievementsPanelBinder pinnedBinder;
 
-    // *** ДОБАВЛЕНО ***
     [Header("Friend Profile Extras")]
-    [SerializeField] private GameObject tabsContainer;       // объект с TabsContainer — скрывается при просмотре чужого профиля
-    [SerializeField] private FriendsPanelBinder friendsPanelBinder; // панель друзей — при чужом профиле показывает только "active"
+    [SerializeField] private GameObject tabsContainer;
+    [SerializeField] private FriendsPanelBinder friendsPanelBinder;
 
     [Header("Debug")]
     [SerializeField] private bool debugLogs = true;
@@ -139,11 +138,9 @@ public class ProfileManager : MonoBehaviour
             return;
         }
 
-        // *** ДОБАВЛЕНО: показываем TabsContainer для своего профиля ***
+        // *** ИСПРАВЛЕНО: только SetTabsContainerVisible — он уже скрывает/показывает FriendsTabController,
+        // так как FriendsTabController находится на том же объекте TabsContainer ***
         SetTabsContainerVisible(true);
-
-        // *** ДОБАВЛЕНО: сбрасываем FriendsPanelBinder в обычный режим (с табами) ***
-        SetFriendsPanelMode(friendsOnly: false);
 
         var profileResponse = TokenManager.Instance.profile;
         var statsResponse   = TokenManager.Instance.userStats;
@@ -161,7 +158,6 @@ public class ProfileManager : MonoBehaviour
             TokenManager.Instance.achievementsMine
         );
 
-        // *** ДОБАВЛЕНО: применяем своих друзей в обычном режиме ***
         if (friendsPanelBinder != null && TokenManager.Instance.cachedFriends != null)
         {
             string myUid = profileResponse.data.uid;
@@ -193,13 +189,9 @@ public class ProfileManager : MonoBehaviour
             yield break;
         }
 
-        // *** ДОБАВЛЕНО: скрываем TabsContainer — при чужом профиле он не нужен ***
+        // *** ИСПРАВЛЕНО: только SetTabsContainerVisible — убирает FriendsTabController автоматически ***
         SetTabsContainerVisible(false);
 
-        // *** ДОБАВЛЕНО: переключаем FriendsPanelBinder в режим "только друзья" (без табов запросов) ***
-        SetFriendsPanelMode(friendsOnly: true);
-
-        // Ищем данные друга в кэше
         TokenManager.FriendData friendData = FindFriendInCache(friendUid);
 
         if (friendData != null)
@@ -224,7 +216,6 @@ public class ProfileManager : MonoBehaviour
             ShowFallbackProfile(friendUid);
         }
 
-        // *** ДОБАВЛЕНО: загружаем закреплённые ачивки друга ***
         if (pinnedBinder != null && TokenManager.Instance.achievementsAll != null)
         {
             TokenManager.UserAchievementListResponse friendAchievements = null;
@@ -244,7 +235,6 @@ public class ProfileManager : MonoBehaviour
             }
         }
 
-        // *** ДОБАВЛЕНО: загружаем друзей друга и показываем только active ***
         if (friendsPanelBinder != null)
         {
             TokenManager.FriendsResponse friendsFriends = null;
@@ -343,9 +333,13 @@ public class ProfileManager : MonoBehaviour
         }
     }
 
-    // *** ДОБАВЛЕНО: хелперы управления видимостью TabsContainer и режимом FriendsPanelBinder ***
+    // ========== ХЕЛПЕРЫ ==========
 
-    /// <summary>Показывает или скрывает TabsContainer (разделитель секций в своём профиле)</summary>
+    /// <summary>
+    /// Показывает или скрывает TabsContainer.
+    /// Так как FriendsTabController находится на том же объекте TabsContainer,
+    /// этот метод автоматически управляет и табами друзей.
+    /// </summary>
     private void SetTabsContainerVisible(bool visible)
     {
         if (tabsContainer == null) return;
@@ -353,24 +347,6 @@ public class ProfileManager : MonoBehaviour
         if (debugLogs) Debug.Log($"[ProfileManager] TabsContainer.SetActive({visible})");
     }
 
-    /// <summary>
-    /// Переключает режим FriendsPanelBinder.
-    /// friendsOnly=true  — скрывает FriendsTabController (нет табов запросов), показывает только active.
-    /// friendsOnly=false — показывает FriendsTabController обратно (обычный режим для своего профиля).
-    /// </summary>
-    private void SetFriendsPanelMode(bool friendsOnly)
-    {
-        if (friendsPanelBinder == null) return;
-
-        var tabController = friendsPanelBinder.GetComponentInChildren<FriendsTabController>(true);
-        if (tabController != null)
-        {
-            tabController.gameObject.SetActive(!friendsOnly);
-            if (debugLogs) Debug.Log($"[ProfileManager] FriendsTabController.SetActive({!friendsOnly})");
-        }
-        else
-        {
-            if (debugLogs) Debug.Log("[ProfileManager] FriendsTabController not found in FriendsPanelBinder children");
-        }
-    }
+    // *** УДАЛЕНО: SetFriendsPanelMode — был избыточен,
+    // так как FriendsTabController живёт на TabsContainer и скрывается вместе с ним ***
 }

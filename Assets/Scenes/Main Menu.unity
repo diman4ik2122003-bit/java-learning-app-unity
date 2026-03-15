@@ -17263,6 +17263,8 @@ MonoBehaviour:
   levelText: {fileID: 1403346150}
   bioText: {fileID: 1197004822}
   pinnedBinder: {fileID: 616961539}
+  tabsContainer: {fileID: 648492631}
+  friendsPanelBinder: {fileID: 1505182814}
   debugLogs: 1
 --- !u!1 &1722862796
 GameObject:
