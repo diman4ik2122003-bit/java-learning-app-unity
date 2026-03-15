@@ -40,6 +40,7 @@ public class FriendsPanelBinder : MonoBehaviour
         if (debugLogs)
             Debug.Log($"[FriendsPanelBinder] Apply called with {friendsResp?.data?.Length ?? -1} friends");
 
+        // *** ИСПРАВЛЕНО: отписка перед подпиской — исключает дублирование событий ***
         if (tabController != null)
         {
             tabController.OnTabChanged -= OnTabChanged;
@@ -59,12 +60,18 @@ public class FriendsPanelBinder : MonoBehaviour
             allFriendsData = new TokenManager.FriendData[0];
             UpdateTabCounts();
             ClearContent();
+            // *** ИСПРАВЛЕНО: сбрасываем таб на AllFriends чтобы не остался pending при пустом списке ***
+            tabController?.SwitchTab(FriendTab.AllFriends);
             return;
         }
 
         allFriendsData = friendsResp.data;
         UpdateTabCounts();
-        OnTabChanged(tabController?.GetCurrentTab() ?? FriendTab.AllFriends);
+
+        // *** ИСПРАВЛЕНО: всегда переключаемся на AllFriends при каждом Apply ***
+        // Без этого, если до этого был активен таб PendingSent/PendingReceived,
+        // при открытии чужого профиля показался бы пустой список вместо друзей
+        tabController?.SwitchTab(FriendTab.AllFriends);
     }
 
     private void UpdateTabCounts()

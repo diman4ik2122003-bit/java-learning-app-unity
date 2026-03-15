@@ -15,6 +15,11 @@ public class ProfileManager : MonoBehaviour
     [Header("Pinned Achievements")]
     [SerializeField] private PinnedAchievementsPanelBinder pinnedBinder;
 
+    // *** ДОБАВЛЕНО ***
+    [Header("Friend Profile Extras")]
+    [SerializeField] private GameObject tabsContainer;       // объект с TabsContainer — скрывается при просмотре чужого профиля
+    [SerializeField] private FriendsPanelBinder friendsPanelBinder; // панель друзей — при чужом профиле показывает только "active"
+
     [Header("Debug")]
     [SerializeField] private bool debugLogs = true;
 
@@ -134,6 +139,12 @@ public class ProfileManager : MonoBehaviour
             return;
         }
 
+        // *** ДОБАВЛЕНО: показываем TabsContainer для своего профиля ***
+        SetTabsContainerVisible(true);
+
+        // *** ДОБАВЛЕНО: сбрасываем FriendsPanelBinder в обычный режим (с табами) ***
+        SetFriendsPanelMode(friendsOnly: false);
+
         var profileResponse = TokenManager.Instance.profile;
         var statsResponse   = TokenManager.Instance.userStats;
 
@@ -149,6 +160,14 @@ public class ProfileManager : MonoBehaviour
             TokenManager.Instance.achievementsAll,
             TokenManager.Instance.achievementsMine
         );
+
+        // *** ДОБАВЛЕНО: применяем своих друзей в обычном режиме ***
+        if (friendsPanelBinder != null && TokenManager.Instance.cachedFriends != null)
+        {
+            string myUid = profileResponse.data.uid;
+            friendsPanelBinder.Apply(TokenManager.Instance.cachedFriends, myUid);
+            if (debugLogs) Debug.Log("[ProfileManager] Friends panel applied for my profile");
+        }
     }
 
     private IEnumerator WaitForSessionAndLoad()
@@ -174,6 +193,13 @@ public class ProfileManager : MonoBehaviour
             yield break;
         }
 
+        // *** ДОБАВЛЕНО: скрываем TabsContainer — при чужом профиле он не нужен ***
+        SetTabsContainerVisible(false);
+
+        // *** ДОБАВЛЕНО: переключаем FriendsPanelBinder в режим "только друзья" (без табов запросов) ***
+        SetFriendsPanelMode(friendsOnly: true);
+
+        // Ищем данные друга в кэше
         TokenManager.FriendData friendData = FindFriendInCache(friendUid);
 
         if (friendData != null)
@@ -191,13 +217,52 @@ public class ProfileManager : MonoBehaviour
             };
 
             UpdateUI(profile, null);
-
-            if (debugLogs) Debug.Log("[ProfileManager] Friend profile loaded from cache");
-            yield break;
+        }
+        else
+        {
+            Debug.LogWarning($"[ProfileManager] Friend {friendUid} not found in cachedFriends, showing fallback");
+            ShowFallbackProfile(friendUid);
         }
 
-        Debug.LogWarning($"[ProfileManager] Friend {friendUid} not found in cachedFriends, showing fallback");
-        ShowFallbackProfile(friendUid);
+        // *** ДОБАВЛЕНО: загружаем закреплённые ачивки друга ***
+        if (pinnedBinder != null && TokenManager.Instance.achievementsAll != null)
+        {
+            TokenManager.UserAchievementListResponse friendAchievements = null;
+            yield return TokenManager.Instance.GetAchievementsByUid(
+                friendUid,
+                r => friendAchievements = r
+            );
+
+            if (friendAchievements != null)
+            {
+                pinnedBinder.Apply(TokenManager.Instance.achievementsAll, friendAchievements);
+                if (debugLogs) Debug.Log($"[ProfileManager] Pinned achievements applied for friend {friendUid}");
+            }
+            else
+            {
+                Debug.LogWarning($"[ProfileManager] Could not load achievements for friend {friendUid}");
+            }
+        }
+
+        // *** ДОБАВЛЕНО: загружаем друзей друга и показываем только active ***
+        if (friendsPanelBinder != null)
+        {
+            TokenManager.FriendsResponse friendsFriends = null;
+            yield return TokenManager.Instance.GetFriendsByUid(
+                friendUid,
+                r => friendsFriends = r
+            );
+
+            if (friendsFriends != null)
+            {
+                friendsPanelBinder.Apply(friendsFriends, friendUid);
+                if (debugLogs) Debug.Log($"[ProfileManager] Friends panel applied for friend {friendUid}, count={friendsFriends.data?.Length ?? 0}");
+            }
+            else
+            {
+                Debug.LogWarning($"[ProfileManager] Could not load friends for uid {friendUid}");
+            }
+        }
     }
 
     private TokenManager.FriendData FindFriendInCache(string friendUid)
@@ -275,6 +340,37 @@ public class ProfileManager : MonoBehaviour
                 Debug.LogError($"[ProfileManager] Failed to load avatar: {request.error}");
                 if (avatarImage != null) avatarImage.sprite = null;
             }
+        }
+    }
+
+    // *** ДОБАВЛЕНО: хелперы управления видимостью TabsContainer и режимом FriendsPanelBinder ***
+
+    /// <summary>Показывает или скрывает TabsContainer (разделитель секций в своём профиле)</summary>
+    private void SetTabsContainerVisible(bool visible)
+    {
+        if (tabsContainer == null) return;
+        tabsContainer.SetActive(visible);
+        if (debugLogs) Debug.Log($"[ProfileManager] TabsContainer.SetActive({visible})");
+    }
+
+    /// <summary>
+    /// Переключает режим FriendsPanelBinder.
+    /// friendsOnly=true  — скрывает FriendsTabController (нет табов запросов), показывает только active.
+    /// friendsOnly=false — показывает FriendsTabController обратно (обычный режим для своего профиля).
+    /// </summary>
+    private void SetFriendsPanelMode(bool friendsOnly)
+    {
+        if (friendsPanelBinder == null) return;
+
+        var tabController = friendsPanelBinder.GetComponentInChildren<FriendsTabController>(true);
+        if (tabController != null)
+        {
+            tabController.gameObject.SetActive(!friendsOnly);
+            if (debugLogs) Debug.Log($"[ProfileManager] FriendsTabController.SetActive({!friendsOnly})");
+        }
+        else
+        {
+            if (debugLogs) Debug.Log("[ProfileManager] FriendsTabController not found in FriendsPanelBinder children");
         }
     }
 }

@@ -40,7 +40,7 @@ public class TokenManager : MonoBehaviour
     public AchievementListResponse achievementsAll;
     public UserAchievementListResponse achievementsMine;
     public LeaderboardResponse cachedLeaderboard;
-    public FriendsResponse cachedFriends; // ← ДОБАВЛЕНО
+    public FriendsResponse cachedFriends;
     public bool IsSessionReady { get; private set; }
     public bool IsIslandsReady { get; private set; }
 
@@ -156,7 +156,7 @@ public class TokenManager : MonoBehaviour
             Debug.LogError("[TokenManager] Leaderboard NOT loaded!");
         }
 
-        // 7. Друзья ← ДОБАВЛЕНО
+        // 7. Друзья
         yield return Get<FriendsResponse>(
             "/friends",
             ok =>
@@ -173,7 +173,7 @@ public class TokenManager : MonoBehaviour
         yield return LoadIslandsProgress(uid);
         IsIslandsReady = true;
 
-        // 9. Прогресс уровней (челленджей) для карты островов
+        // 9. Прогресс уровней
         Debug.Log("[TokenManager] Before LoadChallengesProgress");
         yield return LoadChallengesProgress(uid);
         Debug.Log("[TokenManager] After LoadChallengesProgress");
@@ -288,9 +288,9 @@ public class TokenManager : MonoBehaviour
         ApplyAchievementsToPanel();
     }
 
-    // ========== FRIENDS PANEL HELPER ========== ← ДОБАВЛЕНО
+    // ========== FRIENDS PANEL HELPER ==========
 
-    /// <summary>Обновить список друзей</summary>
+    /// <summary>Обновить список друзей (моих)</summary>
     public void RefreshFriends()
     {
         StartCoroutine(RefreshFriendsRoutine());
@@ -430,9 +430,9 @@ public class TokenManager : MonoBehaviour
         }
     }
 
-    // ========== FRIENDS HTTP METHODS ========== ← ДОБАВЛЕНО
+    // ========== FRIENDS HTTP METHODS ==========
 
-    /// <summary>Получить список друзей GET /friends</summary>
+    /// <summary>Получить список моих друзей GET /friends</summary>
     public IEnumerator GetFriends(Action<FriendsResponse> onResult)
     {
         yield return Get<FriendsResponse>("/friends", onResult);
@@ -461,6 +461,28 @@ public class TokenManager : MonoBehaviour
     public IEnumerator RemoveFriend(string friendId, Action<bool, string> onResult)
     {
         yield return DeleteRequest($"/friends/{friendId}", onResult);
+    }
+
+    // *** ДОБАВЛЕНО: друзья и ачивки ДРУГОГО пользователя ***
+
+    /// <summary>
+    /// Получить список друзей другого пользователя.
+    /// Бэк: GET /friends/user/:uid
+    /// Возвращает только записи со статусом "active".
+    /// </summary>
+    public IEnumerator GetFriendsByUid(string uid, Action<FriendsResponse> onResult)
+    {
+        yield return Get<FriendsResponse>($"/friends/user/{uid}", onResult);
+    }
+
+    /// <summary>
+    /// Получить все ачивки другого пользователя.
+    /// Бэк: GET /achievements/user/:uid
+    /// Фильтрацию по isPinned делает PinnedAchievementsPanelBinder.Apply().
+    /// </summary>
+    public IEnumerator GetAchievementsByUid(string uid, Action<UserAchievementListResponse> onResult)
+    {
+        yield return Get<UserAchievementListResponse>($"/achievements/user/{uid}", onResult);
     }
 
     // Вспомогательный метод для POST с JSON
@@ -788,6 +810,7 @@ public class TokenManager : MonoBehaviour
     }
 
     // ========== LEADERBOARD ==========
+
     [System.Serializable]
     public class LeaderboardEntry
     {
@@ -815,7 +838,7 @@ public class TokenManager : MonoBehaviour
         public LeaderboardData data;
     }
 
-    // ========== FRIENDS ========== ← ДОБАВЛЕНО
+    // ========== FRIENDS ==========
 
     [Serializable]
     public class FriendData

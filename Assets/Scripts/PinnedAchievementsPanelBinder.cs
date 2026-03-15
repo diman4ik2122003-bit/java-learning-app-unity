@@ -93,16 +93,22 @@ public class PinnedAchievementsPanelBinder : MonoBehaviour
 
     private void CreateRow(List<TokenManager.UserAchievement> userAchievements)
     {
+        // *** ИСПРАВЛЕНО: защита от null allAchievements ***
+        if (allAchievements == null)
+        {
+            Debug.LogError("[PinnedAchievementsPanelBinder] allAchievements is null in CreateRow!");
+            return;
+        }
+
         GameObject rowObj = Instantiate(achievementRowPrefab, pinnedContainer, false);
 
-        // растягиваем строку по ширине content
         var rt = rowObj.GetComponent<RectTransform>();
         if (rt != null)
         {
-            rt.anchorMin  = new Vector2(0f, rt.anchorMin.y);
-            rt.anchorMax  = new Vector2(1f, rt.anchorMax.y);
-            rt.offsetMin  = new Vector2(0f, rt.offsetMin.y);
-            rt.offsetMax  = new Vector2(0f, rt.offsetMax.y);
+            rt.anchorMin = new Vector2(0f, rt.anchorMin.y);
+            rt.anchorMax = new Vector2(1f, rt.anchorMax.y);
+            rt.offsetMin = new Vector2(0f, rt.offsetMin.y);
+            rt.offsetMax = new Vector2(0f, rt.offsetMax.y);
         }
 
         foreach (var userAch in userAchievements)
@@ -150,8 +156,14 @@ public class PinnedAchievementsPanelBinder : MonoBehaviour
             var child = pinnedContainer.GetChild(i).gameObject;
 #if UNITY_EDITOR
             if (!Application.isPlaying) DestroyImmediate(child);
-            else Destroy(child);
+            else
+            {
+                // *** ИСПРАВЛЕНО: сразу скрываем, чтобы Apply не видел старые объекты в тот же кадр ***
+                child.SetActive(false);
+                Destroy(child);
+            }
 #else
+            child.SetActive(false);
             Destroy(child);
 #endif
         }
