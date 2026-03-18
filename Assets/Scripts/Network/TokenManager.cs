@@ -18,6 +18,7 @@ public class TokenManager : MonoBehaviour
 
     [Header("Backend base")]
     [SerializeField] private string apiBaseUrl = "https://java-learning-app.onrender.com/api/v1";
+    public string ApiBaseUrl => apiBaseUrl;
 
     [Header("UI (optional)")]
     [SerializeField] private TMP_Text nicknameText;
@@ -484,6 +485,13 @@ public class TokenManager : MonoBehaviour
     {
         yield return Get<UserAchievementListResponse>($"/achievements/user/{uid}", onResult);
     }
+
+    /// <summary>Поиск пользователя по нику и тегу GET /friends/search?q=Ник#Тег</summary>
+public IEnumerator SearchPeople(string nickname, string discriminator, Action<FriendsResponse> onResult)
+{
+    string query = UnityWebRequest.EscapeURL($"{nickname}#{discriminator}");
+    yield return Get<FriendsResponse>($"/friends/search?q={query}", onResult);
+}
 
     // Вспомогательный метод для POST с JSON
     private IEnumerator PostJson(string path, string jsonBody, Action<bool, string> onResult)
