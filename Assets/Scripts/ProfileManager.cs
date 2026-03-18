@@ -173,7 +173,7 @@ public class ProfileManager : MonoBehaviour
         LoadMyProfile();
     }
 
-    // ========== ПРОФИЛЬ ДРУГА ==========
+    // ========== ПРОФИЛЬ ДРУГА / НАЙДЕННОГО ПОЛЬЗОВАТЕЛЯ ==========
 
     private IEnumerator LoadFriendProfileCoroutine(string friendUid)
     {
@@ -191,13 +191,13 @@ public class ProfileManager : MonoBehaviour
         SetTabsContainerVisible(false);
         SetBackButtonVisible(true);
 
+        // 1. Ищем в кэше друзей
         TokenManager.FriendData friendData = FindFriendInCache(friendUid);
 
         if (friendData != null)
         {
-            if (debugLogs) Debug.Log($"[ProfileManager] Found friend {friendUid} in cache, bio='{friendData.bio}'");
-
-            var profile = new TokenManager.UserProfileData
+            if (debugLogs) Debug.Log($"[ProfileManager] Found {friendUid} in cache");
+            UpdateUI(new TokenManager.UserProfileData
             {
                 uid           = friendData.uid,
                 displayName   = friendData.displayName,
@@ -205,51 +205,68 @@ public class ProfileManager : MonoBehaviour
                 bio           = friendData.bio,
                 photoURL      = friendData.photoURL,
                 stats         = new TokenManager.UserProfileStats { level = friendData.level }
-            };
-
-            UpdateUI(profile, null);
+            }, null);
         }
         else
         {
-            Debug.LogWarning($"[ProfileManager] Friend {friendUid} not found in cachedFriends, showing fallback");
-            ShowFallbackProfile(friendUid);
+            // 2. Не в кэше — пользователь найден через поиск, тянем через /friends/user/:uid
+            if (debugLogs) Debug.Log($"[ProfileManager] {friendUid} not in cache, fetching via GetFriendsByUid");
+
+            TokenManager.FriendsResponse searchResult = null;
+            yield return TokenManager.Instance.GetFriendsByUid(friendUid, r => searchResult = r);
+
+            var found = searchResult?.data != null && searchResult.data.Length > 0
+                ? searchResult.data[0] : null;
+
+            if (found != null)
+            {
+                UpdateUI(new TokenManager.UserProfileData
+                {
+                    uid           = found.uid,
+                    displayName   = found.displayName,
+                    discriminator = found.discriminator,
+                    bio           = found.bio,
+                    photoURL      = found.photoURL,
+                    stats         = new TokenManager.UserProfileStats { level = found.level }
+                }, null);
+            }
+            else
+            {
+                ShowFallbackProfile(friendUid);
+            }
         }
 
+        // 3. Пинованные ачивки
         if (pinnedBinder != null && TokenManager.Instance.achievementsAll != null)
         {
             TokenManager.UserAchievementListResponse friendAchievements = null;
-            yield return TokenManager.Instance.GetAchievementsByUid(
-                friendUid,
-                r => friendAchievements = r
-            );
+            yield return TokenManager.Instance.GetAchievementsByUid(friendUid, r => friendAchievements = r);
 
             if (friendAchievements != null)
             {
                 pinnedBinder.Apply(TokenManager.Instance.achievementsAll, friendAchievements);
-                if (debugLogs) Debug.Log($"[ProfileManager] Pinned achievements applied for friend {friendUid}");
+                if (debugLogs) Debug.Log($"[ProfileManager] Pinned achievements applied for {friendUid}");
             }
             else
             {
-                Debug.LogWarning($"[ProfileManager] Could not load achievements for friend {friendUid}");
+                Debug.LogWarning($"[ProfileManager] Could not load achievements for {friendUid}");
             }
         }
 
+        // 4. Друзья найденного пользователя
         if (friendsPanelBinder != null)
         {
             TokenManager.FriendsResponse friendsFriends = null;
-            yield return TokenManager.Instance.GetFriendsByUid(
-                friendUid,
-                r => friendsFriends = r
-            );
+            yield return TokenManager.Instance.GetFriendsByUid(friendUid, r => friendsFriends = r);
 
             if (friendsFriends != null)
             {
                 friendsPanelBinder.Apply(friendsFriends, friendUid);
-                if (debugLogs) Debug.Log($"[ProfileManager] Friends panel applied for friend {friendUid}, count={friendsFriends.data?.Length ?? 0}");
+                if (debugLogs) Debug.Log($"[ProfileManager] Friends panel applied for {friendUid}, count={friendsFriends.data?.Length ?? 0}");
             }
             else
             {
-                Debug.LogWarning($"[ProfileManager] Could not load friends for uid {friendUid}");
+                Debug.LogWarning($"[ProfileManager] Could not load friends for {friendUid}");
             }
         }
     }
@@ -348,10 +365,6 @@ public class ProfileManager : MonoBehaviour
         if (debugLogs) Debug.Log($"[ProfileManager] BackButton.SetActive({visible})");
     }
 
-    /// <summary>
-    /// Вызывается кнопкой "Назад" — возвращает на свой профиль с анимацией.
-    /// Повесить на OnClick кнопки в Inspector.
-    /// </summary>
     public void OnBackButtonClicked()
     {
         if (debugLogs) Debug.Log("[ProfileManager] BackButton clicked, returning to my profile");
@@ -359,6 +372,6 @@ public class ProfileManager : MonoBehaviour
         if (boardSlideSwitcher != null)
             boardSlideSwitcher.ForceOpenMyProfile();
         else
-            ForceLoadProfile(null); // fallback без анимации
+            ForceLoadProfile(null);
     }
 }

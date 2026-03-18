@@ -1,7 +1,6 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Networking;
 
 public class UserSearchPanel : MonoBehaviour
 {
@@ -42,40 +41,23 @@ public class UserSearchPanel : MonoBehaviour
         while (TokenManager.Instance == null || !TokenManager.Instance.IsSessionReady)
             yield return new WaitForSeconds(0.1f);
 
-        string query = UnityWebRequest.EscapeURL($"{nickname}#{discriminator}");
-        string url   = $"{TokenManager.Instance.ApiBaseUrl}/friends/search?q={query}";
+        TokenManager.FriendsResponse response = null;
+        yield return TokenManager.Instance.SearchPeople(nickname, discriminator, r => response = r);
 
-        if (debugLogs) Debug.Log($"[UserSearchPanel] GET {url}");
-
-        using (UnityWebRequest www = UnityWebRequest.Get(url))
+        if (response?.data == null || response.data.Length == 0)
         {
-            www.SetRequestHeader("Authorization", $"Bearer {TokenManager.Instance.firebaseIdToken}");
-            yield return www.SendWebRequest();
-
-            if (www.result != UnityWebRequest.Result.Success)
-            {
-                Debug.LogError($"[UserSearchPanel] Request failed: {www.error}");
-                SetNotFound(true);
-                yield break;
-            }
-
-            var response = JsonUtility.FromJson<TokenManager.FriendsResponse>(www.downloadHandler.text);
-
-            if (response?.data == null || response.data.Length == 0)
-            {
-                if (debugLogs) Debug.Log("[UserSearchPanel] User not found");
-                SetNotFound(true);
-                yield break;
-            }
-
-            string uid = response.data[0].uid;
-            if (debugLogs) Debug.Log($"[UserSearchPanel] Found uid={uid}, opening profile");
-
-            if (boardSlideSwitcher != null)
-                boardSlideSwitcher.ForceOpenProfile(uid);
-            else
-                Debug.LogWarning("[UserSearchPanel] BoardSlideSwitcher not set!");
+            if (debugLogs) Debug.Log("[UserSearchPanel] User not found");
+            SetNotFound(true);
+            yield break;
         }
+
+        string uid = response.data[0].uid;
+        if (debugLogs) Debug.Log($"[UserSearchPanel] Found uid={uid}, opening profile");
+
+        if (boardSlideSwitcher != null)
+            boardSlideSwitcher.ForceOpenProfile(uid);
+        else
+            Debug.LogWarning("[UserSearchPanel] BoardSlideSwitcher not set!");
     }
 
     // ========== ХЕЛПЕР ==========
