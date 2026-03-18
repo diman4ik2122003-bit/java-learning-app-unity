@@ -42,6 +42,7 @@ public class TokenManager : MonoBehaviour
     public UserAchievementListResponse achievementsMine;
     public LeaderboardResponse cachedLeaderboard;
     public FriendsResponse cachedFriends;
+    public event Action OnFriendsUpdated;
     public bool IsSessionReady { get; private set; }
     public bool IsIslandsReady { get; private set; }
 
@@ -89,6 +90,8 @@ public class TokenManager : MonoBehaviour
         if (JavaJudgeClient.Instance != null)
             JavaJudgeClient.Instance.SetAuthToken(token);
 
+        SSEClient.Instance?.Connect(token);
+        
         StartCoroutine(LoadAllSessionData());
     }
 
@@ -314,6 +317,7 @@ public class TokenManager : MonoBehaviour
                 friendsPanel.Apply(ok, uid);
                 Debug.Log($"[TokenManager] Friends refreshed: {ok?.data?.Length ?? 0} friends");
             }
+            OnFriendsUpdated?.Invoke();
         });
     }
 

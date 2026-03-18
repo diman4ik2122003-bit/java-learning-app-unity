@@ -49,6 +49,7 @@ public class UserSearchPanel : MonoBehaviour
         }
 
         TokenManager.FriendData found = response.data[0];
+        Debug.Log($"[UserSearchPanel] Found: uid={found.uid}, name={found.displayName}, status={found.status}, bio={found.bio}, photo={found.photoURL}");
         if (debugLogs) Debug.Log($"[UserSearchPanel] Found uid={found.uid}, opening profile");
 
         // Сохраняем данные в ProfileManager ДО открытия панели
