@@ -98,6 +98,22 @@ public class BoardSlideSwitcher : MonoBehaviour
         _routine = StartCoroutine(ForceOpenProfileRoutine());
     }
 
+    public void ForceOpenMyProfile()
+    {
+        if (debugLogs)
+            Debug.Log($"[BoardSlideSwitcher] ForceOpenMyProfile, _isOpen={_isOpen}");
+
+        _pendingFriendUid = null;
+
+        if (_routine != null)
+        {
+            StopCoroutine(_routine);
+            _routine = null;
+        }
+
+        _routine = StartCoroutine(ForceOpenProfileRoutine());
+    }
+
     private IEnumerator ForceOpenProfileRoutine()
     {
         if (debugLogs)
@@ -111,7 +127,6 @@ public class BoardSlideSwitcher : MonoBehaviour
         if (profileManager == null)
             Debug.LogWarning("[BoardSlideSwitcher] ProfileManager not found!");
 
-        // Сначала закрываем — ПОТОМ трогаем ProfileManager
         if (_isOpen)
         {
             yield return Move(boardRect.anchoredPosition, closedAnchoredPos, moveUpTime, alphaWhenClosed, EaseInCubic);
@@ -121,7 +136,6 @@ public class BoardSlideSwitcher : MonoBehaviour
                 yield return new WaitForSecondsRealtime(topPauseSeconds);
         }
 
-        // Только после закрытия говорим ProfileManager что грузить
         if (profileManager != null)
         {
             if (profileManager.gameObject.activeInHierarchy)
@@ -178,6 +192,10 @@ public class BoardSlideSwitcher : MonoBehaviour
             _currentTab = clickedTab;
             SetTabImmediate(_currentTab);
 
+            // *** сброс профиля на свой при открытии таба Profile ***
+            if (clickedTab == Tab.Profile)
+                ResetProfileToMine();
+
             if (TokenManager.Instance != null)
                 TokenManager.Instance.RefreshAll();
 
@@ -220,6 +238,10 @@ public class BoardSlideSwitcher : MonoBehaviour
         if (topPauseSeconds > 0f)
             yield return new WaitForSecondsRealtime(topPauseSeconds);
 
+        // *** сброс профиля на свой при переключении на таб Profile ***
+        if (nextTab == Tab.Profile)
+            ResetProfileToMine();
+
         _currentTab = nextTab;
         SetTabImmediate(_currentTab);
         yield return null;
@@ -233,6 +255,23 @@ public class BoardSlideSwitcher : MonoBehaviour
     }
 
     // ========== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ==========
+
+    /// <summary>
+    /// Сбрасывает ProfileManager на свой профиль.
+    /// Вызывается при любом открытии таба Profile через кнопку навигации.
+    /// </summary>
+    private void ResetProfileToMine()
+    {
+        ProfileManager profileManager = FindFirstObjectByType<ProfileManager>(FindObjectsInactive.Include);
+        if (profileManager == null) return;
+
+        if (profileManager.gameObject.activeInHierarchy)
+            profileManager.ForceLoadProfile(null);
+        else
+            profileManager.ResetCurrentProfile(); // загрузится в OnEnable
+
+        if (debugLogs) Debug.Log("[BoardSlideSwitcher] Profile reset to mine");
+    }
 
     private void SetTabImmediate(Tab tab)
     {

@@ -19,6 +19,10 @@ public class ProfileManager : MonoBehaviour
     [SerializeField] private GameObject tabsContainer;
     [SerializeField] private FriendsPanelBinder friendsPanelBinder;
 
+    [Header("Navigation")]
+    [SerializeField] private GameObject backButton;
+    [SerializeField] private BoardSlideSwitcher boardSlideSwitcher;
+
     [Header("Debug")]
     [SerializeField] private bool debugLogs = true;
 
@@ -85,10 +89,6 @@ public class ProfileManager : MonoBehaviour
         if (debugLogs) Debug.Log("[ProfileManager] ResetCurrentProfile called");
     }
 
-    /// <summary>
-    /// Загружает профиль без guard-проверки.
-    /// Вызывать из BoardSlideSwitcher когда объект уже активен.
-    /// </summary>
     public void ForceLoadProfile(string uid)
     {
         if (debugLogs) Debug.Log($"[ProfileManager] ForceLoadProfile uid={uid ?? "null (my profile)"}");
@@ -138,9 +138,8 @@ public class ProfileManager : MonoBehaviour
             return;
         }
 
-        // *** ИСПРАВЛЕНО: только SetTabsContainerVisible — он уже скрывает/показывает FriendsTabController,
-        // так как FriendsTabController находится на том же объекте TabsContainer ***
         SetTabsContainerVisible(true);
+        SetBackButtonVisible(false);
 
         var profileResponse = TokenManager.Instance.profile;
         var statsResponse   = TokenManager.Instance.userStats;
@@ -189,14 +188,14 @@ public class ProfileManager : MonoBehaviour
             yield break;
         }
 
-        // *** ИСПРАВЛЕНО: только SetTabsContainerVisible — убирает FriendsTabController автоматически ***
         SetTabsContainerVisible(false);
+        SetBackButtonVisible(true);
 
         TokenManager.FriendData friendData = FindFriendInCache(friendUid);
 
         if (friendData != null)
         {
-            if (debugLogs) Debug.Log($"[ProfileManager] Found friend {friendUid} in cache");
+            if (debugLogs) Debug.Log($"[ProfileManager] Found friend {friendUid} in cache, bio='{friendData.bio}'");
 
             var profile = new TokenManager.UserProfileData
             {
@@ -295,7 +294,7 @@ public class ProfileManager : MonoBehaviour
         if (levelText != null) levelText.text = $"lvl {level}";
         if (debugLogs) Debug.Log($"[ProfileManager] Level: {level}");
 
-        cachedBio = profile.bio ?? "...";
+        cachedBio = !string.IsNullOrEmpty(profile.bio) ? profile.bio : "...";
         UpdateBioText();
 
         if (!string.IsNullOrEmpty(profile.photoURL))
@@ -335,11 +334,6 @@ public class ProfileManager : MonoBehaviour
 
     // ========== ХЕЛПЕРЫ ==========
 
-    /// <summary>
-    /// Показывает или скрывает TabsContainer.
-    /// Так как FriendsTabController находится на том же объекте TabsContainer,
-    /// этот метод автоматически управляет и табами друзей.
-    /// </summary>
     private void SetTabsContainerVisible(bool visible)
     {
         if (tabsContainer == null) return;
@@ -347,6 +341,24 @@ public class ProfileManager : MonoBehaviour
         if (debugLogs) Debug.Log($"[ProfileManager] TabsContainer.SetActive({visible})");
     }
 
-    // *** УДАЛЕНО: SetFriendsPanelMode — был избыточен,
-    // так как FriendsTabController живёт на TabsContainer и скрывается вместе с ним ***
+    private void SetBackButtonVisible(bool visible)
+    {
+        if (backButton == null) return;
+        backButton.SetActive(visible);
+        if (debugLogs) Debug.Log($"[ProfileManager] BackButton.SetActive({visible})");
+    }
+
+    /// <summary>
+    /// Вызывается кнопкой "Назад" — возвращает на свой профиль с анимацией.
+    /// Повесить на OnClick кнопки в Inspector.
+    /// </summary>
+    public void OnBackButtonClicked()
+    {
+        if (debugLogs) Debug.Log("[ProfileManager] BackButton clicked, returning to my profile");
+
+        if (boardSlideSwitcher != null)
+            boardSlideSwitcher.ForceOpenMyProfile();
+        else
+            ForceLoadProfile(null); // fallback без анимации
+    }
 }

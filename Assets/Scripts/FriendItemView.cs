@@ -72,7 +72,7 @@ public class FriendItemView : MonoBehaviour
         if (background != null) background.color = normalBackgroundColor;
 
         if (viewProfileButton != null)
-            viewProfileButton.gameObject.SetActive(status == "active");
+            viewProfileButton.gameObject.SetActive(true);
 
         if (removeButton != null)
             removeButton.gameObject.SetActive(status == "active" || status == "pending_sent");
