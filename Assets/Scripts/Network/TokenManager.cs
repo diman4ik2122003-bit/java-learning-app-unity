@@ -433,6 +433,46 @@ public class TokenManager : MonoBehaviour
 
     // ========== FRIENDS HTTP METHODS ==========
 
+    /// <summary>Получить публичный профиль пользователя по uid</summary>
+public IEnumerator GetProfileByUid(string uid, Action<UserProfileResponse> onResult)
+{
+    yield return Get<UserProfileResponse>($"/auth/profile/{uid}", onResult);
+}
+
+    /// <summary>Отправить запрос в друзья по uid (для ProfileManager)</summary>
+public IEnumerator SendFriendRequest(string friendUid, Action<bool> onResult)
+{
+    string body = JsonUtility.ToJson(new FriendActionData { friendUid = friendUid });
+    bool ok = false;
+    yield return PostJson("/friends/request", body, (success, _) => ok = success);
+    onResult?.Invoke(ok);
+}
+
+/// <summary>Принять запрос в друзья по uid (для ProfileManager)</summary>
+public IEnumerator AcceptFriendRequest(string friendUid, Action<bool> onResult)
+{
+    string body = JsonUtility.ToJson(new FriendActionData { friendUid = friendUid });
+    bool ok = false;
+    yield return PostJson("/friends/accept", body, (success, _) => ok = success);
+    onResult?.Invoke(ok);
+}
+
+/// <summary>Отклонить входящий запрос по uid (для ProfileManager)</summary>
+public IEnumerator DeclineFriendRequest(string friendUid, Action<bool> onResult)
+{
+    bool ok = false;
+    yield return DeleteRequest($"/friends/{friendUid}", (success, _) => ok = success);
+    onResult?.Invoke(ok);
+}
+
+/// <summary>Удалить друга по uid (для ProfileManager)</summary>
+public IEnumerator RemoveFriend(string friendUid, Action<bool> onResult)
+{
+    bool ok = false;
+    yield return DeleteRequest($"/friends/{friendUid}", (success, _) => ok = success);
+    onResult?.Invoke(ok);
+}
+
     /// <summary>Получить список моих друзей GET /friends</summary>
     public IEnumerator GetFriends(Action<FriendsResponse> onResult)
     {
