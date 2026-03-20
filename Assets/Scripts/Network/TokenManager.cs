@@ -79,22 +79,44 @@ public class TokenManager : MonoBehaviour
 #endif
     }
 
-    /// <summary>Вызывается из JS с idToken Firebase</summary>
-    public void ReceiveTokenFromJS(string token)
-    {
-        firebaseIdToken = token;
-        IsSessionReady = false;
-        IsIslandsReady = false;
-        Debug.Log("[TokenManager] ReceiveTokenFromJS, token length = " + (firebaseIdToken?.Length ?? 0));
+    private bool _isLoadingSession = false; 
 
+    /// <summary>Вызывается из JS с idToken Firebase</summary>
+private float _lastTokenReceiveTime = -999f;
+private const float TOKEN_DEBOUNCE_SECONDS = 3f;
+
+public void ReceiveTokenFromJS(string token)
+{
+    // Если сессия уже грузится или только что загрузилась — обновляем токен, но не перезапускаем
+    if (_isLoadingSession)
+    {
+        Debug.LogWarning("[TokenManager] Session loading, updating token silently");
+        firebaseIdToken = token;
         if (JavaJudgeClient.Instance != null)
             JavaJudgeClient.Instance.SetAuthToken(token);
-
-        SSEClient.Instance?.Connect(token);
-        
-        StartCoroutine(LoadAllSessionData());
+        return;
     }
 
+    if (IsSessionReady && Time.realtimeSinceStartup - _lastTokenReceiveTime < TOKEN_DEBOUNCE_SECONDS)
+    {
+        Debug.LogWarning("[TokenManager] Duplicate token call within debounce window, skipping");
+        firebaseIdToken = token; // токен обновляем, но сессию не перезапускаем
+        return;
+    }
+
+    _lastTokenReceiveTime = Time.realtimeSinceStartup;
+    firebaseIdToken = token;
+    IsSessionReady = false;
+    IsIslandsReady = false;
+
+    Debug.Log("[TokenManager] ReceiveTokenFromJS, token length = " + (firebaseIdToken?.Length ?? 0));
+
+    if (JavaJudgeClient.Instance != null)
+        JavaJudgeClient.Instance.SetAuthToken(token);
+
+    SSEClient.Instance?.Connect(token);
+    StartCoroutine(LoadAllSessionData());
+}
     public void RefreshAll()
     {
         if (string.IsNullOrEmpty(firebaseIdToken))
@@ -108,6 +130,7 @@ public class TokenManager : MonoBehaviour
     /// <summary>Главная корутина: профиль, статы, ачивки, прогресс уровней, друзья</summary>
     private IEnumerator LoadAllSessionData()
     {
+        _isLoadingSession = true;
         IsSessionReady = false;
         Debug.Log("[TokenManager] LoadAllSessionData START");
 
@@ -121,9 +144,11 @@ public class TokenManager : MonoBehaviour
                     nicknameText.text = profile?.data?.displayName ?? "Нет ника";
             });
 
-        if (profile?.data == null)
-            yield break;
-
+            if (profile?.data == null)
+            {
+                _isLoadingSession = false;  // ← добавить
+                yield break;
+            }
         string uid = profile.data.uid;
 
         // 2. Общая статистика
@@ -206,6 +231,7 @@ public class TokenManager : MonoBehaviour
         }
 
         IsSessionReady = true;
+        _isLoadingSession = false;
     }
 
     /// <summary>Универсальный GET с авторизацией и парсингом JSON через JsonUtility</summary>
@@ -260,23 +286,11 @@ public class TokenManager : MonoBehaviour
 
     public void ApplyAchievementsToPanel()
     {
-        Debug.LogError($"[TokenManager] ApplyAchievementsToPanel CALLED!");
-        Debug.LogError($"achievementsPanel={achievementsPanel != null}");
-        Debug.LogError($"achievementCategories={achievementCategories != null}");
-        Debug.LogError($"achievementsAll={achievementsAll != null}");
-        Debug.LogError($"achievementsMine={achievementsMine != null}");
-
         if (achievementsPanel)
-        {
-            Debug.LogError("[TokenManager] Calling achievementsPanel.Apply()...");
             achievementsPanel.Apply(achievementCategories, achievementsAll, achievementsMine);
-        }
         else
-        {
             Debug.LogError("[TokenManager] achievementsPanel is NULL!");
-        }
     }
-
     /// <summary>Re-fetch user achievements and re-apply to panel</summary>
     public void RefreshUserAchievements()
     {
@@ -565,6 +579,8 @@ public IEnumerator SearchPeople(string nickname, string discriminator, Action<Fr
                 }
                 catch { errMsg = www.error; }
 
+                Debug.LogError($"[TokenManager] POST {path} FAILED: code={www.responseCode} | raw={www.downloadHandler.text}");
+
                 Debug.LogError($"[TokenManager] POST {path} FAILED: {errMsg}");
                 onResult?.Invoke(false, errMsg);
                 yield break;
@@ -700,11 +716,6 @@ public IEnumerator SearchPeople(string nickname, string discriminator, Action<Fr
                 islandManager.RefreshCurrentIsland();
             }
 
-            Debug.Log("[TokenManager] Challenges progress body: " + json);
-            Debug.Log("[TokenManager] resp == null: " + (resp == null));
-            Debug.Log("[TokenManager] resp.data == null: " + (resp != null && resp.data == null));
-            Debug.Log("[TokenManager] resp.data.Length: " + (resp != null && resp.data != null ? resp.data.Length : -1));
-            Debug.Log("[TokenManager] dict keys: " + string.Join(",", dict.Keys));
         }
     }
 

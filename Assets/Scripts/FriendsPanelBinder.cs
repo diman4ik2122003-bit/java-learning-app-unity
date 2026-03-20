@@ -22,11 +22,16 @@ public class FriendsPanelBinder : MonoBehaviour
 
     private TokenManager.FriendData[] allFriendsData;
     private string currentUserUid;
+    private bool _isMyProfile = true;
+    private bool _hasPendingData = false;
 
     private void OnEnable()
     {
         if (tabController != null)
             tabController.OnTabChanged += OnTabChanged;
+
+        if (_hasPendingData)
+            RebuildUI();
     }
 
     private void OnDisable()
@@ -40,12 +45,20 @@ public class FriendsPanelBinder : MonoBehaviour
         if (debugLogs)
             Debug.Log($"[FriendsPanelBinder] Apply called with {friendsResp?.data?.Length ?? -1} friends");
 
-        // *** ИСПРАВЛЕНО: отписка перед подпиской — исключает дублирование событий ***
-        if (tabController != null)
-        {
-            tabController.OnTabChanged -= OnTabChanged;
-            tabController.OnTabChanged += OnTabChanged;
-        }
+        string selfUid = TokenManager.Instance?.profile?.data?.uid;
+        _isMyProfile = (myUid == selfUid);
+        currentUserUid = myUid;
+        allFriendsData = friendsResp?.data ?? new TokenManager.FriendData[0];
+        _hasPendingData = true;
+
+        if (!gameObject.activeInHierarchy) return;
+
+        RebuildUI();
+    }
+
+    private void RebuildUI()
+    {
+        _hasPendingData = false;
 
         if (!verticalContent || !itemPrefab)
         {
@@ -53,24 +66,13 @@ public class FriendsPanelBinder : MonoBehaviour
             return;
         }
 
-        currentUserUid = myUid;
-
-        if (friendsResp?.data == null || friendsResp.data.Length == 0)
+        if (tabController != null)
         {
-            allFriendsData = new TokenManager.FriendData[0];
-            UpdateTabCounts();
-            ClearContent();
-            // *** ИСПРАВЛЕНО: сбрасываем таб на AllFriends чтобы не остался pending при пустом списке ***
-            tabController?.SwitchTab(FriendTab.AllFriends);
-            return;
+            tabController.OnTabChanged -= OnTabChanged;
+            tabController.OnTabChanged += OnTabChanged;
         }
 
-        allFriendsData = friendsResp.data;
         UpdateTabCounts();
-
-        // *** ИСПРАВЛЕНО: всегда переключаемся на AllFriends при каждом Apply ***
-        // Без этого, если до этого был активен таб PendingSent/PendingReceived,
-        // при открытии чужого профиля показался бы пустой список вместо друзей
         tabController?.SwitchTab(FriendTab.AllFriends);
     }
 
@@ -150,12 +152,14 @@ public class FriendsPanelBinder : MonoBehaviour
             discriminator: friend.discriminator ?? "0000",
             level:         friend.level,
             photoURL:      friend.photoURL,
-            status:        friend.status
+            status:        friend.status,
+            isMyProfile:   _isMyProfile
         );
 
         view.OnProfileClicked += OpenFriendProfile;
         view.OnRemoveClicked  += RemoveFriend;
         view.OnAcceptClicked  += AcceptFriendRequest;
+        view.OnDeclineClicked += DeclineFriendRequest;
     }
 
     private void ClearContent()
@@ -220,6 +224,17 @@ public class FriendsPanelBinder : MonoBehaviour
         else Debug.LogError($"[FriendsPanelBinder] Error accepting friend request: {error}");
     }
 
+    private void DeclineFriendRequest(string friendId)
+    {
+        StartCoroutine(TokenManager.Instance.DeclineFriendRequest(friendId, OnFriendRequestDeclined));
+    }
+
+    private void OnFriendRequestDeclined(bool success)
+    {
+        if (success) TokenManager.Instance.RefreshFriends();
+        else Debug.LogError("[FriendsPanelBinder] Error declining friend request");
+    }
+
 #if UNITY_EDITOR
     [ContextMenu("Test Fill Friends")]
     private void TestFillFriends()
@@ -229,12 +244,12 @@ public class FriendsPanelBinder : MonoBehaviour
             success = true,
             data = new TokenManager.FriendData[]
             {
-                new TokenManager.FriendData { uid="friend1",   displayName="CodeMaster",   discriminator="1234", level=15, status="active",           photoURL="", bio="Java expert"    },
-                new TokenManager.FriendData { uid="friend2",   displayName="DragonSlayer",  discriminator="5678", level=22, status="active",           photoURL="", bio="Pro gamer"      },
-                new TokenManager.FriendData { uid="friend3",   displayName="JavaGuru",      discriminator="9999", level=18, status="active",           photoURL="", bio="Loves coffee"   },
-                new TokenManager.FriendData { uid="pending1",  displayName="NewPlayer",     discriminator="1111", level=5,  status="pending_sent",     photoURL="", bio="Just started"   },
-                new TokenManager.FriendData { uid="incoming1", displayName="BugHunter",     discriminator="3333", level=12, status="pending_received", photoURL="", bio="Found all bugs" },
-                new TokenManager.FriendData { uid="incoming2", displayName="AlgoMaster",    discriminator="6666", level=20, status="pending_received", photoURL="", bio="O(1) everything"},
+                new TokenManager.FriendData { uid="friend1",   displayName="CodeMaster",  discriminator="1234", level=15, status="active",           photoURL="", bio="Java expert"     },
+                new TokenManager.FriendData { uid="friend2",   displayName="DragonSlayer", discriminator="5678", level=22, status="active",           photoURL="", bio="Pro gamer"       },
+                new TokenManager.FriendData { uid="friend3",   displayName="JavaGuru",     discriminator="9999", level=18, status="active",           photoURL="", bio="Loves coffee"    },
+                new TokenManager.FriendData { uid="pending1",  displayName="NewPlayer",    discriminator="1111", level=5,  status="pending_sent",     photoURL="", bio="Just started"    },
+                new TokenManager.FriendData { uid="incoming1", displayName="BugHunter",    discriminator="3333", level=12, status="pending_received", photoURL="", bio="Found all bugs"  },
+                new TokenManager.FriendData { uid="incoming2", displayName="AlgoMaster",   discriminator="6666", level=20, status="pending_received", photoURL="", bio="O(1) everything" },
             }
         };
         Apply(testData, "current_user");
