@@ -387,6 +387,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Code Editor
       objectReference: {fileID: 0}
+    - target: {fileID: 4923723183216823064, guid: 0a470aba8ced84b4a82a7735e75f937f, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: OnButtonClicked
+      objectReference: {fileID: 0}
     - target: {fileID: 5195616661272585872, guid: 0a470aba8ced84b4a82a7735e75f937f, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: 587
@@ -394,6 +398,22 @@ PrefabInstance:
     - target: {fileID: 5195616661272585872, guid: 0a470aba8ced84b4a82a7735e75f937f, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 1061
+      objectReference: {fileID: 0}
+    - target: {fileID: 5196762234318053782, guid: 0a470aba8ced84b4a82a7735e75f937f, type: 3}
+      propertyPath: moveUpTime
+      value: 1.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 5196762234318053782, guid: 0a470aba8ced84b4a82a7735e75f937f, type: 3}
+      propertyPath: openSprite
+      value: 
+      objectReference: {fileID: -4153699555378586793, guid: 8f9af3cfaa5e7ff469ca22419e5fe012, type: 3}
+    - target: {fileID: 5196762234318053782, guid: 0a470aba8ced84b4a82a7735e75f937f, type: 3}
+      propertyPath: closeSprite
+      value: 
+      objectReference: {fileID: 8697185337675980133, guid: eefdb4ec7cd897549b3759bdff25db49, type: 3}
+    - target: {fileID: 5196762234318053782, guid: 0a470aba8ced84b4a82a7735e75f937f, type: 3}
+      propertyPath: moveDownTime
+      value: 1.3
       objectReference: {fileID: 0}
     - target: {fileID: 5793010025455590929, guid: 0a470aba8ced84b4a82a7735e75f937f, type: 3}
       propertyPath: m_AnchorMax.y
