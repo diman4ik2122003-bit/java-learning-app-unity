@@ -2071,7 +2071,6 @@ MonoBehaviour:
   normalTextColor: {r: 0.6117647, g: 0.45490196, b: 0.3254902, a: 1}
   highlightTextColor: {r: 0.87058824, g: 0.64705884, b: 0.23529412, a: 1}
   defaultAvatarSprite: {fileID: 0}
-  debugLogs: 0
 --- !u!114 &194565452
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7525,7 +7524,6 @@ MonoBehaviour:
   normalTextColor: {r: 0.6117647, g: 0.45490196, b: 0.3254902, a: 1}
   highlightTextColor: {r: 0.87058824, g: 0.64705884, b: 0.23529412, a: 1}
   defaultAvatarSprite: {fileID: 0}
-  debugLogs: 0
 --- !u!114 &625278080
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8607,7 +8605,6 @@ MonoBehaviour:
   normalTextColor: {r: 0.6117647, g: 0.45490196, b: 0.3254902, a: 1}
   highlightTextColor: {r: 0.87058824, g: 0.64705884, b: 0.23529412, a: 1}
   defaultAvatarSprite: {fileID: 0}
-  debugLogs: 0
 --- !u!114 &716103903
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9244,7 +9241,6 @@ MonoBehaviour:
   normalTextColor: {r: 0.6117647, g: 0.45490196, b: 0.3254902, a: 1}
   highlightTextColor: {r: 0.87058824, g: 0.64705884, b: 0.23529412, a: 1}
   defaultAvatarSprite: {fileID: 0}
-  debugLogs: 0
 --- !u!114 &811131764
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15220,7 +15216,6 @@ MonoBehaviour:
   normalTextColor: {r: 0.6117647, g: 0.45490196, b: 0.3254902, a: 1}
   highlightTextColor: {r: 0.87058824, g: 0.64705884, b: 0.23529412, a: 1}
   defaultAvatarSprite: {fileID: 0}
-  debugLogs: 0
 --- !u!114 &1366291801
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16826,7 +16821,6 @@ MonoBehaviour:
   normalTextColor: {r: 0.6117647, g: 0.45490196, b: 0.3254902, a: 1}
   highlightTextColor: {r: 0.87058824, g: 0.64705884, b: 0.23529412, a: 1}
   defaultAvatarSprite: {fileID: 0}
-  debugLogs: 0
 --- !u!114 &1524690604
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -18820,7 +18814,6 @@ MonoBehaviour:
   normalTextColor: {r: 0.6117647, g: 0.45490196, b: 0.3254902, a: 1}
   highlightTextColor: {r: 0.87058824, g: 0.64705884, b: 0.23529412, a: 1}
   defaultAvatarSprite: {fileID: 0}
-  debugLogs: 0
 --- !u!114 &1695087615
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20929,7 +20922,6 @@ MonoBehaviour:
   normalTextColor: {r: 0.6117647, g: 0.45490196, b: 0.3254902, a: 1}
   highlightTextColor: {r: 0.87058824, g: 0.64705884, b: 0.23529412, a: 1}
   defaultAvatarSprite: {fileID: 0}
-  debugLogs: 0
 --- !u!114 &1953180291
 MonoBehaviour:
   m_ObjectHideFlags: 0
