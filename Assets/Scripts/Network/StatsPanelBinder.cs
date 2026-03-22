@@ -1,4 +1,3 @@
-// Assets/Scripts/UI/StatsPanelBinder.cs
 using TMPro;
 using UnityEngine;
 
@@ -12,12 +11,32 @@ public class StatsPanelBinder : MonoBehaviour
     [SerializeField] private TextMeshProUGUI txtCompletedLessons;
     [SerializeField] private TextMeshProUGUI txtCompletedCourses;
     [SerializeField] private TextMeshProUGUI txtAchievementsCount;
-    [SerializeField] private TextMeshProUGUI txtTotalChallengesSolved; // берём из /gamification/stats
+    [SerializeField] private TextMeshProUGUI txtTotalChallengesSolved;
 
-    // TokenManager вызывает это после загрузки /auth/profile и /gamification/stats/{uid}
+    private TokenManager.UserProfileResponse _pendingProfile;
+    private TokenManager.UserStatsResponse _pendingStats;
+    private bool _hasPendingData = false;
+
+    private void OnEnable()
+    {
+        if (_hasPendingData)
+            RebuildUI();
+    }
+
     public void Apply(TokenManager.UserProfileResponse profile, TokenManager.UserStatsResponse stats)
     {
-        var p = profile?.data;
+        _pendingProfile = profile;
+        _pendingStats = stats;
+        _hasPendingData = true;
+
+        if (!gameObject.activeInHierarchy) return;
+
+        RebuildUI();
+    }
+
+    private void RebuildUI()
+    {
+        var p = _pendingProfile?.data;
         if (p == null) return;
 
         if (txtLevel) txtLevel.text = p.stats.level.ToString();
@@ -28,7 +47,7 @@ public class StatsPanelBinder : MonoBehaviour
         if (txtCompletedCourses) txtCompletedCourses.text = p.stats.completedCourses.ToString();
         if (txtAchievementsCount) txtAchievementsCount.text = p.stats.achievementsCount.ToString();
 
-        var s = stats?.data;
+        var s = _pendingStats?.data;
         if (s != null && txtTotalChallengesSolved)
             txtTotalChallengesSolved.text = s.totalChallengesSolved.ToString();
     }

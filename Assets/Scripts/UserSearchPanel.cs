@@ -9,13 +9,12 @@ public class UserSearchPanel : MonoBehaviour
     [SerializeField] private TMP_InputField discriminatorInput;
     [SerializeField] private GameObject     notFoundText;
 
-    [Header("Board Switcher")]
+    [Header("References")]
     [SerializeField] private BoardSlideSwitcher boardSlideSwitcher;
+    [SerializeField] private ProfileManager     profileManager;
 
     [Header("Debug")]
     [SerializeField] private bool debugLogs = true;
-
-    // ========== ПУБЛИЧНЫЙ МЕТОД — вешаем на кнопку ==========
 
     public void OnSearchButtonClicked()
     {
@@ -34,8 +33,6 @@ public class UserSearchPanel : MonoBehaviour
         StartCoroutine(SearchAndOpen(nickname, discriminator));
     }
 
-    // ========== КОРУТИНА ПОИСКА ==========
-
     private IEnumerator SearchAndOpen(string nickname, string discriminator)
     {
         while (TokenManager.Instance == null || !TokenManager.Instance.IsSessionReady)
@@ -47,20 +44,22 @@ public class UserSearchPanel : MonoBehaviour
         if (response?.data == null || response.data.Length == 0)
         {
             if (debugLogs) Debug.Log("[UserSearchPanel] User not found");
-            SetNotFound(true);
+            PopupManager.Instance?.Show("Пользователь не найден");
             yield break;
         }
 
-        string uid = response.data[0].uid;
-        if (debugLogs) Debug.Log($"[UserSearchPanel] Found uid={uid}, opening profile");
+        TokenManager.FriendData found = response.data[0];
+        Debug.Log($"[UserSearchPanel] Found: uid={found.uid}, name={found.displayName}, status={found.status}, bio={found.bio}, photo={found.photoURL}");
+        if (debugLogs) Debug.Log($"[UserSearchPanel] Found uid={found.uid}, opening profile");
+
+        // Сохраняем данные в ProfileManager ДО открытия панели
+        profileManager?.SetPendingData(found);
 
         if (boardSlideSwitcher != null)
-            boardSlideSwitcher.ForceOpenProfile(uid);
+            boardSlideSwitcher.ForceOpenProfile(found.uid);
         else
             Debug.LogWarning("[UserSearchPanel] BoardSlideSwitcher not set!");
     }
-
-    // ========== ХЕЛПЕР ==========
 
     private void SetNotFound(bool visible)
     {

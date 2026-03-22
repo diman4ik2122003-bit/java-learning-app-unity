@@ -3,6 +3,7 @@ using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Networking;
 
 public class FriendItemView : MonoBehaviour
 {
@@ -20,23 +21,29 @@ public class FriendItemView : MonoBehaviour
     [SerializeField] private Button viewProfileButton;
     [SerializeField] private Button removeButton;
     [SerializeField] private Button acceptButton;
+    [SerializeField] private Button declineButton;
 
     [Header("Colors")]
     [SerializeField] private Color normalBackgroundColor = new Color(0.17f, 0.17f, 0.17f);
 
     private string friendUid;
     private string friendStatus;
+    private string _lastLoadedUrl;
     private RectTransform contextMenuRect;
     private Transform originalParent;
 
     public event Action<string> OnProfileClicked;
     public event Action<string> OnRemoveClicked;
     public event Action<string> OnAcceptClicked;
+    public event Action<string> OnDeclineClicked;
 
     private void Awake()
     {
-        contextMenuRect = contextMenuPanel.GetComponent<RectTransform>();
-        originalParent  = contextMenuPanel.transform.parent;
+        if (contextMenuPanel != null)
+        {
+            contextMenuRect = contextMenuPanel.GetComponent<RectTransform>();
+            originalParent  = contextMenuPanel.transform.parent;
+        }
 
         menuButton?.onClick.AddListener(ToggleContextMenu);
 
@@ -58,32 +65,49 @@ public class FriendItemView : MonoBehaviour
             OnAcceptClicked?.Invoke(friendUid);
         });
 
+        declineButton?.onClick.AddListener(() =>
+        {
+            HideContextMenu();
+            OnDeclineClicked?.Invoke(friendUid);
+        });
+
         HideContextMenu();
     }
 
     public void Bind(string uid, string displayName, string discriminator,
-                     int level, string photoURL, string status)
+                     int level, string photoURL, string status, bool isMyProfile = true)
     {
         friendUid    = uid;
         friendStatus = status;
 
-        if (nameText   != null) nameText.text    = $"{displayName}#{discriminator}";
-        if (levelText  != null) levelText.text   = $"lvl {level}";
+        if (nameText   != null) nameText.text  = $"{displayName}#{discriminator}";
+        if (levelText  != null) levelText.text = $"lvl {level}";
         if (background != null) background.color = normalBackgroundColor;
+
+        if (menuButton != null)
+            menuButton.gameObject.SetActive(true);
 
         if (viewProfileButton != null)
             viewProfileButton.gameObject.SetActive(true);
 
         if (removeButton != null)
-            removeButton.gameObject.SetActive(status == "active" || status == "pending_sent");
+            removeButton.gameObject.SetActive(isMyProfile && (status == "active" || status == "pending_sent"));
 
         if (acceptButton != null)
-            acceptButton.gameObject.SetActive(status == "pending_received");
+            acceptButton.gameObject.SetActive(isMyProfile && status == "pending_received");
 
-        if (!string.IsNullOrEmpty(photoURL))
+        if (declineButton != null)
+            declineButton.gameObject.SetActive(isMyProfile && status == "pending_received");
+
+        if (!string.IsNullOrEmpty(photoURL) && photoURL != _lastLoadedUrl)
+        {
+            _lastLoadedUrl = photoURL;
             StartCoroutine(LoadAvatar(photoURL));
-        else
+        }
+        else if (string.IsNullOrEmpty(photoURL))
+        {
             SetDefaultAvatar();
+        }
 
         HideContextMenu();
         LayoutRebuilder.ForceRebuildLayoutImmediate(GetComponent<RectTransform>());
@@ -95,20 +119,17 @@ public class FriendItemView : MonoBehaviour
 
         bool willBeVisible = !contextMenuPanel.activeSelf;
 
-        // Закрываем все другие открытые меню
         foreach (var other in FindObjectsByType<FriendItemView>(FindObjectsSortMode.None))
             other.HideContextMenu();
 
         if (!willBeVisible) return;
 
-        // Переносим панель на уровень корневого Canvas — выходим из ScrollRect/Mask
         Canvas rootCanvas = GetComponentInParent<Canvas>().rootCanvas;
         contextMenuRect.SetParent(rootCanvas.transform, true);
 
         PositionMenuNearButton(rootCanvas);
 
         contextMenuPanel.SetActive(true);
-        Debug.Log($"[FriendItemView] Context menu opened, uid={friendUid}");
     }
 
     private void PositionMenuNearButton(Canvas rootCanvas)
@@ -117,19 +138,15 @@ public class FriendItemView : MonoBehaviour
 
         RectTransform buttonRect = menuButton.GetComponent<RectTransform>();
 
-        // Получаем 4 угла кнопки в мировых координатах
-        // 0=bottomLeft, 1=topLeft, 2=topRight, 3=bottomRight
         Vector3[] buttonCorners = new Vector3[4];
         buttonRect.GetWorldCorners(buttonCorners);
         Vector3 topRightWorld = buttonCorners[2];
 
-        // Конвертируем правый верхний угол кнопки в экранные координаты
         Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(
             rootCanvas.worldCamera,
             topRightWorld
         );
 
-        // Конвертируем в локальные координаты Canvas
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             rootCanvas.GetComponent<RectTransform>(),
             screenPoint,
@@ -137,7 +154,6 @@ public class FriendItemView : MonoBehaviour
             out Vector2 localPoint
         );
 
-        // pivot (0, 1) = левый верхний угол меню встаёт в точку правого верхнего угла кнопки
         contextMenuRect.anchorMin        = new Vector2(0.5f, 0.5f);
         contextMenuRect.anchorMax        = new Vector2(0.5f, 0.5f);
         contextMenuRect.pivot            = new Vector2(0f, 1f);
@@ -150,28 +166,16 @@ public class FriendItemView : MonoBehaviour
         contextMenuPanel.SetActive(false);
     }
 
-    private void OnDestroy()
-    {
-        // Возвращаем панель обратно перед уничтожением
-        if (contextMenuPanel != null && originalParent != null)
-            contextMenuPanel.transform.SetParent(originalParent, false);
-
-        menuButton?.onClick.RemoveAllListeners();
-        viewProfileButton?.onClick.RemoveAllListeners();
-        removeButton?.onClick.RemoveAllListeners();
-        acceptButton?.onClick.RemoveAllListeners();
-    }
-
     private IEnumerator LoadAvatar(string url)
     {
-        using (var www = UnityEngine.Networking.UnityWebRequestTexture.GetTexture(url))
+        using (var www = UnityWebRequestTexture.GetTexture(url))
         {
             yield return www.SendWebRequest();
 
-            if (www.result == UnityEngine.Networking.UnityWebRequest.Result.Success)
+            if (www.result == UnityWebRequest.Result.Success)
             {
-                Texture2D texture = UnityEngine.Networking.DownloadHandlerTexture.GetContent(www);
-                if (avatar != null)
+                Texture2D texture = DownloadHandlerTexture.GetContent(www);
+                if (avatar != null && texture != null)
                     avatar.sprite = Sprite.Create(
                         texture,
                         new Rect(0, 0, texture.width, texture.height),
@@ -188,5 +192,19 @@ public class FriendItemView : MonoBehaviour
     private void SetDefaultAvatar()
     {
         if (avatar != null) avatar.color = Color.gray;
+    }
+
+    private void OnDestroy()
+    {
+        StopAllCoroutines();
+
+        if (contextMenuPanel != null && originalParent != null)
+            contextMenuPanel.transform.SetParent(originalParent, false);
+
+        menuButton?.onClick.RemoveAllListeners();
+        viewProfileButton?.onClick.RemoveAllListeners();
+        removeButton?.onClick.RemoveAllListeners();
+        acceptButton?.onClick.RemoveAllListeners();
+        declineButton?.onClick.RemoveAllListeners();
     }
 }

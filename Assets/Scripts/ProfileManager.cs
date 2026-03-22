@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using TMPro;
 using UnityEngine.Networking;
 
+
 public class ProfileManager : MonoBehaviour
 {
     [Header("UI References - Profile")]
@@ -19,6 +20,12 @@ public class ProfileManager : MonoBehaviour
     [SerializeField] private GameObject tabsContainer;
     [SerializeField] private FriendsPanelBinder friendsPanelBinder;
 
+    [Header("Friend Action Buttons")]
+    [SerializeField] private GameObject addFriendButton;
+    [SerializeField] private GameObject acceptFriendButton;
+    [SerializeField] private GameObject declineFriendButton;
+    [SerializeField] private GameObject removeFriendButton;
+
     [Header("Navigation")]
     [SerializeField] private GameObject backButton;
     [SerializeField] private BoardSlideSwitcher boardSlideSwitcher;
@@ -31,8 +38,13 @@ public class ProfileManager : MonoBehaviour
     private string currentProfileUid = "NOT_SET";
     private string cachedBio;
 
-    private string _pendingFriendUid = null;
-    private bool   _hasPendingFriend = false;
+    private string _pendingFriendUid  = null;
+    private bool   _hasPendingFriend  = false;
+    private TokenManager.FriendData _pendingFriendData = null;
+    private TokenManager.UserProfileData _currentViewedProfile = null; // ← ДОБАВЛЕНО
+    private Coroutine _pollCoroutine;
+
+    // ========== ЛОКАЛИЗАЦИЯ ==========
 
     private string GetBioPrefix()
     {
@@ -40,10 +52,20 @@ public class ProfileManager : MonoBehaviour
         return lang == "ru" ? "О себе: " : "Bio: ";
     }
 
+    // ========== LIFECYCLE ==========
+
     private void OnEnable()
     {
         if (LocalizationManager.Instance != null)
             LocalizationManager.Instance.OnLanguageChanged += OnLanguageChanged;
+
+        if (TokenManager.Instance != null)
+            TokenManager.Instance.OnFriendsUpdated += OnFriendsUpdated;
+
+        if (SSEClient.Instance != null)
+            SSEClient.Instance.OnFriendRequest += OnSSEFriendRequest;
+
+        _pollCoroutine = StartCoroutine(PollFriendsLoop());
 
         if (_hasPendingFriend)
         {
@@ -67,8 +89,21 @@ public class ProfileManager : MonoBehaviour
         if (LocalizationManager.Instance != null)
             LocalizationManager.Instance.OnLanguageChanged -= OnLanguageChanged;
 
+        if (TokenManager.Instance != null)
+            TokenManager.Instance.OnFriendsUpdated -= OnFriendsUpdated;
+
+        if (SSEClient.Instance != null)
+            SSEClient.Instance.OnFriendRequest -= OnSSEFriendRequest;
+
+        if (_pollCoroutine != null)
+        {
+            StopCoroutine(_pollCoroutine);
+            _pollCoroutine = null;
+        }
+
         _hasPendingFriend = false;
         _pendingFriendUid = null;
+        // ⚠️ _pendingFriendData НЕ сбрасываем здесь — он нужен при следующем открытии профиля
     }
 
     private void OnLanguageChanged(string newLang)
@@ -83,21 +118,56 @@ public class ProfileManager : MonoBehaviour
             bioText.text = GetBioPrefix() + cachedBio;
     }
 
+    // ========== ПУБЛИЧНЫЕ МЕТОДЫ ==========
+
     public void ResetCurrentProfile()
     {
-        currentProfileUid = "NOT_SET";
-        _hasPendingFriend = false;
-        _pendingFriendUid = null;
+        currentProfileUid    = "NOT_SET";
+        _hasPendingFriend    = false;
+        _pendingFriendUid    = null;
+        _pendingFriendData   = null;
+        _currentViewedProfile = null; // ← ДОБАВЛЕНО
         if (debugLogs) Debug.Log("[ProfileManager] ResetCurrentProfile called");
     }
 
     public void ForceLoadProfile(string uid)
     {
         if (debugLogs) Debug.Log($"[ProfileManager] ForceLoadProfile uid={uid ?? "null (my profile)"}");
-        currentProfileUid = "NOT_SET";
-        _hasPendingFriend = false;
-        _pendingFriendUid = null;
+        currentProfileUid    = "NOT_SET";
+        _hasPendingFriend    = false;
+        _pendingFriendUid    = null;
+        // _pendingFriendData не сбрасываем — если uid != null, он понадобится
+        if (uid == null)
+        {
+            _pendingFriendData    = null;
+            _currentViewedProfile = null; // ← ДОБАВЛЕНО
+        }
         LoadProfile(uid);
+    }
+
+    public void SetPendingData(TokenManager.FriendData data)
+    {
+        _pendingFriendData = data;
+        if (debugLogs) Debug.Log($"[ProfileManager] SetPendingData uid={data?.uid}");
+    }
+
+    public void LoadFriendProfile(TokenManager.FriendData data)
+    {
+        if (data == null) return;
+        if (debugLogs) Debug.Log($"[ProfileManager] LoadFriendProfile uid={data.uid}");
+
+        _pendingFriendData = data;
+
+        if (!gameObject.activeInHierarchy)
+        {
+            _pendingFriendUid = data.uid;
+            _hasPendingFriend = true;
+            if (debugLogs) Debug.Log($"[ProfileManager] Object inactive, queued uid={data.uid}");
+            return;
+        }
+
+        currentProfileUid = "NOT_SET";
+        LoadProfile(data.uid);
     }
 
     public void LoadProfile(string uid)
@@ -128,6 +198,8 @@ public class ProfileManager : MonoBehaviour
 
     private void LoadMyProfile()
     {
+        _currentViewedProfile = null; // ← ДОБАВЛЕНО
+
         if (TokenManager.Instance == null)
         {
             Debug.LogError("[ProfileManager] TokenManager.Instance is null!");
@@ -142,6 +214,7 @@ public class ProfileManager : MonoBehaviour
 
         SetTabsContainerVisible(true);
         SetBackButtonVisible(false);
+        HideAllFriendButtons();
 
         var profileResponse = TokenManager.Instance.profile;
         var statsResponse   = TokenManager.Instance.userStats;
@@ -179,7 +252,7 @@ public class ProfileManager : MonoBehaviour
 
     private IEnumerator LoadFriendProfileCoroutine(string friendUid)
     {
-        if (debugLogs) Debug.Log($"[ProfileManager] Loading friend profile: {friendUid}");
+        if (debugLogs) Debug.Log($"[ProfileManager] LoadFriendProfileCoroutine start: friendUid={friendUid}, _pendingFriendData={_pendingFriendData?.uid ?? "NULL"}");
 
         while (TokenManager.Instance != null && !TokenManager.Instance.IsSessionReady)
             yield return new WaitForSeconds(0.1f);
@@ -198,8 +271,8 @@ public class ProfileManager : MonoBehaviour
 
         if (friendData != null)
         {
-            if (debugLogs) Debug.Log($"[ProfileManager] Found {friendUid} in cache");
-            UpdateUI(new TokenManager.UserProfileData
+            if (debugLogs) Debug.Log($"[ProfileManager] Found {friendUid} in friend cache, status={friendData.status}");
+            var profileData = new TokenManager.UserProfileData
             {
                 uid           = friendData.uid,
                 displayName   = friendData.displayName,
@@ -207,38 +280,41 @@ public class ProfileManager : MonoBehaviour
                 bio           = friendData.bio,
                 photoURL      = friendData.photoURL,
                 stats         = new TokenManager.UserProfileStats { level = friendData.level }
-            }, null);
+            };
+            UpdateUI(profileData, null);
+            _currentViewedProfile = profileData; // ← ДОБАВЛЕНО
+            ApplyFriendButtons(friendData.status);
+            _pendingFriendData = null;
+        }
+        // 2. Есть данные из поиска или из кэша после удаления
+        else if (_pendingFriendData != null && _pendingFriendData.uid == friendUid)
+        {
+            if (debugLogs) Debug.Log($"[ProfileManager] Using _pendingFriendData for {friendUid}, status={_pendingFriendData.status}");
+            var profileData = new TokenManager.UserProfileData
+            {
+                uid           = _pendingFriendData.uid,
+                displayName   = _pendingFriendData.displayName,
+                discriminator = _pendingFriendData.discriminator,
+                bio           = _pendingFriendData.bio,
+                photoURL      = _pendingFriendData.photoURL,
+                stats         = new TokenManager.UserProfileStats { level = _pendingFriendData.level }
+            };
+            UpdateUI(profileData, null);
+            _currentViewedProfile = profileData; // ← ДОБАВЛЕНО
+            ApplyFriendButtons(_pendingFriendData.status);
+            _pendingFriendData = null;
         }
         else
         {
-            // 2. Не в кэше — пользователь найден через поиск, тянем через /friends/user/:uid
-            if (debugLogs) Debug.Log($"[ProfileManager] {friendUid} not in cache, fetching via GetFriendsByUid");
-
-            TokenManager.FriendsResponse searchResult = null;
-            yield return TokenManager.Instance.GetFriendsByUid(friendUid, r => searchResult = r);
-
-            var found = searchResult?.data != null && searchResult.data.Length > 0
-                ? searchResult.data[0] : null;
-
-            if (found != null)
-            {
-                UpdateUI(new TokenManager.UserProfileData
-                {
-                    uid           = found.uid,
-                    displayName   = found.displayName,
-                    discriminator = found.discriminator,
-                    bio           = found.bio,
-                    photoURL      = found.photoURL,
-                    stats         = new TokenManager.UserProfileStats { level = found.level }
-                }, null);
-            }
-            else
-            {
-                ShowFallbackProfile(friendUid);
-            }
+            // 3. Нет данных нигде — fallback
+            if (debugLogs) Debug.Log($"[ProfileManager] No data for {friendUid}, showing fallback");
+            ShowFallbackProfile(friendUid);
+            _currentViewedProfile = null; // ← ДОБАВЛЕНО
+            ApplyFriendButtons(null);
+            _pendingFriendData = null;
         }
 
-        // 3. Пинованные ачивки
+        // 4. Пинованные ачивки
         if (pinnedBinder != null && TokenManager.Instance.achievementsAll != null)
         {
             TokenManager.UserAchievementListResponse friendAchievements = null;
@@ -250,12 +326,10 @@ public class ProfileManager : MonoBehaviour
                 if (debugLogs) Debug.Log($"[ProfileManager] Pinned achievements applied for {friendUid}");
             }
             else
-            {
                 Debug.LogWarning($"[ProfileManager] Could not load achievements for {friendUid}");
-            }
         }
 
-        // 4. Друзья найденного пользователя
+        // 5. Друзья найденного пользователя
         if (friendsPanelBinder != null)
         {
             TokenManager.FriendsResponse friendsFriends = null;
@@ -267,9 +341,7 @@ public class ProfileManager : MonoBehaviour
                 if (debugLogs) Debug.Log($"[ProfileManager] Friends panel applied for {friendUid}, count={friendsFriends.data?.Length ?? 0}");
             }
             else
-            {
                 Debug.LogWarning($"[ProfileManager] Could not load friends for {friendUid}");
-            }
         }
     }
 
@@ -291,6 +363,180 @@ public class ProfileManager : MonoBehaviour
         if (bioText     != null) bioText.text       = "";
         if (avatarImage != null) avatarImage.sprite = null;
         Debug.LogWarning($"[ProfileManager] Fallback profile shown for uid={uid}");
+    }
+
+    // ========== КНОПКИ ДРУЖБЫ ==========
+
+    private void ApplyFriendButtons(string status)
+    {
+        HideAllFriendButtons();
+        if (debugLogs) Debug.Log($"[ProfileManager] ApplyFriendButtons status={status ?? "null"}");
+
+        switch (status)
+        {
+            case "active":
+                if (removeFriendButton  != null) removeFriendButton.SetActive(true);
+                break;
+
+            case "pending_sent":
+                if (addFriendButton     != null) addFriendButton.SetActive(true);
+                break;
+
+            case "pending_received":
+                if (acceptFriendButton  != null) acceptFriendButton.SetActive(true);
+                if (declineFriendButton != null) declineFriendButton.SetActive(true);
+                break;
+
+            default:
+                if (addFriendButton     != null) addFriendButton.SetActive(true);
+                break;
+        }
+    }
+
+    private void HideAllFriendButtons()
+    {
+        if (addFriendButton     != null) addFriendButton.SetActive(false);
+        if (acceptFriendButton  != null) acceptFriendButton.SetActive(false);
+        if (declineFriendButton != null) declineFriendButton.SetActive(false);
+        if (removeFriendButton  != null) removeFriendButton.SetActive(false);
+    }
+
+    // ========== ОБРАБОТЧИКИ КНОПОК ==========
+
+    public void OnAddFriendClicked()
+    {
+        Debug.Log($"[ProfileManager] OnAddFriendClicked! currentProfileUid={currentProfileUid}");
+        string status = GetCachedStatus(currentProfileUid);
+
+        if (status == "pending_sent")
+        {
+            PopupManager.Instance?.Show("Запрос уже отправлен");
+            return;
+        }
+
+        if (debugLogs) Debug.Log($"[ProfileManager] Sending friend request to {currentProfileUid}");
+        StartCoroutine(SendFriendRequestCoroutine(currentProfileUid));
+    }
+
+    public void OnAcceptFriendClicked()
+    {
+        if (debugLogs) Debug.Log($"[ProfileManager] Accepting friend request from {currentProfileUid}");
+        StartCoroutine(AcceptFriendCoroutine(currentProfileUid));
+    }
+
+    public void OnDeclineFriendClicked()
+    {
+        if (debugLogs) Debug.Log($"[ProfileManager] Declining friend request from {currentProfileUid}");
+        StartCoroutine(DeclineFriendCoroutine(currentProfileUid));
+    }
+
+    public void OnRemoveFriendClicked()
+    {
+        if (debugLogs) Debug.Log($"[ProfileManager] Removing friend {currentProfileUid}");
+        StartCoroutine(RemoveFriendCoroutine(currentProfileUid));
+    }
+
+    private string GetCachedStatus(string uid)
+    {
+        var data = TokenManager.Instance?.cachedFriends?.data;
+        if (data == null) return null;
+        foreach (var f in data)
+            if (f.uid == uid) return f.status;
+        return null;
+    }
+
+    private IEnumerator SendFriendRequestCoroutine(string uid)
+    {
+        // Ищем данные: кэш → _pendingFriendData → _currentViewedProfile
+        var cached       = FindFriendInCache(uid);
+        string displayName   = cached?.displayName   ?? _pendingFriendData?.displayName   ?? _currentViewedProfile?.displayName;
+        string discriminator = cached?.discriminator ?? _pendingFriendData?.discriminator ?? _currentViewedProfile?.discriminator;
+
+        if (debugLogs) Debug.Log($"[ProfileManager] SendFriendRequestCoroutine uid={uid}, displayName={displayName}, discriminator={discriminator}");
+
+        if (string.IsNullOrEmpty(displayName))
+        {
+            PopupManager.Instance?.Show("Не удалось отправить запрос");
+            Debug.LogError($"[ProfileManager] SendFriendRequest: no displayName for uid={uid}");
+            yield break;
+        }
+
+        bool success = false;
+        yield return TokenManager.Instance.SendFriendRequest(
+            displayName, discriminator, (ok, _) => success = ok);
+
+        if (success)
+        {
+            PopupManager.Instance?.Show("Запрос отправлен!");
+            ApplyFriendButtons("pending_sent");
+            TokenManager.Instance.RefreshFriends();
+        }
+        else
+            PopupManager.Instance?.Show("Не удалось отправить запрос");
+    }
+
+    private IEnumerator AcceptFriendCoroutine(string uid)
+    {
+        bool success = false;
+        yield return TokenManager.Instance.AcceptFriendRequest(uid, r => success = r);
+
+        if (success)
+        {
+            PopupManager.Instance?.Show("Теперь вы друзья!");
+            ApplyFriendButtons("active");
+            TokenManager.Instance.RefreshFriends();
+        }
+        else
+            PopupManager.Instance?.Show("Не удалось принять запрос");
+    }
+
+    private IEnumerator DeclineFriendCoroutine(string uid)
+    {
+        bool success = false;
+        yield return TokenManager.Instance.DeclineFriendRequest(uid, r => success = r);
+
+        if (success)
+        {
+            PopupManager.Instance?.Show("Запрос отклонён");
+            ApplyFriendButtons(null);
+            TokenManager.Instance.RefreshFriends();
+        }
+        else
+            PopupManager.Instance?.Show("Не удалось отклонить запрос");
+    }
+
+    private IEnumerator RemoveFriendCoroutine(string uid)
+    {
+        var cached = FindFriendInCache(uid); // сохраняем ДО запроса
+
+        bool success = false;
+        yield return TokenManager.Instance.RemoveFriend(uid, r => success = r);
+
+        if (success)
+        {
+            PopupManager.Instance?.Show("Пользователь удалён из друзей");
+            ApplyFriendButtons(null);
+            TokenManager.Instance.RefreshFriends();
+
+            if (cached != null)
+            {
+                cached.status = ""; // не друг, не pending
+                _pendingFriendData = cached;
+                // Обновляем _currentViewedProfile чтобы Add работал сразу после удаления
+                _currentViewedProfile = new TokenManager.UserProfileData // ← ДОБАВЛЕНО
+                {
+                    uid           = cached.uid,
+                    displayName   = cached.displayName,
+                    discriminator = cached.discriminator,
+                    bio           = cached.bio,
+                    photoURL      = cached.photoURL,
+                    stats         = new TokenManager.UserProfileStats { level = cached.level }
+                };
+                if (debugLogs) Debug.Log($"[ProfileManager] Cached friend data saved after remove: uid={cached.uid}");
+            }
+        }
+        else
+            PopupManager.Instance?.Show("Не удалось удалить из друзей");
     }
 
     // ========== UI ==========
@@ -386,5 +632,49 @@ public class ProfileManager : MonoBehaviour
             boardSlideSwitcher.ForceOpenMyProfile();
         else
             ForceLoadProfile(null);
+    }
+
+    // ========== SSE / POLLING ==========
+
+    private void OnSSEFriendRequest(string json)
+    {
+        if (debugLogs) Debug.Log($"[ProfileManager] SSE friend request received: {json}");
+        TokenManager.Instance?.RefreshFriends();
+    }
+
+private void OnFriendsUpdated()
+{
+    if (debugLogs) Debug.Log("[ProfileManager] OnFriendsUpdated called");
+
+    var profileResponse = TokenManager.Instance?.profile;
+
+    // Обновляем панель друзей ТОЛЬКО если открыт мой профиль
+    if (friendsPanelBinder != null && TokenManager.Instance?.cachedFriends != null)
+    {
+        bool isMyProfile = currentProfileUid == null || currentProfileUid == "NOT_SET";
+        if (isMyProfile)
+            friendsPanelBinder.Apply(TokenManager.Instance.cachedFriends, profileResponse?.data?.uid);
+    }
+
+    // Обновляем кнопки если открыт профиль чужого пользователя
+    if (currentProfileUid != null && currentProfileUid != "NOT_SET")
+    {
+        string newStatus = GetCachedStatus(currentProfileUid);
+        if (debugLogs) Debug.Log($"[ProfileManager] OnFriendsUpdated: updating buttons for {currentProfileUid}, status={newStatus}");
+        ApplyFriendButtons(newStatus);
+    }
+}
+
+    private IEnumerator PollFriendsLoop()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(60f); // fallback если SSE оборвался
+            if (TokenManager.Instance != null && TokenManager.Instance.IsSessionReady)
+            {
+                if (debugLogs) Debug.Log("[ProfileManager] Polling friends (fallback)...");
+                TokenManager.Instance.RefreshFriends();
+            }
+        }
     }
 }

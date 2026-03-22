@@ -12,18 +12,17 @@ public class LeaderboardItemView : MonoBehaviour
     [SerializeField] private TextMeshProUGUI txtLevel;
     [SerializeField] private TextMeshProUGUI txtXp;
     [SerializeField] private Image avatarImage;
-    
+
     [Header("Highlight Settings")]
-    [SerializeField] private TMP_FontAsset normalFont; // Обычный шрифт
-    [SerializeField] private TMP_FontAsset highlightFont; // alagard-12px-unicode SDF 2
-    [SerializeField] private Color normalTextColor = new Color(222f/255f, 176f/255f, 120f/255f, 1f); // Бежевый
-    [SerializeField] private Color highlightTextColor = new Color(222f/255f, 165f/255f, 60f/255f, 1f); // Золотой
-    
+    [SerializeField] private TMP_FontAsset normalFont;
+    [SerializeField] private TMP_FontAsset highlightFont;
+    [SerializeField] private Color normalTextColor = new Color(222f/255f, 176f/255f, 120f/255f, 1f);
+    [SerializeField] private Color highlightTextColor = new Color(222f/255f, 165f/255f, 60f/255f, 1f);
+
     [Header("Avatar Settings")]
     [SerializeField] private Sprite defaultAvatarSprite;
-    
-    [Header("Debug")]
-    [SerializeField] private bool debugLogs = true;
+
+    private string _lastLoadedUrl;
 
     private string _pendingAvatarUrl;
     private string _pendingPlayerName;
@@ -49,65 +48,31 @@ public class LeaderboardItemView : MonoBehaviour
         string photoURL,
         bool isCurrentUser = false)
     {
-        if (debugLogs)
-        {
-            Debug.Log($"[LeaderboardItemView] Bind START: rank={rank}, name={displayName}, isCurrentUser={isCurrentUser}");
-        }
-
-        // Заполняем текстовые поля
         if (txtRank) txtRank.text = $"#{rank}";
         if (txtDisplayName) txtDisplayName.text = displayName;
         if (txtLevel) txtLevel.text = $"Lvl {level}";
         if (txtXp) txtXp.text = $"{xp:N0} XP";
 
-        // Определяем стили для текущего пользователя
         TMP_FontAsset fontToUse = isCurrentUser ? highlightFont : normalFont;
         Color textColor = isCurrentUser ? highlightTextColor : normalTextColor;
         FontStyles fontStyle = isCurrentUser ? FontStyles.Bold : FontStyles.Normal;
 
-        // Применяем к Rank
-        if (txtRank)
+        void ApplyStyle(TextMeshProUGUI t)
         {
-            if (fontToUse) txtRank.font = fontToUse;
-            txtRank.color = textColor;
-            txtRank.fontStyle = fontStyle;
+            if (!t) return;
+            if (fontToUse) t.font = fontToUse;
+            t.color = textColor;
+            t.fontStyle = fontStyle;
         }
 
-        // Применяем к DisplayName
-        if (txtDisplayName)
-        {
-            if (fontToUse) txtDisplayName.font = fontToUse;
-            txtDisplayName.color = textColor;
-            txtDisplayName.fontStyle = fontStyle;
-        }
+        ApplyStyle(txtRank);
+        ApplyStyle(txtDisplayName);
+        ApplyStyle(txtLevel);
+        ApplyStyle(txtXp);
 
-        // Применяем к Level
-        if (txtLevel)
-        {
-            if (fontToUse) txtLevel.font = fontToUse;
-            txtLevel.color = textColor;
-            txtLevel.fontStyle = fontStyle;
-        }
-
-        // Применяем к XP
-        if (txtXp)
-        {
-            if (fontToUse) txtXp.font = fontToUse;
-            txtXp.color = textColor;
-            txtXp.fontStyle = fontStyle;
-        }
-
-        if (debugLogs)
-        {
-            Debug.Log($"[LeaderboardItemView] {displayName}: isCurrentUser={isCurrentUser}, " +
-                      $"font={fontToUse?.name}, color=RGB({textColor.r * 255:F0}, {textColor.g * 255:F0}, {textColor.b * 255:F0}), " +
-                      $"fontStyle={fontStyle}");
-        }
-
-        // Загрузка аватара
         if (avatarImage)
         {
-            if (!string.IsNullOrEmpty(photoURL))
+            if (!string.IsNullOrEmpty(photoURL) && photoURL != _lastLoadedUrl)
             {
                 if (gameObject.activeInHierarchy)
                 {
@@ -124,65 +89,36 @@ public class LeaderboardItemView : MonoBehaviour
                     _pendingPlayerName = displayName;
                 }
             }
-            else
+            else if (string.IsNullOrEmpty(photoURL) && defaultAvatarSprite)
             {
-                if (debugLogs)
-                    Debug.LogWarning($"[LeaderboardItemView] photoURL is EMPTY for {displayName}");
-                
-                if (defaultAvatarSprite)
-                    avatarImage.sprite = defaultAvatarSprite;
+                avatarImage.sprite = defaultAvatarSprite;
             }
         }
     }
 
-    private IEnumerator LoadAvatar(string url, string playerName)
+    private IEnumerator LoadAvatar(string url)
     {
-        if (debugLogs)
-            Debug.Log($"[LeaderboardItemView] LoadAvatar START for {playerName}: {url}");
-
         using (UnityWebRequest www = UnityWebRequestTexture.GetTexture(url))
         {
             yield return www.SendWebRequest();
 
             if (www.result != UnityWebRequest.Result.Success)
             {
-                Debug.LogWarning($"[LeaderboardItemView] LoadAvatar FAILED for {playerName}: {www.error}");
-                
                 if (defaultAvatarSprite && avatarImage)
                     avatarImage.sprite = defaultAvatarSprite;
-                
                 yield break;
             }
 
             Texture2D texture = DownloadHandlerTexture.GetContent(www);
-            
-            if (texture == null)
-            {
-                Debug.LogError($"[LeaderboardItemView] Texture is NULL for {playerName}!");
-                yield break;
-            }
+            if (texture == null || avatarImage == null) yield break;
 
-            if (debugLogs)
-                Debug.Log($"[LeaderboardItemView] Texture loaded for {playerName}: {texture.width}x{texture.height}");
-
-            if (avatarImage == null)
-            {
-                Debug.LogError($"[LeaderboardItemView] avatarImage became NULL during loading for {playerName}!");
-                yield break;
-            }
-
-            Sprite sprite = Sprite.Create(
+            avatarImage.sprite = Sprite.Create(
                 texture,
                 new Rect(0, 0, texture.width, texture.height),
                 new Vector2(0.5f, 0.5f),
                 100f
             );
-
-            avatarImage.sprite = sprite;
             avatarImage.enabled = true;
-
-            if (debugLogs)
-                Debug.Log($"[LeaderboardItemView] Avatar sprite SET for {playerName}!");
         }
     }
 
