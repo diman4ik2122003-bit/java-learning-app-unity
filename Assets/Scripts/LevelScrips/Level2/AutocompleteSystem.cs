@@ -15,7 +15,8 @@ public class AutocompleteSystem
         "moveRight()", "moveLeft()", "moveUp()", "moveDown()",
         "jump()", "wait()", "repeat()", "collect()", "interact()",
         "Player.moveRight()", "Player.moveLeft()", "Player.jump()",
-        "int", "float", "String", "boolean",
+        "Elevator.lower()",
+        "int", "float", "long", "byte", "short", "String", "boolean",
         "if", "else", "for", "while", "return"
     };
 
@@ -72,7 +73,6 @@ public class AutocompleteSystem
         {
             ShowSuggestions();
             evt.StopPropagation();
-            evt.PreventDefault();
         }
         else if (evt.keyCode == KeyCode.Escape)
         {

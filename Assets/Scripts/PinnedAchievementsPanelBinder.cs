@@ -24,6 +24,8 @@ public class PinnedAchievementsPanelBinder : MonoBehaviour
 
     [Header("Debug")]
     [SerializeField] private bool debugLogs = true;
+    
+    private int _lastApplyFrame = -1;
 
     private TokenManager.UserAchievement[] allUserAchievements;
     private TokenManager.Achievement[]     allAchievements;
@@ -42,6 +44,13 @@ public class PinnedAchievementsPanelBinder : MonoBehaviour
         TokenManager.UserAchievementListResponse userAchievementsResp)
     {
         if (debugLogs) Debug.Log("[PinnedAchievementsPanelBinder] Apply called");
+        
+        if (_lastApplyFrame == Time.frameCount)
+        {
+            if (debugLogs) Debug.Log("[PinnedAchievementsPanelBinder] Debounce: already applied this frame");
+            return;
+        }
+        _lastApplyFrame = Time.frameCount;
 
         if (!pinnedContainer || !achievementRowPrefab || !achievementItemPrefab)
         {

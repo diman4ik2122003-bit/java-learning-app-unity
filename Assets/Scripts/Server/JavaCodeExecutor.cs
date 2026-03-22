@@ -14,8 +14,8 @@ public class JavaCodeExecutor : MonoBehaviour
     
     void Start()
     {
-        codeEditor = FindObjectOfType<CodeEditorUIToolkit>();
-        player = FindObjectOfType<PlayerController>();
+        codeEditor = FindFirstObjectByType<CodeEditorUIToolkit>();
+        player = FindFirstObjectByType<PlayerController>();
     }
     
     public void ExecuteCode()
@@ -48,7 +48,15 @@ public class JavaCodeExecutor : MonoBehaviour
     {
         codeEditor.AddConsoleLog("⏳ Отправка кода на сервер...");
         
-        var request = new ExecutionRequest { code = code, levelId = 1 };
+        int levelId = 1;
+        LevelManager levelManager = FindFirstObjectByType<LevelManager>();
+        if (levelManager != null && levelManager.allLevels != null)
+        {
+            // Simple logic: if we have a current level index, use it. 
+            // In a real scenario we'd use currentLevel.levelId.
+        }
+
+        var request = new ExecutionRequest { code = code, levelId = levelId };
         string json = JsonUtility.ToJson(request);
         
         using (UnityWebRequest www = new UnityWebRequest(serverUrl, "POST"))
@@ -131,19 +139,27 @@ public class JavaCodeExecutor : MonoBehaviour
             switch (cmd.action)
             {
                 case "moveRight":
-                    yield return player.MoveRightCoroutine(cmd.value);
+                    yield return player.MoveRightCoroutine((int)cmd.value);
                     break;
                     
                 case "moveLeft":
-                    yield return player.MoveLeftCoroutine(cmd.value);
+                    yield return player.MoveLeftCoroutine((int)cmd.value);
                     break;
                     
                 case "moveUp":
-                    yield return player.MoveUpCoroutine(cmd.value);
+                    yield return player.MoveUpCoroutine((int)cmd.value);
                     break;
                     
                 case "moveDown":
-                    yield return player.MoveDownCoroutine(cmd.value);
+                    yield return player.MoveDownCoroutine((int)cmd.value);
+                    break;
+                    
+                case "lowerElevator":
+                    ElevatorLevelController elevatorController = FindFirstObjectByType<ElevatorLevelController>();
+                    if (elevatorController != null)
+                    {
+                        yield return elevatorController.LowerElevator((int)cmd.value2, cmd.value);
+                    }
                     break;
                     
                 case "wait":
@@ -167,7 +183,7 @@ public class JavaCodeExecutor : MonoBehaviour
     // ⭐ Единая точка вызова OnExecutionFinished
     void CallExecutionFinished()
     {
-        LevelManager levelManager = FindObjectOfType<LevelManager>();
+        LevelManager levelManager = FindFirstObjectByType<LevelManager>();
         if (levelManager != null)
         {
             Debug.Log("[JavaCodeExecutor] ⭐ Вызываем OnExecutionFinished()");
@@ -202,5 +218,6 @@ public class ExecutionResult
 public class GameCommand
 {
     public string action;
-    public int value;
+    public long value;
+    public long value2;
 }

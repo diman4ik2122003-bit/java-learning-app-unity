@@ -32,6 +32,7 @@ public class AchievementItemView : MonoBehaviour
     private bool _unlocked;
     private bool _isProcessing;
     private string _lastLoadedUrl;
+    private string _pendingImageUrl;
     private Coroutine _loadCoroutine;
 
 
@@ -45,6 +46,20 @@ public class AchievementItemView : MonoBehaviour
 
         if (enableDebugLogs)
             Debug.Log($"[AchievementItemView] ========== AWAKE END ==========");
+    }
+
+
+    private void OnEnable()
+    {
+        // Retry image load that was deferred because the object was inactive during Bind()
+        if (!string.IsNullOrEmpty(_pendingImageUrl) && _pendingImageUrl != _lastLoadedUrl)
+        {
+            if (enableDebugLogs)
+                Debug.Log($"[AchievementItemView] OnEnable: loading deferred image: {_pendingImageUrl}");
+
+            _loadCoroutine = StartCoroutine(LoadImageFromUrl(_pendingImageUrl));
+            _pendingImageUrl = null;
+        }
     }
 
 
@@ -119,13 +134,18 @@ public class AchievementItemView : MonoBehaviour
                 // Load icon — skip if same URL already loaded
                 if (imageUrl != _lastLoadedUrl)
                 {
-                    if (_loadCoroutine != null)
-                        StopCoroutine(_loadCoroutine);
-                    
-                    if (enableDebugLogs)
-                        Debug.Log($"[AchievementItemView] Starting to load image from: {imageUrl}");
-                    
-                    _loadCoroutine = StartCoroutine(LoadImageFromUrl(imageUrl));
+                    if (gameObject.activeInHierarchy)
+                    {
+                        _pendingImageUrl = null;
+                        _loadCoroutine = StartCoroutine(LoadImageFromUrl(imageUrl));
+                    }
+                    else
+                    {
+                        if (enableDebugLogs)
+                            Debug.Log($"[AchievementItemView] Deferring image load (object inactive): {imageUrl}");
+                        _pendingImageUrl = imageUrl; // will be loaded in OnEnable()
+                        _lastLoadedUrl = null;
+                    }
                 }
             }
             else

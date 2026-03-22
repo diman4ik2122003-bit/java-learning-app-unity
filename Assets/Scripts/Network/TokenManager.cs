@@ -44,6 +44,8 @@ public class TokenManager : MonoBehaviour
     public FriendsResponse cachedFriends;
     public bool IsSessionReady { get; private set; }
     public bool IsIslandsReady { get; private set; }
+    private bool _isLoadingAllData = false;
+    private Coroutine _loadAllCoroutine;
 
     private void Awake()
     {
@@ -81,15 +83,33 @@ public class TokenManager : MonoBehaviour
     /// <summary>Вызывается из JS с idToken Firebase</summary>
     public void ReceiveTokenFromJS(string token)
     {
+        Debug.Log("[TokenManager] ReceiveTokenFromJS, token length = " + (token?.Length ?? 0));
+
+        // Already loading — just update the stored token (for future API calls) and skip
+        if (_isLoadingAllData)
+        {
+            firebaseIdToken = token;
+            Debug.Log("[TokenManager] ReceiveTokenFromJS ignored: already loading");
+            return;
+        }
+
+        // Session already loaded — just update the stored token and skip
+        if (IsSessionReady)
+        {
+            firebaseIdToken = token;
+            Debug.Log("[TokenManager] ReceiveTokenFromJS ignored: session already ready");
+            return;
+        }
+
+        // First load (or previous load was cancelled) — start loading
         firebaseIdToken = token;
         IsSessionReady = false;
         IsIslandsReady = false;
-        Debug.Log("[TokenManager] ReceiveTokenFromJS, token length = " + (firebaseIdToken?.Length ?? 0));
 
         if (JavaJudgeClient.Instance != null)
             JavaJudgeClient.Instance.SetAuthToken(token);
 
-        StartCoroutine(LoadAllSessionData());
+        _loadAllCoroutine = StartCoroutine(LoadAllSessionData());
     }
 
     public void RefreshAll()
@@ -99,12 +119,20 @@ public class TokenManager : MonoBehaviour
             Debug.LogWarning("[TokenManager] No token yet, cannot refresh.");
             return;
         }
-        StartCoroutine(LoadAllSessionData());
+        
+        if (_isLoadingAllData)
+        {
+            Debug.Log("[TokenManager] RefreshAll ignored: already loading...");
+            return;
+        }
+
+        _loadAllCoroutine = StartCoroutine(LoadAllSessionData());
     }
 
     /// <summary>Главная корутина: профиль, статы, ачивки, прогресс уровней, друзья</summary>
     private IEnumerator LoadAllSessionData()
     {
+        _isLoadingAllData = true;
         IsSessionReady = false;
         Debug.Log("[TokenManager] LoadAllSessionData START");
 
@@ -203,6 +231,9 @@ public class TokenManager : MonoBehaviour
         }
 
         IsSessionReady = true;
+        _isLoadingAllData = false;
+        _loadAllCoroutine = null;
+        Debug.Log("[TokenManager] LoadAllSessionData FINISHED");
     }
 
     /// <summary>Универсальный GET с авторизацией и парсингом JSON через JsonUtility</summary>

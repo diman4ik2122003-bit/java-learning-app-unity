@@ -7,7 +7,7 @@ public class CloudTransitionActivator : MonoBehaviour
 
     void Start()
     {
-        transitionManager = FindObjectOfType<CloudTransitionManager>();
+        transitionManager = FindFirstObjectByType<CloudTransitionManager>();
         if (transitionManager == null)
         {
             Debug.LogError("CloudTransitionManager not found in scene.");

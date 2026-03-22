@@ -10,7 +10,6 @@ public class UIButtonScaleOnHover : MonoBehaviour, IPointerEnterHandler, IPointe
 
     private Vector3 originalScale;
     private Vector3 targetScale;
-    private bool hovering;
 
     void Awake()
     {
@@ -26,13 +25,11 @@ public class UIButtonScaleOnHover : MonoBehaviour, IPointerEnterHandler, IPointe
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        hovering = true;
         targetScale = originalScale * scaleMultiplier;
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        hovering = false;
         targetScale = originalScale;
     }
 }

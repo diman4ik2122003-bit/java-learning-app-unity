@@ -15,6 +15,18 @@ public class LeaderboardPanelBinder : MonoBehaviour
     [SerializeField] private bool debugLogs = true;
 
     private string currentUserUid;
+    private RectTransform _pendingScrollTarget;
+
+    private void OnEnable()
+    {
+        if (_pendingScrollTarget != null && scrollRect != null)
+        {
+            if (debugLogs)
+                Debug.Log("[LeaderboardPanelBinder] OnEnable: executing deferred scroll");
+            StartCoroutine(ScrollToItem(_pendingScrollTarget));
+            _pendingScrollTarget = null;
+        }
+    }
 
     public void Apply(TokenManager.LeaderboardResponse leaderboardResp, string myUid)
     {
@@ -25,6 +37,7 @@ public class LeaderboardPanelBinder : MonoBehaviour
         }
 
         currentUserUid = myUid;
+        _pendingScrollTarget = null;
 
         if (debugLogs)
             Debug.Log($"[LeaderboardPanelBinder] Apply START - myUid: '{myUid}'");
@@ -75,7 +88,17 @@ public class LeaderboardPanelBinder : MonoBehaviour
                     Debug.Log($"[LeaderboardPanelBinder] Found current user at rank {entry.rank}, scheduling scroll");
                 
                 Canvas.ForceUpdateCanvases();
-                StartCoroutine(ScrollToItem(view.transform as RectTransform));
+
+                if (gameObject.activeInHierarchy)
+                {
+                    StartCoroutine(ScrollToItem(view.transform as RectTransform));
+                }
+                else
+                {
+                    if (debugLogs)
+                        Debug.Log("[LeaderboardPanelBinder] Deferring scroll (panel inactive)");
+                    _pendingScrollTarget = view.transform as RectTransform;
+                }
             }
         }
 

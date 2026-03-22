@@ -504,7 +504,7 @@ public class CodeEditorUIToolkit : MonoBehaviour
         
         AddConsoleLog("▶️ Запуск кода...");
         
-        var executor = FindObjectOfType<JavaCodeExecutor>();
+        var executor = FindFirstObjectByType<JavaCodeExecutor>();
         if (executor != null)
         {
             executor.ExecuteCode();
@@ -524,7 +524,7 @@ public class CodeEditorUIToolkit : MonoBehaviour
         
         AddConsoleLog("⟲ Сброс");
         
-        var levelManager = FindObjectOfType<LevelManager>();
+        var levelManager = FindFirstObjectByType<LevelManager>();
         if (levelManager != null)
         {
             levelManager.OnResetLevel();

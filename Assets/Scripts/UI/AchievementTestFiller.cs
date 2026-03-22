@@ -11,7 +11,7 @@ public class AchievementTestFiller : MonoBehaviour
     {
         Debug.LogWarning("[TestFiller] ===== START =====");
 
-        var items = FindObjectsOfType<AchievementItemView>(true);
+        var items = FindObjectsByType<AchievementItemView>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         Debug.LogWarning($"[TestFiller] Found {items.Length} AchievementItemView(s)");
 
         for (int i = 0; i < items.Length; i++)
