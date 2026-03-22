@@ -1,7 +1,7 @@
-using TMPro;
 using UnityEngine;
-using UnityEngine.Networking;
 using UnityEngine.UI;
+using TMPro;
+using UnityEngine.Networking;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,11 +9,9 @@ using System.Linq;
 public class AchievementItemView : MonoBehaviour
 {
     [Header("UI")]
-    [SerializeField] private TMP_Text titleText;
-    [SerializeField] private TMP_Text descriptionText;
+    [SerializeField] private TextMeshProUGUI titleText;
+    [SerializeField] private TextMeshProUGUI descriptionText;
     [SerializeField] private Image iconImage;
-
-    [Header("Loading")]
     [SerializeField] private CanvasGroup loadingSpinner;
 
     [Header("Pin")]
@@ -23,9 +21,10 @@ public class AchievementItemView : MonoBehaviour
 
     private Button _button;
     private string _achievementId;
-    private bool _isPinned;
     private bool _unlocked;
-    private bool _isProcessing;
+    private bool _isPinned;
+    private bool _isProcessing = false;
+
     private string _lastLoadedUrl;
     private string _pendingImageUrl;
     private Coroutine _loadCoroutine;
@@ -36,26 +35,16 @@ public class AchievementItemView : MonoBehaviour
         EnsureClickableArea();
     }
 
-
     private void OnEnable()
     {
         // Retry image load that was deferred because the object was inactive during Bind()
         if (!string.IsNullOrEmpty(_pendingImageUrl) && _pendingImageUrl != _lastLoadedUrl)
         {
-            if (enableDebugLogs)
-                Debug.Log($"[AchievementItemView] OnEnable: loading deferred image: {_pendingImageUrl}");
-
             _loadCoroutine = StartCoroutine(LoadImageFromUrl(_pendingImageUrl));
             _pendingImageUrl = null;
         }
     }
 
-
-    /// <summary>
-    /// Ensures the root GameObject has a transparent Image that covers the full area
-    /// so the Button can receive clicks everywhere, not just on child graphics.
-    /// Also disables raycastTarget on child graphics to prevent them from blocking.
-    /// </summary>
     private void EnsureClickableArea()
     {
         var rootImage = GetComponent<Image>();
@@ -93,33 +82,19 @@ public class AchievementItemView : MonoBehaviour
         if (titleText)       titleText.text       = title       ?? "";
         if (descriptionText) descriptionText.text = description ?? "";
 
+        // Icon handling
         if (iconImage && !string.IsNullOrEmpty(imageUrl) && imageUrl != _lastLoadedUrl)
         {
-            if (!string.IsNullOrEmpty(imageUrl))
+            if (gameObject.activeInHierarchy)
             {
-                // Load icon — skip if same URL already loaded
-                if (imageUrl != _lastLoadedUrl)
-                {
-                    if (gameObject.activeInHierarchy)
-                    {
-                        _pendingImageUrl = null;
-                        _loadCoroutine = StartCoroutine(LoadImageFromUrl(imageUrl));
-                    }
-                    else
-                    {
-                        if (enableDebugLogs)
-                            Debug.Log($"[AchievementItemView] Deferring image load (object inactive): {imageUrl}");
-                        _pendingImageUrl = imageUrl; // will be loaded in OnEnable()
-                        _lastLoadedUrl = null;
-                    }
-                }
+                _pendingImageUrl = null;
+                if (_loadCoroutine != null) StopCoroutine(_loadCoroutine);
+                _loadCoroutine = StartCoroutine(LoadImageFromUrl(imageUrl));
             }
             else
             {
-                if (enableDebugLogs)
-                    Debug.Log($"[AchievementItemView] No imageUrl, keeping prefab sprite");
-                
-                // НЕ ТРОГАЕМ iconImage.sprite! Останется дефолтный из префаба ✅
+                _pendingImageUrl = imageUrl;
+                _lastLoadedUrl = null;
             }
         }
 

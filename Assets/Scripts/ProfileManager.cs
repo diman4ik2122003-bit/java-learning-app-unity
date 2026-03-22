@@ -478,7 +478,7 @@ public class ProfileManager : MonoBehaviour
     private IEnumerator AcceptFriendCoroutine(string uid)
     {
         bool success = false;
-        yield return TokenManager.Instance.AcceptFriendRequest(uid, r => success = r);
+        yield return TokenManager.Instance.AcceptFriendRequest(uid, (r, _) => success = r);
 
         if (success)
         {
@@ -493,7 +493,7 @@ public class ProfileManager : MonoBehaviour
     private IEnumerator DeclineFriendCoroutine(string uid)
     {
         bool success = false;
-        yield return TokenManager.Instance.DeclineFriendRequest(uid, r => success = r);
+        yield return TokenManager.Instance.DeclineFriendRequest(uid, (r, _) => success = r);
 
         if (success)
         {
@@ -510,7 +510,7 @@ public class ProfileManager : MonoBehaviour
         var cached = FindFriendInCache(uid); // сохраняем ДО запроса
 
         bool success = false;
-        yield return TokenManager.Instance.RemoveFriend(uid, r => success = r);
+        yield return TokenManager.Instance.RemoveFriend(uid, (r, _) => success = r);
 
         if (success)
         {

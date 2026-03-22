@@ -90,6 +90,8 @@ public class TokenManager : MonoBehaviour
         if (_isLoadingAllData)
         {
             firebaseIdToken = token;
+            if (JavaJudgeClient.Instance != null)
+                JavaJudgeClient.Instance.SetAuthToken(token);
             Debug.Log("[TokenManager] ReceiveTokenFromJS ignored: already loading");
             return;
         }
@@ -98,6 +100,8 @@ public class TokenManager : MonoBehaviour
         if (IsSessionReady)
         {
             firebaseIdToken = token;
+            if (JavaJudgeClient.Instance != null)
+                JavaJudgeClient.Instance.SetAuthToken(token);
             Debug.Log("[TokenManager] ReceiveTokenFromJS ignored: session already ready");
             return;
         }
@@ -107,43 +111,13 @@ public class TokenManager : MonoBehaviour
         IsSessionReady = false;
         IsIslandsReady = false;
 
-    /// <summary>Вызывается из JS с idToken Firebase</summary>
-private float _lastTokenReceiveTime = -999f;
-private const float TOKEN_DEBOUNCE_SECONDS = 3f;
-
-public void ReceiveTokenFromJS(string token)
-{
-    // Если сессия уже грузится или только что загрузилась — обновляем токен, но не перезапускаем
-    if (_isLoadingSession)
-    {
-        Debug.LogWarning("[TokenManager] Session loading, updating token silently");
-        firebaseIdToken = token;
         if (JavaJudgeClient.Instance != null)
             JavaJudgeClient.Instance.SetAuthToken(token);
 
+        SSEClient.Instance?.Connect(token);
         _loadAllCoroutine = StartCoroutine(LoadAllSessionData());
     }
 
-    if (IsSessionReady && Time.realtimeSinceStartup - _lastTokenReceiveTime < TOKEN_DEBOUNCE_SECONDS)
-    {
-        Debug.LogWarning("[TokenManager] Duplicate token call within debounce window, skipping");
-        firebaseIdToken = token; // токен обновляем, но сессию не перезапускаем
-        return;
-    }
-
-    _lastTokenReceiveTime = Time.realtimeSinceStartup;
-    firebaseIdToken = token;
-    IsSessionReady = false;
-    IsIslandsReady = false;
-
-    Debug.Log("[TokenManager] ReceiveTokenFromJS, token length = " + (firebaseIdToken?.Length ?? 0));
-
-    if (JavaJudgeClient.Instance != null)
-        JavaJudgeClient.Instance.SetAuthToken(token);
-
-    SSEClient.Instance?.Connect(token);
-    StartCoroutine(LoadAllSessionData());
-}
     public void RefreshAll()
     {
         if (string.IsNullOrEmpty(firebaseIdToken))
@@ -178,11 +152,11 @@ public void ReceiveTokenFromJS(string token)
                     nicknameText.text = profile?.data?.displayName ?? "Нет ника";
             });
 
-            if (profile?.data == null)
-            {
-                _isLoadingSession = false;  // ← добавить
-                yield break;
-            }
+        if (profile?.data == null)
+        {
+            _isLoadingAllData = false;
+            yield break;
+        }
         string uid = profile.data.uid;
 
         // 2. Общая статистика
@@ -488,52 +462,19 @@ public void ReceiveTokenFromJS(string token)
     // ========== FRIENDS HTTP METHODS ==========
 
     /// <summary>Получить публичный профиль пользователя по uid</summary>
-public IEnumerator GetProfileByUid(string uid, Action<UserProfileResponse> onResult)
-{
-    yield return Get<UserProfileResponse>($"/auth/profile/{uid}", onResult);
-}
-
-    /// <summary>Отправить запрос в друзья по uid (для ProfileManager)</summary>
-public IEnumerator SendFriendRequest(string friendUid, Action<bool> onResult)
-{
-    string body = JsonUtility.ToJson(new FriendActionData { friendUid = friendUid });
-    bool ok = false;
-    yield return PostJson("/friends/request", body, (success, _) => ok = success);
-    onResult?.Invoke(ok);
-}
-
-/// <summary>Принять запрос в друзья по uid (для ProfileManager)</summary>
-public IEnumerator AcceptFriendRequest(string friendUid, Action<bool> onResult)
-{
-    string body = JsonUtility.ToJson(new FriendActionData { friendUid = friendUid });
-    bool ok = false;
-    yield return PostJson("/friends/accept", body, (success, _) => ok = success);
-    onResult?.Invoke(ok);
-}
-
-/// <summary>Отклонить входящий запрос по uid (для ProfileManager)</summary>
-public IEnumerator DeclineFriendRequest(string friendUid, Action<bool> onResult)
-{
-    bool ok = false;
-    yield return DeleteRequest($"/friends/{friendUid}", (success, _) => ok = success);
-    onResult?.Invoke(ok);
-}
-
-/// <summary>Удалить друга по uid (для ProfileManager)</summary>
-public IEnumerator RemoveFriend(string friendUid, Action<bool> onResult)
-{
-    bool ok = false;
-    yield return DeleteRequest($"/friends/{friendUid}", (success, _) => ok = success);
-    onResult?.Invoke(ok);
-}
-
-    /// <summary>Получить список моих друзей GET /friends</summary>
-    public IEnumerator GetFriends(Action<FriendsResponse> onResult)
+    public IEnumerator GetProfileByUid(string uid, Action<UserProfileResponse> onResult)
     {
-        yield return Get<FriendsResponse>("/friends", onResult);
+        yield return Get<UserProfileResponse>($"/auth/profile/{uid}", onResult);
     }
 
-    /// <summary>Отправить запрос в друзья POST /friends/request</summary>
+    /// <summary>Отправить запрос в друзья по UID</summary>
+    public IEnumerator SendFriendRequest(string friendUid, Action<bool, string> onResult)
+    {
+        string body = JsonUtility.ToJson(new FriendActionData { friendUid = friendUid });
+        yield return PostJson("/friends/request", body, onResult);
+    }
+
+    /// <summary>Отправить запрос в друзья по имени и дискриминатору</summary>
     public IEnumerator SendFriendRequest(string username, string discriminator, Action<bool, string> onResult)
     {
         string body = JsonUtility.ToJson(new FriendRequestData
@@ -541,22 +482,35 @@ public IEnumerator RemoveFriend(string friendUid, Action<bool> onResult)
             username = username,
             discriminator = discriminator
         });
-
         yield return PostJson("/friends/request", body, onResult);
     }
 
-    /// <summary>Принять запрос в друзья POST /friends/accept</summary>
+    /// <summary>Принять запрос в друзья</summary>
     public IEnumerator AcceptFriendRequest(string friendUid, Action<bool, string> onResult)
     {
         string body = JsonUtility.ToJson(new FriendActionData { friendUid = friendUid });
         yield return PostJson("/friends/accept", body, onResult);
     }
 
-    /// <summary>Удалить друга / отклонить запрос DELETE /friends/{friendId}</summary>
-    public IEnumerator RemoveFriend(string friendId, Action<bool, string> onResult)
+    /// <summary>Отклонить входящий запрос по uid</summary>
+    public IEnumerator DeclineFriendRequest(string friendUid, Action<bool, string> onResult)
     {
-        yield return DeleteRequest($"/friends/{friendId}", onResult);
+        yield return DeleteRequest($"/friends/{friendUid}", onResult);
     }
+
+    /// <summary>Удалить друга по uid</summary>
+    public IEnumerator RemoveFriend(string friendUid, Action<bool, string> onResult)
+    {
+        yield return DeleteRequest($"/friends/{friendUid}", onResult);
+    }
+
+    /// <summary>Получить список моих друзей GET /friends</summary>
+    public IEnumerator GetFriends(Action<FriendsResponse> onResult)
+    {
+        yield return Get<FriendsResponse>("/friends", onResult);
+    }
+
+    // (Duplicates removed, consolidated above)
 
     // *** ДОБАВЛЕНО: друзья и ачивки ДРУГОГО пользователя ***
 
@@ -615,9 +569,7 @@ public IEnumerator SearchPeople(string nickname, string discriminator, Action<Fr
                 }
                 catch { errMsg = www.error; }
 
-                Debug.LogError($"[TokenManager] POST {path} FAILED: code={www.responseCode} | raw={www.downloadHandler.text}");
-
-                Debug.LogError($"[TokenManager] POST {path} FAILED: {errMsg}");
+                Debug.LogError($"[TokenManager] POST {path} FAILED: code={www.responseCode} | message={errMsg}");
                 onResult?.Invoke(false, errMsg);
                 yield break;
             }

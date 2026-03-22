@@ -31,9 +31,7 @@ public class LeaderboardItemView : MonoBehaviour
     {
         if (!string.IsNullOrEmpty(_pendingAvatarUrl))
         {
-            if (debugLogs)
-                Debug.Log($"[LeaderboardItemView] OnEnable: loading deferred avatar for {_pendingPlayerName}");
-            StartCoroutine(LoadAvatar(_pendingAvatarUrl, _pendingPlayerName));
+            StartCoroutine(LoadAvatar(_pendingAvatarUrl));
             _pendingAvatarUrl = null;
             _pendingPlayerName = null;
         }
@@ -76,15 +74,11 @@ public class LeaderboardItemView : MonoBehaviour
             {
                 if (gameObject.activeInHierarchy)
                 {
-                    if (debugLogs)
-                        Debug.Log($"[LeaderboardItemView] Starting LoadAvatar for {displayName}, URL: {photoURL}");
                     _pendingAvatarUrl = null;
-                    StartCoroutine(LoadAvatar(photoURL, displayName));
+                    StartCoroutine(LoadAvatar(photoURL));
                 }
                 else
                 {
-                    if (debugLogs)
-                        Debug.Log($"[LeaderboardItemView] Deferring LoadAvatar for {displayName} (object inactive)");
                     _pendingAvatarUrl = photoURL;
                     _pendingPlayerName = displayName;
                 }

@@ -238,10 +238,10 @@ public class FriendsPanelBinder : MonoBehaviour
         StartCoroutine(TokenManager.Instance.DeclineFriendRequest(friendId, OnFriendRequestDeclined));
     }
 
-    private void OnFriendRequestDeclined(bool success)
+    private void OnFriendRequestDeclined(bool success, string error)
     {
         if (success) TokenManager.Instance.RefreshFriends();
-        else Debug.LogError("[FriendsPanelBinder] Error declining friend request");
+        else Debug.LogError($"[FriendsPanelBinder] Error declining friend request: {error}");
     }
 
 #if UNITY_EDITOR
