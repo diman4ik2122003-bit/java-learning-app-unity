@@ -33,6 +33,8 @@ public class ProfileManager : MonoBehaviour
     [Header("Debug")]
     [SerializeField] private bool debugLogs = true;
 
+    private static readonly System.Collections.Generic.Dictionary<string, Sprite> _avatarCache = new();
+
     private string currentProfileUid = "NOT_SET";
     private string cachedBio;
 
@@ -572,6 +574,13 @@ public class ProfileManager : MonoBehaviour
     {
         if (debugLogs) Debug.Log($"[ProfileManager] Loading avatar from: {url}");
 
+        if (_avatarCache.TryGetValue(url, out var cached) && cached != null)
+        {
+            if (avatarImage != null) avatarImage.sprite = cached;
+            if (debugLogs) Debug.Log("[ProfileManager] Avatar loaded from cache");
+            yield break;
+        }
+
         using (UnityWebRequest request = UnityWebRequestTexture.GetTexture(url))
         {
             yield return request.SendWebRequest();
@@ -580,11 +589,15 @@ public class ProfileManager : MonoBehaviour
             {
                 Texture2D texture = DownloadHandlerTexture.GetContent(request);
                 if (avatarImage != null)
-                    avatarImage.sprite = Sprite.Create(
+                {
+                    Sprite sprite = Sprite.Create(
                         texture,
                         new Rect(0, 0, texture.width, texture.height),
                         new Vector2(0.5f, 0.5f)
                     );
+                    _avatarCache[url] = sprite;
+                    avatarImage.sprite = sprite;
+                }
                 if (debugLogs) Debug.Log("[ProfileManager] Avatar loaded successfully");
             }
             else

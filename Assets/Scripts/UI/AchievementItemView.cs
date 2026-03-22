@@ -27,6 +27,7 @@ public class AchievementItemView : MonoBehaviour
     private bool _unlocked;
     private bool _isProcessing;
     private string _lastLoadedUrl;
+    private string _pendingImageUrl;
     private Coroutine _loadCoroutine;
 
     private void Awake()
@@ -35,6 +36,26 @@ public class AchievementItemView : MonoBehaviour
         EnsureClickableArea();
     }
 
+
+    private void OnEnable()
+    {
+        // Retry image load that was deferred because the object was inactive during Bind()
+        if (!string.IsNullOrEmpty(_pendingImageUrl) && _pendingImageUrl != _lastLoadedUrl)
+        {
+            if (enableDebugLogs)
+                Debug.Log($"[AchievementItemView] OnEnable: loading deferred image: {_pendingImageUrl}");
+
+            _loadCoroutine = StartCoroutine(LoadImageFromUrl(_pendingImageUrl));
+            _pendingImageUrl = null;
+        }
+    }
+
+
+    /// <summary>
+    /// Ensures the root GameObject has a transparent Image that covers the full area
+    /// so the Button can receive clicks everywhere, not just on child graphics.
+    /// Also disables raycastTarget on child graphics to prevent them from blocking.
+    /// </summary>
     private void EnsureClickableArea()
     {
         var rootImage = GetComponent<Image>();
@@ -74,8 +95,32 @@ public class AchievementItemView : MonoBehaviour
 
         if (iconImage && !string.IsNullOrEmpty(imageUrl) && imageUrl != _lastLoadedUrl)
         {
-            if (_loadCoroutine != null) StopCoroutine(_loadCoroutine);
-            _loadCoroutine = StartCoroutine(LoadImageFromUrl(imageUrl));
+            if (!string.IsNullOrEmpty(imageUrl))
+            {
+                // Load icon — skip if same URL already loaded
+                if (imageUrl != _lastLoadedUrl)
+                {
+                    if (gameObject.activeInHierarchy)
+                    {
+                        _pendingImageUrl = null;
+                        _loadCoroutine = StartCoroutine(LoadImageFromUrl(imageUrl));
+                    }
+                    else
+                    {
+                        if (enableDebugLogs)
+                            Debug.Log($"[AchievementItemView] Deferring image load (object inactive): {imageUrl}");
+                        _pendingImageUrl = imageUrl; // will be loaded in OnEnable()
+                        _lastLoadedUrl = null;
+                    }
+                }
+            }
+            else
+            {
+                if (enableDebugLogs)
+                    Debug.Log($"[AchievementItemView] No imageUrl, keeping prefab sprite");
+                
+                // НЕ ТРОГАЕМ iconImage.sprite! Останется дефолтный из префаба ✅
+            }
         }
 
         if (pinIcon) pinIcon.SetActive(_isPinned);

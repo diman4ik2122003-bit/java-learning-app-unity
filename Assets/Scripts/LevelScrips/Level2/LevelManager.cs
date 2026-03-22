@@ -142,7 +142,7 @@ public class LevelManager : MonoBehaviour
 
         if (useJavaServer)
         {
-            JavaCodeExecutor executor = FindObjectOfType<JavaCodeExecutor>();
+            JavaCodeExecutor executor = FindFirstObjectByType<JavaCodeExecutor>();
             if (executor != null)
             {
                 executor.ExecuteCode();

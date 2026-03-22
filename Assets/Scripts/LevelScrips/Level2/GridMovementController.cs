@@ -29,7 +29,7 @@ public class GridMovementController : MonoBehaviour
         // Автопоиск Grid
         if (grid == null)
         {
-            grid = FindObjectOfType<Grid>();
+            grid = FindFirstObjectByType<Grid>();
             if (grid != null)
             {
                 Debug.Log($"Grid found at: {grid.transform.position}");
@@ -54,7 +54,7 @@ public class GridMovementController : MonoBehaviour
     
     void AutoFindCollisionTilemaps()
     {
-        Tilemap[] allTilemaps = FindObjectsOfType<Tilemap>();
+        Tilemap[] allTilemaps = FindObjectsByType<Tilemap>(FindObjectsSortMode.None);
         System.Collections.Generic.List<Tilemap> collisionList = new System.Collections.Generic.List<Tilemap>();
         
         foreach (Tilemap tilemap in allTilemaps)

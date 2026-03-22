@@ -19,6 +19,8 @@ public class FriendsPanelBinder : MonoBehaviour
 
     [Header("Debug")]
     [SerializeField] private bool debugLogs = true;
+    
+    private int _lastApplyFrame = -1;
 
     private TokenManager.FriendData[] allFriendsData;
     private string currentUserUid;
@@ -44,6 +46,13 @@ public class FriendsPanelBinder : MonoBehaviour
     {
         if (debugLogs)
             Debug.Log($"[FriendsPanelBinder] Apply called with {friendsResp?.data?.Length ?? -1} friends");
+            
+        if (_lastApplyFrame == Time.frameCount)
+        {
+            if (debugLogs) Debug.Log("[FriendsPanelBinder] Debounce: already applied this frame");
+            return;
+        }
+        _lastApplyFrame = Time.frameCount;
 
         string selfUid = TokenManager.Instance?.profile?.data?.uid;
         _isMyProfile = (myUid == selfUid);

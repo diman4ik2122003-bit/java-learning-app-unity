@@ -27,8 +27,8 @@ public class HintSystem : MonoBehaviour
     
     void Start()
     {
-        codeEditor = FindObjectOfType<CodeEditorUIToolkit>();
-        levelManager = FindObjectOfType<LevelManager>();
+        codeEditor = FindFirstObjectByType<CodeEditorUIToolkit>();
+        levelManager = FindFirstObjectByType<LevelManager>();
         
         if (hints.Count == 0)
         {

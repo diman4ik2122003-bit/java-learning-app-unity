@@ -4,7 +4,7 @@ public class SceneStartHandler : MonoBehaviour
 {
     void Start()
     {
-        CloudTransitionManager transitionManager = FindObjectOfType<CloudTransitionManager>();
+        CloudTransitionManager transitionManager = FindFirstObjectByType<CloudTransitionManager>();
         if (transitionManager != null)
         {
             transitionManager.EndTransition();

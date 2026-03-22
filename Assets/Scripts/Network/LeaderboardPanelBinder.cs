@@ -14,14 +14,18 @@ public class LeaderboardPanelBinder : MonoBehaviour
     [Header("Debug")]
     [SerializeField] private bool debugLogs = true;
 
-    private TokenManager.LeaderboardResponse _pendingResp;
-    private string _pendingMyUid;
-    private bool _hasPendingData = false;
+    private string currentUserUid;
+    private RectTransform _pendingScrollTarget;
 
     private void OnEnable()
     {
-        if (_hasPendingData)
-            RebuildUI();
+        if (_pendingScrollTarget != null && scrollRect != null)
+        {
+            if (debugLogs)
+                Debug.Log("[LeaderboardPanelBinder] OnEnable: executing deferred scroll");
+            StartCoroutine(ScrollToItem(_pendingScrollTarget));
+            _pendingScrollTarget = null;
+        }
     }
 
     public void Apply(TokenManager.LeaderboardResponse leaderboardResp, string myUid)
@@ -45,6 +49,13 @@ public class LeaderboardPanelBinder : MonoBehaviour
             return;
         }
 
+        currentUserUid = myUid;
+        _pendingScrollTarget = null;
+
+        if (debugLogs)
+            Debug.Log($"[LeaderboardPanelBinder] Apply START - myUid: '{myUid}'");
+
+        // Очистка старого контента
         for (int i = verticalContent.childCount - 1; i >= 0; i--)
             Destroy(verticalContent.GetChild(i).gameObject);
 
@@ -81,8 +92,28 @@ public class LeaderboardPanelBinder : MonoBehaviour
                 isCurrentUser: isMe
             );
 
-            if (isMe)
-                myItemRect = view.transform as RectTransform;
+            if (debugLogs)
+                Debug.Log($"[LeaderboardPanelBinder] Bind called for {entry.displayName}, photoURL='{entry.photoURL}', active={view.gameObject.activeSelf}");
+            
+            // Автопрокрутка к своей позиции
+            if (isMe && scrollRect != null)
+            {
+                if (debugLogs)
+                    Debug.Log($"[LeaderboardPanelBinder] Found current user at rank {entry.rank}, scheduling scroll");
+                
+                Canvas.ForceUpdateCanvases();
+
+                if (gameObject.activeInHierarchy)
+                {
+                    StartCoroutine(ScrollToItem(view.transform as RectTransform));
+                }
+                else
+                {
+                    if (debugLogs)
+                        Debug.Log("[LeaderboardPanelBinder] Deferring scroll (panel inactive)");
+                    _pendingScrollTarget = view.transform as RectTransform;
+                }
+            }
         }
 
         if (myItemRect != null && scrollRect != null)
