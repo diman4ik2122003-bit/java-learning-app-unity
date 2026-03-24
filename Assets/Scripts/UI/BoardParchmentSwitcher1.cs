@@ -153,7 +153,19 @@ public class BoardSlideSwitcher : MonoBehaviour
 
         _currentTab = Tab.Profile;
         SetTabImmediate(_currentTab);
-        yield return null;
+
+        // ← ждём в ВЕРХНЕЙ точке, до Move DOWN
+        if (uidToLoad != null && profileManager != null && profileManager.gameObject.activeInHierarchy)
+        {
+            if (debugLogs) Debug.Log("[BoardSlideSwitcher] Waiting for profile data at top...");
+            while (profileManager.IsProfileLoading)
+                yield return null;
+            if (debugLogs) Debug.Log("[BoardSlideSwitcher] Profile loaded, moving down");
+        }
+        else
+        {
+            yield return null; // оригинальный пропуск кадра для своего профиля
+        }
 
         yield return Move(boardRect.anchoredPosition, openAnchoredPos, moveDownTime, 1f, EaseOutCubic);
         _isOpen = true;
@@ -192,7 +204,6 @@ public class BoardSlideSwitcher : MonoBehaviour
             _currentTab = clickedTab;
             SetTabImmediate(_currentTab);
 
-            // *** сброс профиля на свой при открытии таба Profile ***
             if (clickedTab == Tab.Profile)
                 ResetProfileToMine();
 
@@ -238,7 +249,6 @@ public class BoardSlideSwitcher : MonoBehaviour
         if (topPauseSeconds > 0f)
             yield return new WaitForSecondsRealtime(topPauseSeconds);
 
-        // *** сброс профиля на свой при переключении на таб Profile ***
         if (nextTab == Tab.Profile)
             ResetProfileToMine();
 
@@ -256,10 +266,6 @@ public class BoardSlideSwitcher : MonoBehaviour
 
     // ========== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ==========
 
-    /// <summary>
-    /// Сбрасывает ProfileManager на свой профиль.
-    /// Вызывается при любом открытии таба Profile через кнопку навигации.
-    /// </summary>
     private void ResetProfileToMine()
     {
         ProfileManager profileManager = FindFirstObjectByType<ProfileManager>(FindObjectsInactive.Include);
@@ -268,7 +274,7 @@ public class BoardSlideSwitcher : MonoBehaviour
         if (profileManager.gameObject.activeInHierarchy)
             profileManager.ForceLoadProfile(null);
         else
-            profileManager.ResetCurrentProfile(); // загрузится в OnEnable
+            profileManager.ResetCurrentProfile();
 
         if (debugLogs) Debug.Log("[BoardSlideSwitcher] Profile reset to mine");
     }
