@@ -15,8 +15,8 @@ public class PanelSlideController : MonoBehaviour
     [SerializeField] private Vector2 closedAnchoredPos;
 
     [Header("Timing")]
-    [Min(0f)] [SerializeField] private float moveDownTime = 1.0f;   // опускание вниз
-    [Min(0f)] [SerializeField] private float moveUpTime   = 1.0f;   // подъём вверх
+    [Min(0f)] [SerializeField] private float moveDownTime = 1.0f;
+    [Min(0f)] [SerializeField] private float moveUpTime   = 1.0f;
 
     [Header("Swing after opening")]
     [Min(0f)] [SerializeField] private float swingAmplitude    = 12f;
@@ -28,12 +28,16 @@ public class PanelSlideController : MonoBehaviour
     [SerializeField] private float alphaWhenClosed = 0f;
 
     [Header("Button Sprite")]
-    [SerializeField] private Image buttonImage;            // картинка кнопки
-    [SerializeField] private Sprite openSprite;             // спрайт со стрелкой вниз
-    [SerializeField] private Sprite closeSprite;            // спрайт со стрелкой вверх
+    [SerializeField] private Image buttonImage;
+    [SerializeField] private Sprite openSprite;
+    [SerializeField] private Sprite closeSprite;
+
+    [Header("Auto Open on Start")]
+    [Tooltip("Если включено — панель автоматически открывается при запуске сцены без нажатия кнопки")]
+    [SerializeField] private bool openOnStart = false;
 
     [Header("Debug")]
-    [SerializeField] private bool debugLogs = true;         // включи в инспекторе
+    [SerializeField] private bool debugLogs = true;
 
 
     private Coroutine _routine;
@@ -45,8 +49,7 @@ public class PanelSlideController : MonoBehaviour
     {
         panelRect        = GetComponent<RectTransform>();
         panelCanvasGroup = GetComponent<CanvasGroup>();
-
-        buttonImage = GetComponent<Image>();
+        buttonImage      = GetComponent<Image>();
 
         if (debugLogs)
         {
@@ -80,6 +83,17 @@ public class PanelSlideController : MonoBehaviour
         UpdateButtonSprite();
     }
 
+    private void Start()
+    {
+        if (openOnStart)
+        {
+            if (debugLogs) Debug.Log("[PanelSlideController] openOnStart = true, auto-opening panel on Start");
+
+            if (_routine != null) StopCoroutine(_routine);
+            _routine = StartCoroutine(OpenRoutine());
+        }
+    }
+
 
 
     // ========== ПУБЛИЧНЫЕ МЕТОДЫ ==========
@@ -87,9 +101,7 @@ public class PanelSlideController : MonoBehaviour
     public void OnButtonClicked()
     {
         if (debugLogs)
-        {
             Debug.Log("[PanelSlideController] OnButtonClicked called, _isOpened = " + _isOpened + ", _routine = " + (_routine != null).ToString());
-        }
 
         if (_routine != null)
         {
@@ -111,7 +123,7 @@ public class PanelSlideController : MonoBehaviour
 
 
 
-    // ========== ПОМОЩЬНИКИ ПО СПРАЙТАМ ==========
+    // ========== ПОМОЩНИКИ ПО СПРАЙТАМ ==========
 
     private void UpdateButtonSprite()
     {
@@ -151,7 +163,7 @@ public class PanelSlideController : MonoBehaviour
         yield return Move(panelRect.anchoredPosition, openAnchoredPos, moveDownTime, 1f, EaseOutCubic);
         _isOpened = true;
 
-        UpdateButtonSprite();
+        UpdateButtonSprite();   // ← здесь спрайт станет closeSprite (и при openOnStart тоже)
 
         yield return Swing(openAnchoredPos);
 
@@ -208,9 +220,7 @@ public class PanelSlideController : MonoBehaviour
                 panelCanvasGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, s);
 
             if (debugLogs && Mathf.Approximately(t, 0.1f))
-            {
                 Debug.Log("[PanelSlideController] Move tick: t=" + t + ", p=" + p + ", s=" + s);
-            }
 
             yield return null;
         }
@@ -244,9 +254,7 @@ public class PanelSlideController : MonoBehaviour
             panelRect.anchoredPosition = basePos + new Vector2(0f, y);
 
             if (debugLogs && Mathf.Approximately(t, 0.1f))
-            {
                 Debug.Log("[PanelSlideController] Swing tick: t=" + t + ", y=" + y);
-            }
 
             yield return null;
         }

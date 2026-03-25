@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 public class CodeEditor : MonoBehaviour
 {
-    [SerializeField] private Scrollbar horizontalScrollbar;
+    [SerializeField] private Slider horizontalSlider;
 
     [Header("UI References")]
     public TMP_InputField codeInput;
@@ -21,6 +21,9 @@ public class CodeEditor : MonoBehaviour
     private RectTransform placeholderRect;
     private RectTransform caretRect;
     private float currentHScrollOffset = 0f;
+
+    private RectTransform _sliderHandleRect;
+    private RectTransform _sliderSlideAreaRect;
 
     private int _lastCaretPos = -1;
     private int _lastSelectFocus = -1;
@@ -43,7 +46,11 @@ public class CodeEditor : MonoBehaviour
 
         codeInput.textComponent.enableWordWrapping = false;
 
-        horizontalScrollbar.onValueChanged.AddListener(OnHorizontalScroll);
+        // Slider горизонтальный — rect.width трека, sizeDelta.x ручки
+        _sliderHandleRect = horizontalSlider.handleRect;
+        _sliderSlideAreaRect = _sliderHandleRect.parent as RectTransform;
+
+        horizontalSlider.onValueChanged.AddListener(OnHorizontalScroll);
         lineNumbers.gameObject.SetActive(true);
         codeInput.onValueChanged.AddListener(OnCodeChanged);
         OnCodeChanged(codeInput.text);
@@ -63,21 +70,17 @@ public class CodeEditor : MonoBehaviour
         return maxWidth + 20f;
     }
 
-    // Точная X позиция каретки: измеряем ширину текста от начала строки до каретки
-    // GetPreferredValues не зависит от координатной системы TMP и всегда возвращает реальные пиксели
     float GetCaretX()
     {
         int caretPos = codeInput.caretPosition;
         string text = codeInput.text;
         if (string.IsNullOrEmpty(text) || caretPos <= 0) return 0f;
 
-        // Ищем начало текущей строки
         int lineStart = text.LastIndexOf('\n', caretPos - 1);
         lineStart = lineStart < 0 ? 0 : lineStart + 1;
 
         if (caretPos <= lineStart) return 0f;
 
-        // Ширина текста от начала строки до позиции каретки
         string segment = text.Substring(lineStart, caretPos - lineStart);
         return codeInput.textComponent.GetPreferredValues(segment, float.MaxValue, float.MaxValue).x;
     }
@@ -89,17 +92,27 @@ public class CodeEditor : MonoBehaviour
 
         if (contentWidth <= visibleWidth)
         {
-            horizontalScrollbar.gameObject.SetActive(false);
+            horizontalSlider.gameObject.SetActive(false);
             currentHScrollOffset = 0f;
             return;
         }
 
-        horizontalScrollbar.gameObject.SetActive(true);
-        horizontalScrollbar.size = Mathf.Clamp01(visibleWidth / contentWidth);
+        horizontalSlider.gameObject.SetActive(true);
+
+        // Чистый горизонтальный Slider: ширина трека = rect.width, ручка — sizeDelta.x
+        float trackWidth = _sliderSlideAreaRect.rect.width;
+        if (trackWidth > 0f)
+        {
+            float ratio = Mathf.Clamp01(visibleWidth / contentWidth);
+            _sliderHandleRect.sizeDelta = new Vector2(
+                ratio * trackWidth,
+                _sliderHandleRect.sizeDelta.y
+            );
+        }
 
         float maxOffset = Mathf.Max(0f, contentWidth - visibleWidth);
         if (maxOffset > 0f)
-            horizontalScrollbar.SetValueWithoutNotify(currentHScrollOffset / maxOffset);
+            horizontalSlider.SetValueWithoutNotify(Mathf.Clamp01(currentHScrollOffset / maxOffset));
     }
 
     void OnHorizontalScroll(float value)
@@ -121,23 +134,20 @@ public class CodeEditor : MonoBehaviour
         else if (caretX > currentHScrollOffset + visibleWidth - margin)
             currentHScrollOffset = caretX - visibleWidth + margin;
 
-        // Синхронизируем ползунок
         float contentWidth = GetContentWidth();
         float maxOffset = Mathf.Max(0f, contentWidth - visibleWidth);
         if (maxOffset > 0f)
-            horizontalScrollbar.SetValueWithoutNotify(currentHScrollOffset / maxOffset);
+            horizontalSlider.SetValueWithoutNotify(Mathf.Clamp01(currentHScrollOffset / maxOffset));
         else
-            horizontalScrollbar.gameObject.SetActive(false);
+            horizontalSlider.gameObject.SetActive(false);
     }
 
     void LateUpdate()
     {
-        // Следим за кареткой и выделением — проверяем в LateUpdate чтобы избежать моргания
-        // (ForceMeshUpdate в Update сбивал позиции до того как мы их восстанавливали)
         if (codeInput.isFocused)
         {
             int curCaret = codeInput.caretPosition;
-            int curFocus = codeInput.selectionFocusPosition; // меняется при выделении мышью
+            int curFocus = codeInput.selectionFocusPosition;
 
             if (curCaret != _lastCaretPos || curFocus != _lastSelectFocus)
             {
@@ -171,7 +181,6 @@ public class CodeEditor : MonoBehaviour
 
     IEnumerator SmartAutoScroll()
     {
-        // 2 кадра — layout должен пересчитать высоту контента после добавления строки
         yield return null;
         yield return null;
 
@@ -193,14 +202,12 @@ public class CodeEditor : MonoBehaviour
 
     void Update()
     {
-        // Enter — сбрасываем H скролл чтобы видеть начало новой строки
         if (Input.GetKeyDown(KeyCode.Return) && codeInput.isFocused)
         {
             currentHScrollOffset = 0f;
-            horizontalScrollbar.SetValueWithoutNotify(0f);
+            horizontalSlider.SetValueWithoutNotify(0f);
         }
 
-        // Колёсико мыши — только над CodePanel
         float scroll = Input.GetAxis("Mouse ScrollWheel");
         if (scroll != 0f)
         {
