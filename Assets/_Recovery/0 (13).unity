@@ -601,6 +601,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: -17.19
       objectReference: {fileID: 0}
+    - target: {fileID: 2404542588029008694, guid: 0a470aba8ced84b4a82a7735e75f937f, type: 3}
+      propertyPath: m_ScrollSensitivity
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 2439679891913939446, guid: 0a470aba8ced84b4a82a7735e75f937f, type: 3}
       propertyPath: m_SizeDelta.x
       value: 569.93
@@ -725,6 +729,10 @@ PrefabInstance:
       propertyPath: closeSprite
       value: 
       objectReference: {fileID: 8697185337675980133, guid: eefdb4ec7cd897549b3759bdff25db49, type: 3}
+    - target: {fileID: 5196762234318053782, guid: 0a470aba8ced84b4a82a7735e75f937f, type: 3}
+      propertyPath: openOnStart
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5196762234318053782, guid: 0a470aba8ced84b4a82a7735e75f937f, type: 3}
       propertyPath: moveDownTime
       value: 1.3

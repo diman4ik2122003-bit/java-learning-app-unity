@@ -22,14 +22,16 @@ public class CodeEditor : MonoBehaviour
     private RectTransform _sliderHandleRect;
     private RectTransform _sliderSlideAreaRect;
 
-    private int _lastCaretPos = -1;
+    private int _lastCaretPos    = -1;
     private int _lastSelectFocus = -1;
-    private int _lastLineCount = 1;
+    private int _lastLineCount   = 1;
+
+    private Coroutine _scrollCoroutine;
 
     void Start()
     {
-        codeInputRect = codeInput.GetComponent<RectTransform>();
-        textRect = codeInput.textComponent.GetComponent<RectTransform>();
+        codeInputRect   = codeInput.GetComponent<RectTransform>();
+        textRect        = codeInput.textComponent.GetComponent<RectTransform>();
         placeholderRect = codeInput.placeholder.GetComponent<RectTransform>();
 
         RectTransform textArea = textRect.parent as RectTransform;
@@ -44,7 +46,7 @@ public class CodeEditor : MonoBehaviour
 
         codeInput.textComponent.enableWordWrapping = false;
 
-        _sliderHandleRect = horizontalSlider.handleRect;
+        _sliderHandleRect    = horizontalSlider.handleRect;
         _sliderSlideAreaRect = _sliderHandleRect.parent as RectTransform;
 
         horizontalSlider.onValueChanged.AddListener(OnHorizontalScroll);
@@ -53,18 +55,8 @@ public class CodeEditor : MonoBehaviour
         OnCodeChanged(codeInput.text);
     }
 
-    // ── Высота строки ────────────────────────────────────────────────────────
-    float GetLineHeight()
-    {
-        codeInput.textComponent.ForceMeshUpdate();
-        var info = codeInput.textComponent.textInfo;
-        if (info != null && info.lineCount > 0)
-            return info.lineInfo[0].lineHeight;
-        // запасной вариант
-        return codeInput.textComponent.fontSize * 1.2f;
-    }
-
     // ── Горизонтальный скролл ────────────────────────────────────────────────
+
     float GetContentWidth()
     {
         codeInput.textComponent.ForceMeshUpdate();
@@ -81,7 +73,7 @@ public class CodeEditor : MonoBehaviour
     float GetCaretX()
     {
         int caretPos = codeInput.caretPosition;
-        string text = codeInput.text;
+        string text  = codeInput.text;
         if (string.IsNullOrEmpty(text) || caretPos <= 0) return 0f;
 
         int lineStart = text.LastIndexOf('\n', caretPos - 1);
@@ -115,15 +107,15 @@ public class CodeEditor : MonoBehaviour
     {
         float contentWidth = GetContentWidth();
         float visibleWidth = codeInputRect.rect.width;
-        float maxOffset = Mathf.Max(0f, contentWidth - visibleWidth);
+        float maxOffset    = Mathf.Max(0f, contentWidth - visibleWidth);
         currentHScrollOffset = value * maxOffset;
     }
 
     void EnsureCaretVisible()
     {
-        float caretX = GetCaretX();
+        float caretX      = GetCaretX();
         float visibleWidth = codeInputRect.rect.width;
-        float margin = 20f;
+        float margin      = 20f;
 
         if (caretX < currentHScrollOffset + margin)
             currentHScrollOffset = Mathf.Max(0f, caretX - margin);
@@ -131,7 +123,7 @@ public class CodeEditor : MonoBehaviour
             currentHScrollOffset = caretX - visibleWidth + margin;
 
         float contentWidth = GetContentWidth();
-        float maxOffset = Mathf.Max(0f, contentWidth - visibleWidth);
+        float maxOffset    = Mathf.Max(0f, contentWidth - visibleWidth);
         if (maxOffset > 0f)
             horizontalSlider.SetValueWithoutNotify(Mathf.Clamp01(currentHScrollOffset / maxOffset));
         else
@@ -139,6 +131,7 @@ public class CodeEditor : MonoBehaviour
     }
 
     // ── LateUpdate ───────────────────────────────────────────────────────────
+
     void LateUpdate()
     {
         if (codeInput.isFocused)
@@ -148,7 +141,7 @@ public class CodeEditor : MonoBehaviour
 
             if (curCaret != _lastCaretPos || curFocus != _lastSelectFocus)
             {
-                _lastCaretPos = curCaret;
+                _lastCaretPos    = curCaret;
                 _lastSelectFocus = curFocus;
                 EnsureCaretVisible();
             }
@@ -163,19 +156,24 @@ public class CodeEditor : MonoBehaviour
     }
 
     // ── OnCodeChanged ────────────────────────────────────────────────────────
+
     void OnCodeChanged(string newText)
     {
         lineNumbers.gameObject.SetActive(true);
         UpdateLineNumbers(newText);
 
         int currentLineCount = string.IsNullOrEmpty(newText) ? 1 : newText.Split('\n').Length;
-        bool lineAdded = currentLineCount > _lastLineCount;
-        _lastLineCount = currentLineCount;
+        bool lineAdded       = currentLineCount > _lastLineCount;
+        _lastLineCount       = currentLineCount;
 
         StartCoroutine(UpdateScrollbarNextFrame());
 
         if (lineAdded)
-            StartCoroutine(SmartAutoScrollCoroutine());
+        {
+            // Останавливаем предыдущий скролл-корутин, чтобы не было конфликтов
+            if (_scrollCoroutine != null) StopCoroutine(_scrollCoroutine);
+            _scrollCoroutine = StartCoroutine(SmartAutoScrollCoroutine());
+        }
     }
 
     IEnumerator UpdateScrollbarNextFrame()
@@ -185,64 +183,94 @@ public class CodeEditor : MonoBehaviour
     }
 
     // ── Вертикальный автоскролл ───────────────────────────────────────────────
+
     IEnumerator SmartAutoScrollCoroutine()
     {
-        // Ждём два кадра — TMP и Layout успевают обновиться
         yield return null;
         yield return null;
-
         SmartAutoScroll();
     }
 
     void SmartAutoScroll()
     {
-        string text = codeInput.text;
+        Canvas.ForceUpdateCanvases();
+
+        string text  = codeInput.text;
         int caretPos = Mathf.Clamp(codeInput.caretPosition, 0, text.Length);
 
-        // Номер строки каретки (0-based)
         int caretLine = 0;
         for (int i = 0; i < caretPos; i++)
             if (text[i] == '\n') caretLine++;
 
-        float lineH = GetLineHeight();
+        codeInput.textComponent.ForceMeshUpdate();
+        var textInfo = codeInput.textComponent.textInfo;
+        if (textInfo.lineCount == 0) return;
 
-        // Y строки каретки от верха контента (TMP считает вниз)
-        float caretTopY    = caretLine * lineH;
-        float caretBottomY = caretTopY + lineH;
+        int lineIdx = Mathf.Min(caretLine, textInfo.lineCount - 1);
 
-        float contentHeight  = scrollRect.content.rect.height;
-        float viewportHeight = ((RectTransform)scrollRect.transform).rect.height;
+        float ascender  = textInfo.lineInfo[lineIdx].ascender;
+        float descender = textInfo.lineInfo[lineIdx].descender;
 
-        // Если контент умещается — скроллить некуда
-        if (contentHeight <= viewportHeight)
+        // Координатная трансформация: локальное TMP → мировое → локальное content
+        RectTransform textRT    = codeInput.textComponent.rectTransform;
+        RectTransform contentRT = scrollRect.content;
+        // ↓ ИСПРАВЛЕНО: viewport вместо scrollRect.transform
+        RectTransform viewportRT = scrollRect.viewport;
+
+        Vector3 lineTopWorld    = textRT.TransformPoint(new Vector3(0f, ascender,  0f));
+        Vector3 lineBottomWorld = textRT.TransformPoint(new Vector3(0f, descender, 0f));
+
+        float lineTopInContent    = contentRT.InverseTransformPoint(lineTopWorld).y;
+        float lineBottomInContent = contentRT.InverseTransformPoint(lineBottomWorld).y;
+
+        float contentRectTop    = contentRT.rect.yMax;
+        float lineTopFromTop    = contentRectTop - lineTopInContent;
+        float lineBottomFromTop = contentRectTop - lineBottomInContent;
+
+        float contentHeight  = contentRT.rect.height;
+        // ↓ ИСПРАВЛЕНО: реальная высота viewport, а не весь ScrollRect
+        float viewportHeight = viewportRT.rect.height;
+        float scrollable     = Mathf.Max(0f, contentHeight - viewportHeight);
+
+        if (scrollable <= 0f)
         {
             scrollRect.verticalNormalizedPosition = 1f;
             return;
         }
 
-        float scrollable = contentHeight - viewportHeight;
-
-        // normalizedPos = 1 → верх; 0 → низ
-        // смещение от верха = (1 - normalizedPos) * scrollable
         float topOffset    = (1f - scrollRect.verticalNormalizedPosition) * scrollable;
         float bottomOffset = topOffset + viewportHeight;
 
-        // Строка уже видна — ничего не делаем
-        if (caretTopY >= topOffset && caretBottomY <= bottomOffset)
-            return;
+        // ↓ ИСПРАВЛЕНО: margin — строка у самой границы тоже считается "невидимой"
+        const float margin = 4f;
 
-        // Скроллим так, чтобы строка каретки оказалась внизу видимой области
-        float targetTop = Mathf.Clamp(caretBottomY - viewportHeight, 0f, scrollable);
+        if (lineTopFromTop    >= topOffset    + margin &&
+            lineBottomFromTop <= bottomOffset - margin)
+            return;  // строка полностью видна — ничего не делаем
+
+        float targetTop;
+        if (lineTopFromTop < topOffset + margin)
+            // Строка выше viewport — показать с отступом сверху
+            targetTop = Mathf.Max(0f, lineTopFromTop - margin);
+        else
+            // Строка ниже viewport — показать с отступом снизу
+            targetTop = lineBottomFromTop - viewportHeight + margin;
+
+        targetTop = Mathf.Clamp(targetTop, 0f, scrollable);
         scrollRect.verticalNormalizedPosition = 1f - targetTop / scrollable;
     }
+
+    // ── Номера строк ─────────────────────────────────────────────────────────
 
     void UpdateLineNumbers(string text)
     {
         string[] lines = string.IsNullOrEmpty(text) ? new[] { "" } : text.Split('\n');
-        lineNumbers.text = string.Join("\n", Enumerable.Range(1, lines.Length).Select(i => i.ToString()));
+        lineNumbers.text = string.Join("\n",
+            Enumerable.Range(1, lines.Length).Select(i => i.ToString()));
     }
 
     // ── Update (колесо мыши + Enter) ─────────────────────────────────────────
+
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.Return) && codeInput.isFocused)
