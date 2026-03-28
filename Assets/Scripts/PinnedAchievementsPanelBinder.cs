@@ -25,6 +25,9 @@ public class PinnedAchievementsPanelBinder : MonoBehaviour
     [Header("Debug")]
     [SerializeField] private bool debugLogs = true;
     
+    [Header("Loading")]
+    [SerializeField] private PanelLoadingController loadingController;  // ← новое
+
     private int _lastApplyFrame = -1;
 
     private TokenManager.UserAchievement[] allUserAchievements;
@@ -37,6 +40,8 @@ public class PinnedAchievementsPanelBinder : MonoBehaviour
 
         if (pinnedContainer == null && scrollRect != null)
             pinnedContainer = scrollRect.content;
+
+        ShowEmptyState(false); // ← всегда скрыт до первого Apply()
     }
 
     public void Apply(
@@ -52,6 +57,9 @@ public class PinnedAchievementsPanelBinder : MonoBehaviour
         }
         _lastApplyFrame = Time.frameCount;
 
+        // ← Сразу сбрасываем empty state, независимо от того, что придёт дальше
+        ShowEmptyState(false);
+
         if (!pinnedContainer || !achievementRowPrefab || !achievementItemPrefab)
         {
             Debug.LogError("[PinnedAchievementsPanelBinder] References not set. " +
@@ -66,6 +74,7 @@ public class PinnedAchievementsPanelBinder : MonoBehaviour
             if (debugLogs) Debug.LogWarning("[PinnedAchievementsPanelBinder] No achievements data");
             ClearContent();
             ShowEmptyState(true);
+            loadingController?.StopLoading();
             return;
         }
 
@@ -85,10 +94,11 @@ public class PinnedAchievementsPanelBinder : MonoBehaviour
         if (pinned.Count == 0)
         {
             ShowEmptyState(true);
+            loadingController?.StopLoading(); 
             return;
         }
 
-        ShowEmptyState(false);
+        //ShowEmptyState(false);
 
         for (int i = 0; i < pinned.Count; i += achievementsPerRow)
             CreateRow(pinned.Skip(i).Take(achievementsPerRow).ToList());
@@ -98,6 +108,7 @@ public class PinnedAchievementsPanelBinder : MonoBehaviour
             LayoutRebuilder.ForceRebuildLayoutImmediate(rt);
 
         if (debugLogs) Debug.Log("[PinnedAchievementsPanelBinder] Done");
+        loadingController?.StopLoading();
     }
 
     private void CreateRow(List<TokenManager.UserAchievement> userAchievements)

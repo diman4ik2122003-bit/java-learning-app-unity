@@ -16,6 +16,9 @@ public class AchievementsPanelBinder : MonoBehaviour
     [Header("Pinned Section (optional)")]
     [SerializeField] private Transform pinnedContainer;
 
+    [Header("Loading")]
+    [SerializeField] private PanelLoadingController loadingController;  // ← новое
+
     private TokenManager.AchievementCategoryListResponse _pendingCategories;
     private TokenManager.AchievementListResponse _pendingAchievements;
     private TokenManager.UserAchievementListResponse _pendingMine;
@@ -37,6 +40,7 @@ public class AchievementsPanelBinder : MonoBehaviour
         _pendingMine         = mineResp;
         _hasPendingData      = true;
 
+        loadingController?.StopLoading();
         if (!gameObject.activeInHierarchy) return;
 
         RebuildUI();

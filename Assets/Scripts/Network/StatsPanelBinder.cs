@@ -13,6 +13,9 @@ public class StatsPanelBinder : MonoBehaviour
     [SerializeField] private TextMeshProUGUI txtAchievementsCount;
     [SerializeField] private TextMeshProUGUI txtTotalChallengesSolved;
 
+    [Header("Loading")]
+    [SerializeField] private PanelLoadingController loadingController;  // ← новое
+
     private TokenManager.UserProfileResponse _pendingProfile;
     private TokenManager.UserStatsResponse _pendingStats;
     private bool _hasPendingData = false;
@@ -28,7 +31,8 @@ public class StatsPanelBinder : MonoBehaviour
         _pendingProfile = profile;
         _pendingStats = stats;
         _hasPendingData = true;
-
+        
+        loadingController?.StopLoading();
         if (!gameObject.activeInHierarchy) return;
 
         RebuildUI();
@@ -50,5 +54,6 @@ public class StatsPanelBinder : MonoBehaviour
         var s = _pendingStats?.data;
         if (s != null && txtTotalChallengesSolved)
             txtTotalChallengesSolved.text = s.totalChallengesSolved.ToString();
+        
     }
 }

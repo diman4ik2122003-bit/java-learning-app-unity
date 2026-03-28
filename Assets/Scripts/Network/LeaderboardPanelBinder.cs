@@ -14,6 +14,9 @@ public class LeaderboardPanelBinder : MonoBehaviour
     [Header("Debug")]
     [SerializeField] private bool debugLogs = true;
 
+    [Header("Loading")]
+    [SerializeField] private PanelLoadingController loadingController;  // ← новое
+
     private string currentUserUid;
     private RectTransform _pendingScrollTarget;
 
@@ -46,6 +49,8 @@ public class LeaderboardPanelBinder : MonoBehaviour
         _pendingResp = leaderboardResp;
         _pendingMyUid = myUid;
         _hasPendingData = true;
+
+        loadingController?.StopLoading();
 
         if (!gameObject.activeInHierarchy) return;
 
@@ -112,7 +117,7 @@ public class LeaderboardPanelBinder : MonoBehaviour
         if (myItemRect != null && scrollRect != null)
             StartCoroutine(ScrollToItem(myItemRect));
         else
-            LayoutRebuilder.ForceRebuildLayoutImmediate(verticalContent as RectTransform);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(verticalContent as RectTransform);  
     }
 
     private LeaderboardItemView CreateItem(Transform parent)

@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
-    <Style src="LoaderSpinner.uss" />
+    <Style src="USS/LoaderSpinner.uss" />
     <ui:VisualElement name="loader-root" class="loader-root">
         <ui:VisualElement name="dot-0" class="dot"/>
         <ui:VisualElement name="dot-1" class="dot"/>

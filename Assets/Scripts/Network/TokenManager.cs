@@ -338,7 +338,7 @@ public class TokenManager : MonoBehaviour
             cachedFriends = ok;
             if (friendsPanel)
             {
-                friendsPanel.Apply(ok, uid);
+                //friendsPanel.Apply(ok, uid);
                 Debug.Log($"[TokenManager] Friends refreshed: {ok?.data?.Length ?? 0} friends");
             }
             OnFriendsUpdated?.Invoke();
