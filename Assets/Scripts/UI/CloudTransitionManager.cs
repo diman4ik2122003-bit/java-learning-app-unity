@@ -14,6 +14,9 @@ public class CloudTransitionManager : MonoBehaviour
     private int cloudsCompleted = 0;
     private string targetScene;
 
+    [Header("Sounds")]
+    [SerializeField] private string cloudsInSound = "CloudsIn";
+    [SerializeField] private string cloudsOutSound = "CloudsOut";
     void Awake()
     {
         if (instance == null)
@@ -38,6 +41,8 @@ public class CloudTransitionManager : MonoBehaviour
 
         targetScene = sceneName;
         cloudsCompleted = 0;
+
+        AudioManager.Instance?.PlaySFX(cloudsInSound);
 
         foreach (var cloud in clouds)
         {
@@ -104,6 +109,8 @@ private IEnumerator DelayedEndTransition()
     {
         if (clouds == null || clouds.Count == 0)
             return;
+
+        AudioManager.Instance?.PlaySFX(cloudsOutSound);
 
         foreach (var cloud in clouds)
         {
