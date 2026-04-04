@@ -18,7 +18,7 @@ public class HintSystem : MonoBehaviour
     public string correctCode = "";
     
     [Header("References")]
-    private CodeEditorUIToolkit codeEditor;
+    private CodeEditor codeEditor;
     private LevelManager levelManager;
     
     private int failedAttempts = 0;
@@ -27,7 +27,7 @@ public class HintSystem : MonoBehaviour
     
     void Start()
     {
-        codeEditor = FindFirstObjectByType<CodeEditorUIToolkit>();
+        codeEditor = FindFirstObjectByType<CodeEditor>();
         levelManager = FindFirstObjectByType<LevelManager>();
         
         if (hints.Count == 0)

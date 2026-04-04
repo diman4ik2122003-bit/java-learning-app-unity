@@ -9,12 +9,12 @@ public class JavaCodeExecutor : MonoBehaviour
     [Header("Server Settings")]
     public string serverUrl = "http://localhost:4000/api/v1/submissions/execute";
     
-    private CodeEditorUIToolkit codeEditor;
+    private CodeEditor codeEditor;
     private PlayerController player;
     
     void Start()
     {
-        codeEditor = FindFirstObjectByType<CodeEditorUIToolkit>();
+        codeEditor = FindFirstObjectByType<CodeEditor>();
         player = FindFirstObjectByType<PlayerController>();
     }
     
@@ -130,10 +130,19 @@ public class JavaCodeExecutor : MonoBehaviour
         }
     }
     
+    public bool executionAborted = false;
+
     IEnumerator ExecuteCommandsSequence(GameCommand[] commands)
     {
+        executionAborted = false;
         foreach (var cmd in commands)
         {
+            if (executionAborted)
+            {
+                codeEditor.AddConsoleLog("🛑 Выполнение прервано из-за ошибки.", true);
+                break;
+            }
+
             codeEditor.AddConsoleLog($"▶️ {cmd.action}({cmd.value})");
             
             switch (cmd.action)
@@ -154,11 +163,11 @@ public class JavaCodeExecutor : MonoBehaviour
                     yield return player.MoveDownCoroutine((int)cmd.value);
                     break;
                     
-                case "lowerElevator":
+                case "raiseElevator":
                     ElevatorLevelController elevatorController = FindFirstObjectByType<ElevatorLevelController>();
                     if (elevatorController != null)
                     {
-                        yield return elevatorController.LowerElevator((int)cmd.value2, cmd.value);
+                        yield return elevatorController.RaiseElevator((int)cmd.value2, cmd.value);
                     }
                     break;
                     

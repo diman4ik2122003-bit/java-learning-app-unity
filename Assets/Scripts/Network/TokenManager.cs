@@ -60,15 +60,7 @@ public class TokenManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
 
         if (!statsPanel) statsPanel = FindFirstObjectByType<StatsPanelBinder>();
-        if (!achievementsPanel)
-        {
-            achievementsPanel = FindFirstObjectByType<AchievementsPanelBinder>();
-            Debug.LogError($"[TokenManager.Awake] FindFirstObjectByType result: {achievementsPanel != null}");
-        }
-        else
-        {
-            Debug.LogError($"[TokenManager.Awake] achievementsPanel ALREADY assigned in Inspector!");
-        }
+        if (!achievementsPanel) achievementsPanel = FindFirstObjectByType<AchievementsPanelBinder>();
         if (!leaderboardPanel) leaderboardPanel = FindFirstObjectByType<LeaderboardPanelBinder>();
         if (!friendsPanel) friendsPanel = FindFirstObjectByType<FriendsPanelBinder>();
         if (!pinnedAchievementsPanel) pinnedAchievementsPanel = FindFirstObjectByType<PinnedAchievementsPanelBinder>();

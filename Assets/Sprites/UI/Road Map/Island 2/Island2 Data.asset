@@ -18,13 +18,19 @@ MonoBehaviour:
   levels:
   - sprite: {fileID: 6040649613417962703, guid: fe82cc2560374ce439ce2d746604c6bc, type: 3}
     anchoredPosition: {x: -542, y: 245}
+    levelData: {fileID: 11400000, guid: e106abc1b9458d14f9a9291efbc9e2e3, type: 2}
   - sprite: {fileID: -6327325649173860178, guid: 7490ab20570b29e479d921e20a850004, type: 3}
     anchoredPosition: {x: -456, y: 0}
+    levelData: {fileID: 0}
   - sprite: {fileID: -2351124063596626731, guid: 1b60a9177477c504b96635d54b8f7439, type: 3}
     anchoredPosition: {x: -243, y: -176}
+    levelData: {fileID: 0}
   - sprite: {fileID: -2333655104237556482, guid: 1a216d82b3a0044478be1bc1b144e942, type: 3}
     anchoredPosition: {x: 29, y: -142}
+    levelData: {fileID: 0}
   - sprite: {fileID: -2858338080222453747, guid: b5821105e85ef9841ba65d2a507387e9, type: 3}
     anchoredPosition: {x: 276, y: -20}
+    levelData: {fileID: 0}
   - sprite: {fileID: -1872977586338071037, guid: af15d5cff2409c64fafdcfc16abcd1f1, type: 3}
     anchoredPosition: {x: 543, y: 71}
+    levelData: {fileID: 0}

@@ -292,4 +292,41 @@ public class CodeEditor : MonoBehaviour
             }
         }
     }
+
+    // ── Compatibility API (v3) ─────────────────────────────────────────────
+
+    public string GetCode() => codeInput != null ? codeInput.text : "";
+
+    public void SetCode(string code)
+    {
+        if (codeInput != null)
+        {
+            if (codeInput.text != code)
+            {
+                codeInput.text = code;
+                OnCodeChanged(code);
+            }
+        }
+    }
+
+    public void AddConsoleLog(string message, bool isError = false)
+    {
+        if (ConsoleController.Instance != null)
+        {
+            if (isError) ConsoleController.LogError(message);
+            else ConsoleController.Log(message);
+        }
+        else
+        {
+            Debug.Log($"[Console fallback] {message}");
+        }
+    }
+
+    public void ClearConsole()
+    {
+        if (ConsoleController.Instance != null)
+        {
+            ConsoleController.Instance.Clear();
+        }
+    }
 }

@@ -5,6 +5,7 @@ public class PlayerController : MonoBehaviour
 {
     private GridMovementController gridMovement;
     private Vector2Int startGridPosition;
+    private Vector3 startWorldPosition;
     private bool startPositionInitialized = false;
     
     void Awake()
@@ -28,9 +29,10 @@ public class PlayerController : MonoBehaviour
         // Сохраняем стартовую позицию только если она ещё не была установлена
         if (!startPositionInitialized)
         {
+            startWorldPosition = transform.position;
             startGridPosition = gridMovement.GetGridPosition();
             startPositionInitialized = true;
-            Debug.Log($"Player start position initialized: {startGridPosition}");
+            Debug.Log($"Player start position initialized: World={startWorldPosition}, Grid={startGridPosition}");
         }
     }
     
@@ -84,18 +86,20 @@ public class PlayerController : MonoBehaviour
     // === Управление состоянием ===
     public void ResetState()
     {
-        Debug.Log($"ResetState called. Returning to: {startGridPosition}");
+        Debug.Log($"ResetState called. Returning to world pos: {startWorldPosition}");
         
         StopAllCoroutines();
         gridMovement.StopAllCoroutines();
         
         // Возвращаемся на стартовую позицию
-        gridMovement.SetGridPosition(startGridPosition);
+        transform.position = startWorldPosition;
+        gridMovement.SetGridPosition(gridMovement.WorldToGrid(startWorldPosition));
     }
     
     // ⭐ Новый метод для установки стартовой позиции
     public void SetStartPosition(Vector3 worldPos)
     {
+        startWorldPosition = worldPos;
         Vector2Int gridPos = gridMovement.WorldToGrid(worldPos);
         startGridPosition = gridPos;
         startPositionInitialized = true;

@@ -9,6 +9,7 @@ public class GridMovementController : MonoBehaviour
     
     [Header("Visual")]
     public SpriteRenderer spriteRenderer;
+    public Animator animator;
     
     [Header("Grid Reference")]
     public Grid grid; // ← Ссылка на Grid компонент
@@ -169,6 +170,18 @@ public class GridMovementController : MonoBehaviour
         
         isMoving = true;
         
+        // Поворот спрайта
+        if (direction.x != 0 && spriteRenderer != null)
+        {
+            spriteRenderer.flipX = direction.x < 0;
+        }
+        
+        // Включаем анимацию ходьбы
+        if (animator != null)
+        {
+            animator.SetBool("isWalking", true);
+        }
+        
         Vector2Int currentPos = gridPosition;
         Vector2Int step = new Vector2Int(
             direction.x != 0 ? (int)Mathf.Sign(direction.x) : 0,
@@ -206,6 +219,12 @@ public class GridMovementController : MonoBehaviour
         
         gridPosition = currentPos;
         isMoving = false;
+        
+        // Выключаем анимацию ходьбы
+        if (animator != null)
+        {
+            animator.SetBool("isWalking", false);
+        }
     }
     
     public Vector2Int GetGridPosition()

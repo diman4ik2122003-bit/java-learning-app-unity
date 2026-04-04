@@ -8,7 +8,7 @@ public class UniversalLevelManager : MonoBehaviour
     [Header("References")]
     public PlayerController player;
     public Transform goalTransform;
-    public CodeEditorUIToolkit codeEditor;
+    public CodeEditor codeEditor;
     public JavaCodeExecutor executor;
     
     [Header("Scene Container")]
