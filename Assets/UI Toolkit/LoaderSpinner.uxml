@@ -1,0 +1,13 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="USS/LoaderSpinner.uss" />
+    <ui:VisualElement name="loader-root" class="loader-root">
+        <ui:VisualElement name="dot-0" class="dot"/>
+        <ui:VisualElement name="dot-1" class="dot"/>
+        <ui:VisualElement name="dot-2" class="dot"/>
+        <ui:VisualElement name="dot-3" class="dot"/>
+        <ui:VisualElement name="dot-4" class="dot"/>
+        <ui:VisualElement name="dot-5" class="dot"/>
+        <ui:VisualElement name="dot-6" class="dot"/>
+        <ui:VisualElement name="dot-7" class="dot"/>
+    </ui:VisualElement>
+</ui:UXML>

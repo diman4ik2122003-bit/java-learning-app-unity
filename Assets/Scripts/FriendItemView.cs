@@ -23,6 +23,12 @@ public class FriendItemView : MonoBehaviour
     [SerializeField] private Button acceptButton;
     [SerializeField] private Button declineButton;
 
+    [Header("Context Menu Position")]
+    [Tooltip("true = запомнить смещение из редактора, false = использовать menuOffset вручную")]
+    [SerializeField] private bool useEditorPosition = true;
+    [Tooltip("Смещение в пикселях относительно кнопки (используется только если useEditorPosition = false)")]
+    [SerializeField] private Vector2 menuOffset = Vector2.zero;
+
     [Header("Colors")]
     [SerializeField] private Color normalBackgroundColor = new Color(0.17f, 0.17f, 0.17f);
 
@@ -31,6 +37,7 @@ public class FriendItemView : MonoBehaviour
     private string _lastLoadedUrl;
     private RectTransform contextMenuRect;
     private Transform originalParent;
+    private Vector2 _editorOffset; // смещение экранных координат меню относительно кнопки
 
     public event Action<string> OnProfileClicked;
     public event Action<string> OnRemoveClicked;
@@ -43,6 +50,22 @@ public class FriendItemView : MonoBehaviour
         {
             contextMenuRect = contextMenuPanel.GetComponent<RectTransform>();
             originalParent  = contextMenuPanel.transform.parent;
+
+            // Запоминаем смещение из редактора до любого рипэрентинга
+            if (menuButton != null)
+            {
+                Canvas canvas = GetComponentInParent<Canvas>();
+                if (canvas != null)
+                {
+                    Camera cam = canvas.renderMode == RenderMode.ScreenSpaceOverlay
+                        ? null
+                        : canvas.worldCamera;
+
+                    Vector2 menuScreen   = RectTransformUtility.WorldToScreenPoint(cam, contextMenuRect.position);
+                    Vector2 buttonScreen = RectTransformUtility.WorldToScreenPoint(cam, menuButton.transform.position);
+                    _editorOffset = menuScreen - buttonScreen;
+                }
+            }
         }
 
         menuButton?.onClick.AddListener(ToggleContextMenu);
@@ -124,11 +147,11 @@ public class FriendItemView : MonoBehaviour
 
         if (!willBeVisible) return;
 
-        Canvas rootCanvas = GetComponentInParent<Canvas>().rootCanvas;
+        Canvas rootCanvas = GetComponentInParent<Canvas>()?.rootCanvas;
+        if (rootCanvas == null) return;
+
         contextMenuRect.SetParent(rootCanvas.transform, true);
-
         PositionMenuNearButton(rootCanvas);
-
         contextMenuPanel.SetActive(true);
     }
 
@@ -136,27 +159,29 @@ public class FriendItemView : MonoBehaviour
     {
         if (menuButton == null || contextMenuRect == null) return;
 
-        RectTransform buttonRect = menuButton.GetComponent<RectTransform>();
+        Camera cam = rootCanvas.renderMode == RenderMode.ScreenSpaceOverlay
+            ? null
+            : rootCanvas.worldCamera;
 
-        Vector3[] buttonCorners = new Vector3[4];
-        buttonRect.GetWorldCorners(buttonCorners);
-        Vector3 topRightWorld = buttonCorners[2];
+        // Экранная позиция кнопки (центр)
+        Vector2 buttonScreen = RectTransformUtility.WorldToScreenPoint(
+            cam, menuButton.transform.position);
 
-        Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(
-            rootCanvas.worldCamera,
-            topRightWorld
-        );
+        // Итоговое смещение: из редактора или ручное
+        Vector2 offset = useEditorPosition ? _editorOffset : menuOffset;
+
+        Vector2 targetScreen = buttonScreen + offset;
 
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             rootCanvas.GetComponent<RectTransform>(),
-            screenPoint,
-            rootCanvas.worldCamera,
+            targetScreen,
+            cam,
             out Vector2 localPoint
         );
 
         contextMenuRect.anchorMin        = new Vector2(0.5f, 0.5f);
         contextMenuRect.anchorMax        = new Vector2(0.5f, 0.5f);
-        contextMenuRect.pivot            = new Vector2(0f, 1f);
+        contextMenuRect.pivot            = new Vector2(0.5f, 0.5f); // центр меню
         contextMenuRect.anchoredPosition = localPoint;
     }
 

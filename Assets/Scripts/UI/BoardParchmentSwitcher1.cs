@@ -46,6 +46,10 @@ public class BoardSlideSwitcher : MonoBehaviour
     [Range(0f, 1f)]
     [SerializeField] private float alphaWhenClosed = 0f;
 
+    [Header("Sounds")]
+    public string openSound = "BoardOpen";    // звук при открытии
+    public string closeSound = "BoardClose";  // звук при закрытии
+
     [Header("Debug")]
     [SerializeField] private bool debugLogs = false;
 
@@ -225,6 +229,8 @@ public class BoardSlideSwitcher : MonoBehaviour
 
     private IEnumerator OpenRoutine()
     {
+        AudioManager.Instance.PlaySFX(openSound);
+        
         yield return Move(boardRect.anchoredPosition, openAnchoredPos, moveDownTime, 1f, EaseOutCubic);
         _isOpen = true;
 
@@ -235,6 +241,8 @@ public class BoardSlideSwitcher : MonoBehaviour
 
     private IEnumerator CloseRoutine()
     {
+        AudioManager.Instance.PlaySFX(closeSound);
+
         yield return Move(boardRect.anchoredPosition, closedAnchoredPos, moveUpTime, alphaWhenClosed, EaseInCubic);
         _isOpen = false;
 
@@ -243,6 +251,8 @@ public class BoardSlideSwitcher : MonoBehaviour
 
     private IEnumerator SwitchTabRoutine(Tab nextTab)
     {
+        AudioManager.Instance.PlaySFX(closeSound);
+
         yield return Move(boardRect.anchoredPosition, closedAnchoredPos, moveUpTime, alphaWhenClosed, EaseInCubic);
         _isOpen = false;
 
@@ -256,6 +266,8 @@ public class BoardSlideSwitcher : MonoBehaviour
         SetTabImmediate(_currentTab);
         yield return null;
 
+        AudioManager.Instance.PlaySFX(openSound);
+        
         yield return Move(boardRect.anchoredPosition, openAnchoredPos, moveDownTime, 1f, EaseOutCubic);
         _isOpen = true;
 

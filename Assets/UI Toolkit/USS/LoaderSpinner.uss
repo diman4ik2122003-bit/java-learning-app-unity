@@ -1,0 +1,26 @@
+.loader-root {
+    width: 62px;
+    height: 62px;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    translate: -31px -31px;
+}
+
+.dot {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 5px;
+    background-color: rgb(156, 116, 83);
+    opacity: 0.2;
+}
+
+#dot-0 { left: 26px; top: 0px;  }
+#dot-1 { left: 44px; top: 8px;  }
+#dot-2 { left: 51px; top: 26px; }
+#dot-3 { left: 43px; top: 43px; }
+#dot-4 { left: 26px; top: 51px; }
+#dot-5 { left: 8px;  top: 44px; }
+#dot-6 { left: 0px;  top: 26px; }
+#dot-7 { left: 8px;  top: 8px;  }

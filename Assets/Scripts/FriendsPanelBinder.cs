@@ -20,6 +20,9 @@ public class FriendsPanelBinder : MonoBehaviour
     [Header("Debug")]
     [SerializeField] private bool debugLogs = true;
     
+    [Header("Loading")]
+    [SerializeField] private PanelLoadingController loadingController;  // ← новое
+
     private int _lastApplyFrame = -1;
 
     private TokenManager.FriendData[] allFriendsData;
@@ -60,6 +63,7 @@ public class FriendsPanelBinder : MonoBehaviour
         allFriendsData = friendsResp?.data ?? new TokenManager.FriendData[0];
         _hasPendingData = true;
 
+        loadingController?.StopLoading();
         if (!gameObject.activeInHierarchy) return;
 
         RebuildUI();
