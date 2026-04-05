@@ -60,12 +60,24 @@ public class ElevatorLevelController : MonoBehaviour
         // 1. Идём к платформе лифта
         if (player != null && entry.pulley.platformSide != null)
         {
-            float platformX = entry.pulley.platformSide.position.x;
+            Vector3 platformCenter = GetPlatformCenter(entry.pulley.platformSide);
+            float platformX = platformCenter.x;
+            
+            // Шаг А: идём горизонтально до середины платформы
             if (Mathf.Abs(player.transform.position.x - platformX) > 0.1f)
             {
-                Vector3 targetPath = new Vector3(platformX, player.transform.position.y, player.transform.position.z);
-                yield return MovePlayerSmoothly(targetPath);
+                Vector3 targetPathX = new Vector3(platformX, player.transform.position.y, player.transform.position.z);
+                yield return MovePlayerSmoothly(targetPathX);
             }
+            
+            // Шаг Б: падаем вниз (встаём на платформу)
+            float platformY = platformCenter.y + 0.5f; // +0.5f чтобы ноги не проваливались под текстуру
+            if (player.transform.position.y > platformY + 0.1f)
+            {
+                Vector3 targetPathY = new Vector3(platformX, platformY, player.transform.position.z);
+                yield return MovePlayerSmoothly(targetPathY, 15f); // Быстро падаем
+            }
+
             player.transform.SetParent(entry.pulley.platformSide);
             Debug.Log($"[ElevatorController] Игрок привязан к платформе лифта {id}");
         }
@@ -143,6 +155,16 @@ public class ElevatorLevelController : MonoBehaviour
             player.transform.SetParent(null);
             player.ResetState();
         }
+    }
+
+    private Vector3 GetPlatformCenter(Transform platformSide)
+    {
+        // Ищем визуальную платформу (в иерархии есть опечатка "Elevator Platfrom")
+        Transform visual = platformSide.Find("Elevator Platfrom");
+        if (visual == null) visual = platformSide.Find("Elevator Platform");
+        if (visual == null && platformSide.childCount > 0) visual = platformSide.GetChild(0);
+        
+        return visual != null ? visual.position : platformSide.position;
     }
 
     private ChestController FindNextChestToRight(float startX)
