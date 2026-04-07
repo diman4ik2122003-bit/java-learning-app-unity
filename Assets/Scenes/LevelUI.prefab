@@ -691,6 +691,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 367999061610752511}
+  - component: {fileID: 8246186899754300311}
   - component: {fileID: 5147342979782528336}
   - component: {fileID: 5324671438590128932}
   - component: {fileID: 8452215283136232880}
@@ -721,6 +722,20 @@ RectTransform:
   m_AnchoredPosition: {x: -98.5, y: 103.4}
   m_SizeDelta: {x: 138.28, y: 30.4789}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &8246186899754300311
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2391623143432227580}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2668acb88f73ac8498d130e6ba8ae11e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalizedText
+  key: hint_button
+  database: {fileID: 11400000, guid: 7e5d43645b3342646aa2beeadd22250f, type: 2}
 --- !u!222 &5147342979782528336
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -824,6 +839,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2493124972829650460}
+  - component: {fileID: 8411512302669890275}
+  - component: {fileID: 8254146266129550888}
   - component: {fileID: 9093848122604860525}
   - component: {fileID: 5015212026531971109}
   - component: {fileID: 5931995465038064649}
@@ -855,6 +872,34 @@ RectTransform:
   m_AnchoredPosition: {x: -180.4, y: -285}
   m_SizeDelta: {x: 239.8535, y: 58.873}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &8411512302669890275
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2508436063681436334}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2668acb88f73ac8498d130e6ba8ae11e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalizedText
+  key: back_to_menu_button
+  database: {fileID: 11400000, guid: 7e5d43645b3342646aa2beeadd22250f, type: 2}
+--- !u!114 &8254146266129550888
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2508436063681436334}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad9f88525e8d2e843a3b2e5cc719c1c1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonScaleOnHover
+  scaleMultiplier: 1.15
+  scaleSpeed: 8
 --- !u!114 &9093848122604860525
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1048,6 +1093,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3554842450955398479}
+  - component: {fileID: 5034485151249800388}
   - component: {fileID: 6080571092679145423}
   - component: {fileID: 5862129165465693851}
   - component: {fileID: 509296281302213926}
@@ -1078,6 +1124,20 @@ RectTransform:
   m_AnchoredPosition: {x: 47.4, y: 103.4}
   m_SizeDelta: {x: 138.2784, y: 30.479}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &5034485151249800388
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2923328004016500754}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2668acb88f73ac8498d130e6ba8ae11e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalizedText
+  key: solution_button
+  database: {fileID: 11400000, guid: 7e5d43645b3342646aa2beeadd22250f, type: 2}
 --- !u!222 &6080571092679145423
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1190,7 +1250,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &8511086647386554223
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1465,6 +1525,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2581293260672864970}
+  - component: {fileID: 1175335823847694523}
   - component: {fileID: 8936473709858624550}
   - component: {fileID: 7754171591335416833}
   m_Layer: 5
@@ -1493,6 +1554,20 @@ RectTransform:
   m_AnchoredPosition: {x: -0.000038146973, y: -72.7}
   m_SizeDelta: {x: 900, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1175335823847694523
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4948876340373895538}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2668acb88f73ac8498d130e6ba8ae11e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalizedText
+  key: victory_time
+  database: {fileID: 11400000, guid: 7e5d43645b3342646aa2beeadd22250f, type: 2}
 --- !u!222 &8936473709858624550
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1601,6 +1676,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8973966808529020360}
+  - component: {fileID: 432178917202612826}
   - component: {fileID: 1269743942853478286}
   - component: {fileID: 5673537905199100496}
   m_Layer: 5
@@ -1629,6 +1705,20 @@ RectTransform:
   m_AnchoredPosition: {x: 0.000050132, y: -136.99998}
   m_SizeDelta: {x: 900, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &432178917202612826
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5043903697685527437}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2668acb88f73ac8498d130e6ba8ae11e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalizedText
+  key: victory_attempts
+  database: {fileID: 11400000, guid: 7e5d43645b3342646aa2beeadd22250f, type: 2}
 --- !u!222 &1269743942853478286
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1948,6 +2038,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5662649699227237453}
+  - component: {fileID: 2358978036587413181}
+  - component: {fileID: 9104136602909662380}
   - component: {fileID: 969091772523105274}
   - component: {fileID: 5162251170812856251}
   - component: {fileID: 6301412831590296858}
@@ -1978,6 +2070,34 @@ RectTransform:
   m_AnchoredPosition: {x: 176.74, y: -284.44}
   m_SizeDelta: {x: 239.85, y: 60}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &2358978036587413181
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5670116464279575434}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2668acb88f73ac8498d130e6ba8ae11e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalizedText
+  key: next_level_button
+  database: {fileID: 11400000, guid: 7e5d43645b3342646aa2beeadd22250f, type: 2}
+--- !u!114 &9104136602909662380
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5670116464279575434}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad9f88525e8d2e843a3b2e5cc719c1c1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonScaleOnHover
+  scaleMultiplier: 1.15
+  scaleSpeed: 8
 --- !u!222 &969091772523105274
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2217,6 +2337,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1621380276582728264}
+  - component: {fileID: 5774383773304307889}
   - component: {fileID: 745195213729729103}
   - component: {fileID: 6222849590424376250}
   m_Layer: 5
@@ -2245,6 +2366,20 @@ RectTransform:
   m_AnchoredPosition: {x: -0.000050132, y: 257.6}
   m_SizeDelta: {x: 900, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &5774383773304307889
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6874281569945371985}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2668acb88f73ac8498d130e6ba8ae11e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalizedText
+  key: victory_title
+  database: {fileID: 11400000, guid: 7e5d43645b3342646aa2beeadd22250f, type: 2}
 --- !u!222 &745195213729729103
 CanvasRenderer:
   m_ObjectHideFlags: 0
