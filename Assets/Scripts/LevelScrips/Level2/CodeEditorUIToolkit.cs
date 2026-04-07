@@ -504,14 +504,14 @@ public class CodeEditorUIToolkit : MonoBehaviour
         
         AddConsoleLog("▶️ Запуск кода...");
         
-        var executor = FindFirstObjectByType<JavaCodeExecutor>();
-        if (executor != null)
+        var manager = FindFirstObjectByType<LevelGameManager>();
+        if (manager != null)
         {
-            executor.ExecuteCode();
+            manager.OnRunCode();
         }
         else
         {
-            AddConsoleLog("❌ JavaCodeExecutor не найден!", true);
+            AddConsoleLog("❌ LevelGameManager не найден!", true);
         }
     }
 

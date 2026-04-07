@@ -22,11 +22,47 @@ public class ElevatorLevelController : MonoBehaviour
     public PlayerController player;
 
     [Header("Gamification")]
-    public List<string> unlockedTypes = new List<string>() { "byte" }; // byte открыт изначально
+    [Tooltip("Список известных типов. Оставьте пустым, чтобы первый сундук в катсцене выдал и показал первый тип!")]
+    public List<string> unlockedTypes = new List<string>();
+
+    [Header("Cutscene")]
+    [Tooltip("Автоматически проиграть заход игрока и открытие первого сундука при старте")]
+    public bool playIntroCutscene = true;
 
     private void Awake()
     {
         if (player == null) player = FindFirstObjectByType<PlayerController>();
+    }
+
+    private void Start()
+    {
+        if (playIntroCutscene && player != null)
+        {
+            StartCoroutine(PlayIntroCoroutine());
+        }
+    }
+
+    private IEnumerator PlayIntroCoroutine()
+    {
+        // Ждем 1 кадр, чтобы LevelGameManager телепортировал игрока на startPlayerPosition
+        yield return null;
+
+        // Ищем первый сундук правее изначальной позиции
+        ChestController firstChest = FindNextChestToRight(player.transform.position.x - 2f);
+        if (firstChest != null)
+        {
+            Vector3 target = firstChest.transform.position;
+            target.x -= 0.15f; // Доходим почти до середины
+            target.y = player.transform.position.y; // Сохраняем исходную высоту, чтобы не провалиться под землю
+
+            yield return MovePlayerSmoothly(target, 3f);
+
+            // Даем небольшую паузу
+            yield return new WaitForSeconds(0.2f);
+            
+            // Открываем автоматически (начнётся анимация и вылет текста)
+            firstChest.Open();
+        }
     }
 
     public void UnlockType(string typeName)
@@ -54,7 +90,7 @@ public class ElevatorLevelController : MonoBehaviour
     /// Добавить вес на лифт и запустить анимацию, если хватает.
     /// Вызывается из JavaCodeExecutor.
     /// </summary>
-    public IEnumerator AddWeightToElevator(int id, float weight)
+    public IEnumerator AddWeightToElevator(int id, long weight)
     {
         ElevatorEntry entry = elevators.Find(e => e.id == id);
         if (entry == null || entry.pulley == null)
@@ -71,7 +107,16 @@ public class ElevatorLevelController : MonoBehaviour
         }
 
         // --- ПРОВЕРКА ВЕСА ---
-        float totalWeight = entry.pulley.CurrentWeight + weight;
+        long totalWeight;
+        try 
+        { 
+            totalWeight = checked(entry.pulley.CurrentWeight + weight); 
+        }
+        catch (System.OverflowException) 
+        { 
+            totalWeight = long.MaxValue; 
+        }
+
         if (totalWeight < entry.pulley.requiredWeight)
         {
             CodeEditor editor = FindFirstObjectByType<CodeEditor>();
@@ -202,6 +247,13 @@ public class ElevatorLevelController : MonoBehaviour
         {
             player.transform.SetParent(null);
             player.ResetState();
+        }
+
+        unlockedTypes.Clear();
+        
+        if (playIntroCutscene && player != null)
+        {
+            StartCoroutine(PlayIntroCoroutine());
         }
     }
 

@@ -101,7 +101,15 @@ public class LevelGameManager : MonoBehaviour
     {
         Debug.Log("[LevelGameManager] ⭐ OnRunCode() вызван");
 
-        if (uiManager == null || uiManager.codeEditor == null) return;
+        if (uiManager == null)
+        {
+            Debug.LogError("[LevelGameManager] uiManager is null! Please assign LevelManager in the Inspector.");
+            return;
+        }
+        if (uiManager.codeEditor == null)
+        {
+            Debug.LogWarning("[LevelGameManager] uiManager.codeEditor is null! RunCode will proceed, but local logic may fail.");
+        }
 
         progressMadeThisRun = false;
 
@@ -114,13 +122,28 @@ public class LevelGameManager : MonoBehaviour
         if (useJavaServer)
         {
             JavaCodeExecutor executor = FindFirstObjectByType<JavaCodeExecutor>();
-            if (executor != null) executor.ExecuteCode();
+            if (executor != null)
+            {
+                executor.ExecuteCode();
+            }
+            else
+            {
+                Debug.LogError("[LevelGameManager] JavaCodeExecutor is missing in the scene!");
+                if (uiManager != null && uiManager.codeEditor != null)
+                    uiManager.codeEditor.AddConsoleLog("❌ Ошибка: В сцене отсутствует JavaCodeExecutor!", true);
+            }
         }
         else
         {
             if (CodeExecutor.Instance != null)
             {
-                CodeExecutor.Instance.Execute(uiManager.codeEditor.GetCode(), player);
+                CodeExecutor.Instance.Execute(uiManager?.codeEditor?.GetCode(), player);
+            }
+            else
+            {
+                Debug.LogError("[LevelGameManager] Local CodeExecutor.Instance is null!");
+                if (uiManager != null && uiManager.codeEditor != null)
+                    uiManager.codeEditor.AddConsoleLog("❌ Ошибка: Локальный CodeExecutor не найден, а сервер отключен!", true);
             }
         }
     }
@@ -235,6 +258,13 @@ public class LevelGameManager : MonoBehaviour
 
             if (player != null) player.SetStartPosition(currentLevel.playerStartPosition);
             levelCompleted = false;
+        }
+
+        // Пробрасываем сброс в ElevatorLevelController для кат-сцены и лифтов
+        ElevatorLevelController elc = FindFirstObjectByType<ElevatorLevelController>();
+        if (elc != null)
+        {
+            elc.ResetLevel();
         }
     }
 

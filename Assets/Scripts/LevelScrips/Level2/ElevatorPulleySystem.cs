@@ -63,15 +63,16 @@ public class ElevatorPulleySystem : MonoBehaviour
     private AudioSource audioSource;
 
     [Header("=== Состояние ===")]
-    public float requiredWeight = 10f;
-    private float currentWeight = 0f;
-    public float CurrentWeight => currentWeight;
+    public long requiredWeight = 10;
+    private long currentWeight = 0;
+    public long CurrentWeight => currentWeight;
+    private long displayedAddedWeight = 0;
     private bool isAnimating = false;
 
     /// <summary>
     /// Доля пройденного пути (0..1). 0 = внизу, 1 = полностью наверху.
     /// </summary>
-    public float Progress => Mathf.Clamp01(currentWeight / Mathf.Max(requiredWeight, 0.01f));
+    public float Progress => Mathf.Clamp01((float)currentWeight / Mathf.Max((float)requiredWeight, 0.01f));
 
     /// <summary>
     /// true, когда лифт доехал до конца И не анимируется.
@@ -109,7 +110,7 @@ public class ElevatorPulleySystem : MonoBehaviour
             Transform constWeightBox = platformSide.Find("Elevator Weight Const");
             if (constWeightBox != null)
             {
-                platformWeightText = CreateWeightText(constWeightBox, requiredWeight.ToString());
+                platformWeightText = CreateWeightText(constWeightBox, FormatWeight(requiredWeight));
                 platformWeightText.transform.localPosition = Vector3.zero;
             }
         }
@@ -147,6 +148,10 @@ public class ElevatorPulleySystem : MonoBehaviour
         textMesh.color = new Color(0.2f, 0.2f, 0.2f, 1f); 
         textMesh.sortingOrder = 50;
 
+        // Позволяем перенос по строкам и задаем жесткие рамки RectTransform
+        textMesh.enableWordWrapping = true;
+        textMesh.rectTransform.sizeDelta = new Vector2(4.5f, 4.5f);
+
         // Берём шрифт 100% правильно из компонента логики уровней
         LevelManager lm = FindFirstObjectByType<LevelManager>();
         if (lm != null && lm.taskTitle != null && lm.taskTitle.font != null)
@@ -158,19 +163,45 @@ public class ElevatorPulleySystem : MonoBehaviour
     }
 
     /// <summary>
+    /// Форматируем вес, добавляя перенос сроки если слишком длинный
+    /// </summary>
+    private string FormatWeight(long weight)
+    {
+        string s = weight.ToString("N0", System.Globalization.CultureInfo.InvariantCulture).Replace(",", " ");
+        if (s.Length > 7)
+        {
+            // Пытаемся найти пробел поближе к середине, чтобы разделить строку
+            int mid = s.Length / 2;
+            int spaceIdx = s.IndexOf(' ', System.Math.Max(0, mid - 2));
+            if (spaceIdx == -1) spaceIdx = s.LastIndexOf(' ', System.Math.Min(s.Length - 1, mid + 2));
+            
+            if (spaceIdx != -1)
+            {
+                s = s.Substring(0, spaceIdx) + "\n" + s.Substring(spaceIdx + 1);
+            }
+        }
+        return s;
+    }
+
+    /// <summary>
     /// Добавить груз. Лифт сдвинется пропорционально:
     /// requiredWeight=10, добавили 5 → едет на 50% пути.
     /// Добавили ещё 3 → доезжает до 80%. И т.д.
     /// </summary>
-    public void AddWeight(float weight)
+    public void AddWeight(long weight)
     {
-        currentWeight += weight;
-        // Ограничиваем максимум
-        currentWeight = Mathf.Min(currentWeight, requiredWeight);
+        try { displayedAddedWeight = checked(displayedAddedWeight + weight); }
+        catch (System.OverflowException) { displayedAddedWeight = long.MaxValue; }
+        
+        try { currentWeight = checked(currentWeight + weight); }
+        catch (System.OverflowException) { currentWeight = long.MaxValue; }
+
+        // Ограничиваем максимум (Используем System.Math.Min, т.к. Mathf.Min кастует в float и ломает числа!)
+        currentWeight = System.Math.Min(currentWeight, requiredWeight);
 
         if (addedWeightText != null)
         {
-            addedWeightText.text = currentWeight.ToString();
+            addedWeightText.text = FormatWeight(displayedAddedWeight);
         }
 
         float targetProgress = Progress;
@@ -188,7 +219,7 @@ public class ElevatorPulleySystem : MonoBehaviour
     /// </summary>
     public void SetProgress(float progress01)
     {
-        currentWeight = Mathf.Clamp01(progress01) * requiredWeight;
+        currentWeight = (long)(Mathf.Clamp01(progress01) * requiredWeight);
         if (!isAnimating)
         {
             StartCoroutine(AnimateToProgress(progress01));
@@ -372,10 +403,12 @@ public class ElevatorPulleySystem : MonoBehaviour
 
     public void ResetElevator()
     {
-        StopAllCoroutines();
-        isAnimating = false;
-        currentWeight = 0f;
+        currentWeight = 0;
+        displayedAddedWeight = 0;
         currentVisualProgress = 0f;
+        isAnimating = false;
+        
+        if (addedWeightText != null) addedWeightText.text = "0";
 
         if (platformSide != null) platformSide.localPosition = platformStartLocal;
         if (weightSide != null) weightSide.localPosition = weightStartLocal;
