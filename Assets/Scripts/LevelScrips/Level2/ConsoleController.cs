@@ -53,7 +53,7 @@ public class ConsoleController : MonoBehaviour
         
         if (consoleInputField == null) 
         {
-            Debug.LogError("[ConsoleController] consoleInputField is NULL! Drag the TMP_Text from UI into the slot.");
+            // Убираем Debug.LogError, чтобы избежать бесконечной рекурсии (т.к. мы перехватываем логи)
             return;
         }
 

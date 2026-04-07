@@ -3127,6 +3127,7 @@ GameObject:
   m_Component:
   - component: {fileID: 9212383225867204012}
   - component: {fileID: 6151760917477020721}
+  - component: {fileID: 7205955392812688586}
   m_Layer: 5
   m_Name: CodeEditorManager
   m_TagString: Untagged
@@ -3169,6 +3170,21 @@ MonoBehaviour:
   codeInput: {fileID: 5461391332148900546}
   lineNumbers: {fileID: 5862852122925589007}
   scrollRect: {fileID: 1118457510894693021}
+--- !u!114 &7205955392812688586
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6314021890617991242}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ad148f2872fe5f4d96ce5f335a785fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ConsoleController
+  consoleInputField: {fileID: 5378972115430338694}
+  maxLines: 50
+  interceptUnityLogs: 1
 --- !u!1 &6326658062027014171
 GameObject:
   m_ObjectHideFlags: 0

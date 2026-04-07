@@ -104,6 +104,25 @@ public class JavaCodeExecutor : MonoBehaviour
                 {
                     if (result.success && result.status == "success")
                     {
+                        // ВОССТАНОВЛЕНИЕ EXACT LONG:
+                        // Node.js округляет 64-битные числа, так что JsonUtility ставит 0 для огромных (т.к. они > long.MaxValue).
+                        // Но в result.output числа лежат как точный текст от Java!
+                        if (!string.IsNullOrEmpty(result.output))
+                        {
+                            var mc1 = System.Text.RegularExpressions.Regex.Matches(result.output, @"\""value\""\s*:\s*(-?\d+)");
+                            var mc2 = System.Text.RegularExpressions.Regex.Matches(result.output, @"\""value2\""\s*:\s*(-?\d+)");
+                            for (int i = 0; i < result.commands.Length; i++)
+                            {
+                                if (i < mc1.Count && long.TryParse(mc1[i].Groups[1].Value, out long trueVal))
+                                    result.commands[i].value = trueVal;
+                                else if (i < mc1.Count && ulong.TryParse(mc1[i].Groups[1].Value, out ulong _))
+                                    result.commands[i].value = long.MaxValue; // Хак на случай если число вышло за границу
+
+                                if (i < mc2.Count && long.TryParse(mc2[i].Groups[1].Value, out long trueVal2))
+                                    result.commands[i].value2 = trueVal2;
+                            }
+                        }
+
                         codeEditor.AddConsoleLog("✅ Код скомпилирован!");
                         codeEditor.AddConsoleLog($"📝 Команд: {result.commands.Length}");
                         
