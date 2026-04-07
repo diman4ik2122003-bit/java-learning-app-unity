@@ -524,7 +524,7 @@ public class CodeEditorUIToolkit : MonoBehaviour
         
         AddConsoleLog("⟲ Сброс");
         
-        var levelManager = FindFirstObjectByType<LevelManager>();
+        var levelManager = FindFirstObjectByType<LevelGameManager>();
         if (levelManager != null)
         {
             levelManager.OnResetLevel();

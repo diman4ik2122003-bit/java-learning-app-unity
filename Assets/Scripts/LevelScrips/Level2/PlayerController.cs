@@ -93,7 +93,7 @@ public class PlayerController : MonoBehaviour
         
         // Возвращаемся на стартовую позицию
         transform.position = startWorldPosition;
-        gridMovement.SetGridPosition(gridMovement.WorldToGrid(startWorldPosition));
+        gridMovement.SetLogicalGridPosition(gridMovement.WorldToGrid(startWorldPosition));
     }
     
     // ⭐ Новый метод для установки стартовой позиции
@@ -104,7 +104,8 @@ public class PlayerController : MonoBehaviour
         startGridPosition = gridPos;
         startPositionInitialized = true;
         
-        gridMovement.SetGridPosition(gridPos);
+        transform.position = worldPos;
+        gridMovement.SetLogicalGridPosition(gridPos);
         
         Debug.Log($"Start position set to: World={worldPos}, Grid={gridPos}");
     }
