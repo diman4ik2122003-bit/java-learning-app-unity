@@ -119,11 +119,6 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!4 &196614541 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7246055760327343345, guid: 7f1643cff8403374d99a647ca5d10a19, type: 3}
-  m_PrefabInstance: {fileID: 1865305149}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &902116187
 GameObject:
   m_ObjectHideFlags: 0
@@ -540,7 +535,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1557841225}
-  - component: {fileID: 1557841224}
   - component: {fileID: 1557841223}
   m_Layer: 0
   m_Name: GameManager
@@ -569,27 +563,8 @@ MonoBehaviour:
   closeHintButton: {fileID: 8371183976225579427}
   showHintButton: {fileID: 8128504367745519699}
   useSolutionButton: {fileID: 1143288078597439414}
-  player: {fileID: 5412425416169489095}
-  goalTransform: {fileID: 196614541}
-  useJavaServer: 1
   victoryPanel: {fileID: 7695935531993628954}
-  allLevels:
-  - {fileID: 11400000, guid: e106abc1b9458d14f9a9291efbc9e2e3, type: 2}
-  - {fileID: 11400000, guid: e106abc1b9458d14f9a9291efbc9e2e3, type: 2}
   victoryPanelUI: {fileID: 8990102245832529754}
-  progressMadeThisRun: 0
---- !u!114 &1557841224
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1557841222}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bc433987cc6b69b4eb256b79b7dc4bdf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CodeExecutor
 --- !u!4 &1557841225
 Transform:
   m_ObjectHideFlags: 0
