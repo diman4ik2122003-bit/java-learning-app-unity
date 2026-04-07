@@ -36,7 +36,7 @@ Material:
     - _Density: 1000
     - _EmissionPower: 10
     - _SparkleSpeed: 2
-    - _Threshold: 0.8
+    - _Threshold: 0.19
     m_Colors: []
   m_BuildTextureStacks: []
   m_AllowLocking: 1
