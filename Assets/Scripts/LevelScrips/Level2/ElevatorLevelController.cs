@@ -21,9 +21,33 @@ public class ElevatorLevelController : MonoBehaviour
     [Header("Игрок")]
     public PlayerController player;
 
+    [Header("Gamification")]
+    public List<string> unlockedTypes = new List<string>() { "byte" }; // byte открыт изначально
+
     private void Awake()
     {
         if (player == null) player = FindFirstObjectByType<PlayerController>();
+    }
+
+    public void UnlockType(string typeName)
+    {
+        if (!unlockedTypes.Contains(typeName))
+        {
+            unlockedTypes.Add(typeName);
+            Debug.Log($"[Gamification] Разблокирован новый тип: {typeName}");
+            
+            CodeEditor editor = FindFirstObjectByType<CodeEditor>();
+            if (editor != null)
+            {
+                editor.AddConsoleLog($"🏆 Найден новый тип данных из сундука: {typeName}!", false);
+            }
+
+            LevelGameManager lm = FindFirstObjectByType<LevelGameManager>();
+            if (lm != null)
+            {
+                lm.progressMadeThisRun = true;
+            }
+        }
     }
 
     /// <summary>
@@ -36,6 +60,13 @@ public class ElevatorLevelController : MonoBehaviour
         if (entry == null || entry.pulley == null)
         {
             Debug.LogError($"[ElevatorController] Лифт с id {id} не найден!");
+            yield break;
+        }
+
+        // Если лифт уже отработал в прошлый раз — просто пропускаем его команду!
+        if (entry.pulley.IsFinished)
+        {
+            Debug.Log($"[ElevatorController] Лифт {id} уже опущен. Команда пропущена.");
             yield break;
         }
 
@@ -71,7 +102,7 @@ public class ElevatorLevelController : MonoBehaviour
             }
             
             // Шаг Б: падаем вниз (встаём на платформу)
-            float platformY = platformCenter.y + 0.5f; // +0.5f чтобы ноги не проваливались под текстуру
+            float platformY = platformCenter.y + 1f; // +0.5f чтобы ноги не проваливались под текстуру
             if (player.transform.position.y > platformY + 0.1f)
             {
                 Vector3 targetPathY = new Vector3(platformX, platformY, player.transform.position.z);
@@ -102,10 +133,27 @@ public class ElevatorLevelController : MonoBehaviour
             }
             else
             {
-                UniversalLevelManager mgr = FindFirstObjectByType<UniversalLevelManager>();
-                if (mgr != null && mgr.goalTransform != null && mgr.goalTransform.position.x > player.transform.position.x)
+                UniversalLevelManager uniMgr = FindFirstObjectByType<UniversalLevelManager>();
+                if (uniMgr != null && uniMgr.goalTransform != null && uniMgr.goalTransform.position.x > player.transform.position.x)
                 {
-                    targetX = mgr.goalTransform.position.x;
+                    targetX = uniMgr.goalTransform.position.x;
+                }
+                else
+                {
+                    LevelGameManager lm = FindFirstObjectByType<LevelGameManager>();
+                    if (lm != null && lm.goalTransform != null && lm.goalTransform.position.x > player.transform.position.x)
+                    {
+                        targetX = lm.goalTransform.position.x;
+                    }
+                    else
+                    {
+                        // Прямая попытка найти объект с тегом "Finish" или именем "Goal" на крайний случай
+                        GameObject goalObj = GameObject.Find("Goal");
+                        if (goalObj != null && goalObj.transform.position.x > player.transform.position.x)
+                        {
+                            targetX = goalObj.transform.position.x;
+                        }
+                    }
                 }
             }
 
@@ -124,7 +172,7 @@ public class ElevatorLevelController : MonoBehaviour
             GridMovementController gridMovement = player.GetComponent<GridMovementController>();
             if (gridMovement != null)
             {
-                gridMovement.SetGridPosition(gridMovement.WorldToGrid(player.transform.position));
+                gridMovement.SetLogicalGridPosition(gridMovement.WorldToGrid(player.transform.position));
             }
         }
     }

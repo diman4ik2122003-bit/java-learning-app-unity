@@ -197,12 +197,12 @@ TextureImporter:
       name: TX Chest Animation_0
       rect:
         serializedVersion: 2
-        x: 30
-        y: 447
-        width: 36
-        height: 31
+        x: 16
+        y: 432
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -219,12 +219,12 @@ TextureImporter:
       name: TX Chest Animation_1
       rect:
         serializedVersion: 2
-        x: 94
-        y: 447
-        width: 36
-        height: 34
+        x: 80
+        y: 432
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -241,12 +241,12 @@ TextureImporter:
       name: TX Chest Animation_2
       rect:
         serializedVersion: 2
-        x: 158
-        y: 447
-        width: 36
-        height: 37
+        x: 144
+        y: 432
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -263,12 +263,12 @@ TextureImporter:
       name: TX Chest Animation_3
       rect:
         serializedVersion: 2
-        x: 222
-        y: 447
-        width: 36
-        height: 39
+        x: 208
+        y: 432
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -285,12 +285,12 @@ TextureImporter:
       name: TX Chest Animation_4
       rect:
         serializedVersion: 2
-        x: 286
-        y: 447
-        width: 36
-        height: 42
+        x: 272
+        y: 432
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -307,12 +307,12 @@ TextureImporter:
       name: TX Chest Animation_5
       rect:
         serializedVersion: 2
-        x: 350
-        y: 447
-        width: 36
-        height: 40
+        x: 336
+        y: 432
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -329,12 +329,12 @@ TextureImporter:
       name: TX Chest Animation_6
       rect:
         serializedVersion: 2
-        x: 414
-        y: 447
-        width: 36
-        height: 38
+        x: 400
+        y: 432
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -351,12 +351,12 @@ TextureImporter:
       name: TX Chest Animation_7
       rect:
         serializedVersion: 2
-        x: 30
-        y: 383
-        width: 36
-        height: 32
+        x: 16
+        y: 368
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -373,12 +373,12 @@ TextureImporter:
       name: TX Chest Animation_8
       rect:
         serializedVersion: 2
-        x: 94
-        y: 383
-        width: 36
-        height: 36
+        x: 80
+        y: 368
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -395,12 +395,12 @@ TextureImporter:
       name: TX Chest Animation_9
       rect:
         serializedVersion: 2
-        x: 158
-        y: 383
-        width: 36
-        height: 40
+        x: 144
+        y: 368
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -417,12 +417,12 @@ TextureImporter:
       name: TX Chest Animation_10
       rect:
         serializedVersion: 2
-        x: 222
-        y: 383
-        width: 36
-        height: 43
+        x: 208
+        y: 368
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -439,12 +439,12 @@ TextureImporter:
       name: TX Chest Animation_11
       rect:
         serializedVersion: 2
-        x: 286
-        y: 383
-        width: 36
-        height: 41
+        x: 272
+        y: 368
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -461,12 +461,12 @@ TextureImporter:
       name: TX Chest Animation_12
       rect:
         serializedVersion: 2
-        x: 350
-        y: 383
-        width: 36
-        height: 37
+        x: 336
+        y: 368
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -483,12 +483,12 @@ TextureImporter:
       name: TX Chest Animation_13
       rect:
         serializedVersion: 2
-        x: 414
-        y: 383
-        width: 36
-        height: 34
+        x: 400
+        y: 368
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -505,12 +505,12 @@ TextureImporter:
       name: TX Chest Animation_14
       rect:
         serializedVersion: 2
-        x: 30
-        y: 319
-        width: 36
-        height: 32
+        x: 16
+        y: 304
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -527,12 +527,12 @@ TextureImporter:
       name: TX Chest Animation_15
       rect:
         serializedVersion: 2
-        x: 94
-        y: 319
-        width: 36
-        height: 36
+        x: 80
+        y: 304
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -549,12 +549,12 @@ TextureImporter:
       name: TX Chest Animation_16
       rect:
         serializedVersion: 2
-        x: 158
-        y: 319
-        width: 36
-        height: 38
+        x: 144
+        y: 304
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -571,12 +571,12 @@ TextureImporter:
       name: TX Chest Animation_17
       rect:
         serializedVersion: 2
-        x: 222
-        y: 319
-        width: 36
-        height: 39
+        x: 208
+        y: 304
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -593,12 +593,12 @@ TextureImporter:
       name: TX Chest Animation_18
       rect:
         serializedVersion: 2
-        x: 286
-        y: 319
-        width: 36
-        height: 41
+        x: 272
+        y: 304
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -615,12 +615,12 @@ TextureImporter:
       name: TX Chest Animation_19
       rect:
         serializedVersion: 2
-        x: 350
-        y: 319
-        width: 36
-        height: 40
+        x: 336
+        y: 304
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -637,12 +637,12 @@ TextureImporter:
       name: TX Chest Animation_20
       rect:
         serializedVersion: 2
-        x: 414
-        y: 319
-        width: 36
-        height: 39
+        x: 400
+        y: 304
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -659,12 +659,12 @@ TextureImporter:
       name: TX Chest Animation_21
       rect:
         serializedVersion: 2
-        x: 30
-        y: 255
-        width: 36
-        height: 31
+        x: 16
+        y: 240
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -681,12 +681,12 @@ TextureImporter:
       name: TX Chest Animation_22
       rect:
         serializedVersion: 2
-        x: 94
-        y: 255
-        width: 36
-        height: 35
+        x: 80
+        y: 240
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -703,12 +703,12 @@ TextureImporter:
       name: TX Chest Animation_23
       rect:
         serializedVersion: 2
-        x: 158
-        y: 255
-        width: 36
-        height: 37
+        x: 144
+        y: 240
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -725,12 +725,12 @@ TextureImporter:
       name: TX Chest Animation_24
       rect:
         serializedVersion: 2
-        x: 222
-        y: 255
-        width: 36
-        height: 39
+        x: 208
+        y: 240
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -747,12 +747,12 @@ TextureImporter:
       name: TX Chest Animation_25
       rect:
         serializedVersion: 2
-        x: 286
-        y: 255
-        width: 36
-        height: 41
+        x: 272
+        y: 240
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -769,12 +769,12 @@ TextureImporter:
       name: TX Chest Animation_26
       rect:
         serializedVersion: 2
-        x: 350
-        y: 255
-        width: 36
-        height: 40
+        x: 336
+        y: 240
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -791,12 +791,12 @@ TextureImporter:
       name: TX Chest Animation_27
       rect:
         serializedVersion: 2
-        x: 414
-        y: 255
-        width: 36
-        height: 38
+        x: 400
+        y: 240
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -813,7 +813,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: c0d0ac8bf0bd6a7428ff751b3d7777b2
     internalID: 0
     vertices: []
     indices: 
@@ -821,7 +821,9 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries: []
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":64.0,"y":64.0},"gridSpriteOffset":{"x":16.0,"y":16.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":1,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
       TX Chest Animation_0: -1309413244939661745
       TX Chest Animation_1: 2628861295414256057

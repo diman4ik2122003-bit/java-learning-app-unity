@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 
 /// <summary>
 /// Система лебёдки с правильной схемой цепей:
@@ -56,6 +57,11 @@ public class ElevatorPulleySystem : MonoBehaviour
     public float moveSpeed = 2f;
     public float travelDistance = 5f;
 
+    [Header("=== Аудио ===")]
+    [Tooltip("Звук движения лебедки (зацикленный)")]
+    public AudioClip moveSound;
+    private AudioSource audioSource;
+
     [Header("=== Состояние ===")]
     public float requiredWeight = 10f;
     private float currentWeight = 0f;
@@ -86,12 +92,69 @@ public class ElevatorPulleySystem : MonoBehaviour
     private List<GameObject> chainRightArm = new List<GameObject>();     // точка разделения → правый якорь
     private List<GameObject> chainWeight = new List<GameObject>();       // шкив → якорь груза
 
+    // Тексты для визуализации веса
+    private TextMeshPro platformWeightText;
+    private TextMeshPro addedWeightText;
+
     void Start()
     {
         if (platformSide != null) platformStartLocal = platformSide.localPosition;
         if (weightSide != null) weightStartLocal = weightSide.localPosition;
 
         RebuildAllChains();
+
+        // Ищем конкретные объекты камней, чтобы центрировать текст идеально
+        if (platformSide != null)
+        {
+            Transform constWeightBox = platformSide.Find("Elevator Weight Const");
+            if (constWeightBox != null)
+            {
+                platformWeightText = CreateWeightText(constWeightBox, requiredWeight.ToString());
+                platformWeightText.transform.localPosition = Vector3.zero;
+            }
+        }
+
+        if (weightSide != null)
+        {
+            Transform dynamicWeightBox = weightSide.Find("Elevator Weight");
+            if (dynamicWeightBox != null)
+            {
+                addedWeightText = CreateWeightText(dynamicWeightBox, "0");
+                addedWeightText.transform.localPosition = Vector3.zero;
+            }
+        }
+        // Настраиваем AudioSource для звука лебедки
+        audioSource = gameObject.AddComponent<AudioSource>();
+        audioSource.playOnAwake = false;
+        audioSource.loop = false;
+        // Можно сделать spatialBlend = 1f, если нужна 3D-локализация (звук затухает вдалеке), 
+        // но оставим 0f (2D) для слышимости
+        audioSource.spatialBlend = 0f; 
+        audioSource.volume = 0.7f;
+    }
+
+    private TextMeshPro CreateWeightText(Transform parent, string initialText)
+    {
+        GameObject textObj = new GameObject("WeightText");
+        textObj.transform.SetParent(parent, false); // Идеальный центр
+        
+        TextMeshPro textMesh = textObj.AddComponent<TextMeshPro>();
+        textMesh.text = initialText;
+        textMesh.fontSize = 5;
+        textMesh.alignment = TextAlignmentOptions.Center;
+        
+        // Черный или тёмно-серый цвет хорошо читается на камне
+        textMesh.color = new Color(0.2f, 0.2f, 0.2f, 1f); 
+        textMesh.sortingOrder = 50;
+
+        // Берём шрифт 100% правильно из компонента логики уровней
+        LevelManager lm = FindFirstObjectByType<LevelManager>();
+        if (lm != null && lm.taskTitle != null && lm.taskTitle.font != null)
+        {
+            textMesh.font = lm.taskTitle.font;
+        }
+
+        return textMesh;
     }
 
     /// <summary>
@@ -104,6 +167,11 @@ public class ElevatorPulleySystem : MonoBehaviour
         currentWeight += weight;
         // Ограничиваем максимум
         currentWeight = Mathf.Min(currentWeight, requiredWeight);
+
+        if (addedWeightText != null)
+        {
+            addedWeightText.text = currentWeight.ToString();
+        }
 
         float targetProgress = Progress;
         Debug.Log($"[Pulley] Добавлен груз {weight}. Итого: {currentWeight}/{requiredWeight} ({targetProgress * 100:F0}%)");
@@ -130,6 +198,12 @@ public class ElevatorPulleySystem : MonoBehaviour
     private IEnumerator AnimateToProgress(float targetProgress)
     {
         isAnimating = true;
+
+        if (moveSound != null && audioSource != null && !audioSource.isPlaying)
+        {
+            audioSource.clip = moveSound;
+            audioSource.Play();
+        }
 
         float startProgress = currentVisualProgress;
         float progressDelta = Mathf.Abs(targetProgress - startProgress);
@@ -158,6 +232,12 @@ public class ElevatorPulleySystem : MonoBehaviour
         currentVisualProgress = targetProgress;
         ApplyPositions(currentVisualProgress);
         RebuildAllChains();
+
+        // Остановка звука
+        if (audioSource != null && audioSource.isPlaying)
+        {
+            audioSource.Stop();
+        }
 
         isAnimating = false;
 

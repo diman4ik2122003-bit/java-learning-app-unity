@@ -13,14 +13,14 @@ public class CodeEditorButtonBridge : MonoBehaviour
     public Button minusScaleButton;
     public Button resetScaleButton;
 
-    private LevelManager levelManager;
+    private LevelGameManager levelManager;
     private UniversalLevelManager universalLevelManager;
     private ScaleController scaleController;
 
     private void OnEnable()
     {
         Debug.Log("[CodeEditorButtonBridge] OnEnable: Searching for LevelManager...");
-        levelManager = FindFirstObjectByType<LevelManager>();
+        levelManager = FindFirstObjectByType<LevelGameManager>();
         universalLevelManager = FindFirstObjectByType<UniversalLevelManager>();
         scaleController = FindFirstObjectByType<ScaleController>();
 

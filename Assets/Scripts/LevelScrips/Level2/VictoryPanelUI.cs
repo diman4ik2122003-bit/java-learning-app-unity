@@ -79,7 +79,7 @@ public class VictoryPanelUI : MonoBehaviour
     {
         Debug.Log("[VictoryPanelUI] Загрузка следующего уровня");
         
-        LevelManager levelManager = FindFirstObjectByType<LevelManager>();
+        LevelGameManager levelManager = FindFirstObjectByType<LevelGameManager>();
         if (levelManager != null)
         {
             levelManager.OnNextLevel();

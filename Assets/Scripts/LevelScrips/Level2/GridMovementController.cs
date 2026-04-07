@@ -238,4 +238,9 @@ public class GridMovementController : MonoBehaviour
         SnapToGrid();
         Debug.Log($"SetGridPosition: {pos} -> World: {transform.position}");
     }
+
+    public void SetLogicalGridPosition(Vector2Int pos)
+    {
+        gridPosition = pos;
+    }
 }

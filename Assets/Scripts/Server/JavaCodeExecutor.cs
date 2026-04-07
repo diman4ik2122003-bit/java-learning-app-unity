@@ -40,6 +40,31 @@ public class JavaCodeExecutor : MonoBehaviour
             CallExecutionFinished(); // ← Даже при пустом коде вызываем!
             return;
         }
+
+        // --- Геймификация: проверка открытых типов данных ---
+        ElevatorLevelController elc = FindFirstObjectByType<ElevatorLevelController>();
+        if (elc != null)
+        {
+            // Очищаем код от комментариев, чтобы подсказки // не блокировали запуск
+            string cleanCode = System.Text.RegularExpressions.Regex.Replace(code, @"//.*", "");
+            cleanCode = System.Text.RegularExpressions.Regex.Replace(cleanCode, @"/\*.*?\*/", "", System.Text.RegularExpressions.RegexOptions.Singleline);
+
+            string[] restrictedTypes = { "short", "int", "long", "float", "double" };
+            foreach (var type in restrictedTypes)
+            {
+                // Ищем точное совпадение слова (например, "short ")
+                if (System.Text.RegularExpressions.Regex.IsMatch(cleanCode, $@"\b{type}\b"))
+                {
+                    if (!elc.unlockedTypes.Contains(type))
+                    {
+                        codeEditor.AddConsoleLog($"\n🚫 ОШИБКА: Вы пытаетесь использовать тип '{type}', но ваш персонаж еще не нашел его в сундуке!\nДоберитесь до сундука используя уже открытые типы.", true);
+                        CallExecutionFinished();
+                        return;
+                    }
+                }
+            }
+        }
+        // ----------------------------------------------------
         
         StartCoroutine(SendCodeToServer(code));
     }
@@ -49,8 +74,8 @@ public class JavaCodeExecutor : MonoBehaviour
         codeEditor.AddConsoleLog("⏳ Отправка кода на сервер...");
         
         int levelId = 1;
-        LevelManager levelManager = FindFirstObjectByType<LevelManager>();
-        if (levelManager != null && levelManager.allLevels != null)
+        LevelGameManager levelManager = FindFirstObjectByType<LevelGameManager>();
+        if (levelManager != null)
         {
             // Simple logic: if we have a current level index, use it. 
             // In a real scenario we'd use currentLevel.levelId.
@@ -185,14 +210,26 @@ public class JavaCodeExecutor : MonoBehaviour
         
         codeEditor.AddConsoleLog("✅ Выполнение завершено!");
         
-        // ⭐ КРИТИЧНО: ВСЕГДА вызываем LevelManager
-        CallExecutionFinished();
+        // ⭐ КРИТИЧНО: ВСЕГДА вызываем LevelGameManager
+        // чтобы проверить, провалился уровень или нет
+        // Задержка небольшая, чтобы успеть доиграть анимации
+        LevelGameManager levelManager = FindFirstObjectByType<LevelGameManager>();
+        
+        if (levelManager != null)
+        {
+            Debug.Log("[JavaCodeExecutor] 🎯 Вызываем OnExecutionFinished()");
+            levelManager.OnExecutionFinished();
+        }
+        else
+        {
+            Debug.LogWarning("[JavaCodeExecutor] LevelGameManager не найден!");
+        }
     }
 
     // ⭐ Единая точка вызова OnExecutionFinished
     void CallExecutionFinished()
     {
-        LevelManager levelManager = FindFirstObjectByType<LevelManager>();
+        LevelGameManager levelManager = FindFirstObjectByType<LevelGameManager>();
         if (levelManager != null)
         {
             Debug.Log("[JavaCodeExecutor] ⭐ Вызываем OnExecutionFinished()");
@@ -200,7 +237,7 @@ public class JavaCodeExecutor : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("[JavaCodeExecutor] LevelManager не найден!");
+            Debug.LogWarning("[JavaCodeExecutor] LevelGameManager не найден!");
         }
     }
 }
