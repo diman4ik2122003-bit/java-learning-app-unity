@@ -23,9 +23,20 @@ public class VictoryPanelUI : MonoBehaviour
 
     [Header("Scene Navigation")]
     [SerializeField] private string levelSelectSceneName = "LevelSelectScene";
-    [SerializeField] private string nextLevelSceneName = "LevelSelectScene";
+    [SerializeField] private string nextLevelSceneName  = "LevelSelectScene";
+
+    [Header("Localization")]
+    [SerializeField] private LocalizedTextDatabase localizationDB;
 
     private CloudTransitionManager _transitionManager;
+
+    // Запоминаем последние значения для перерисовки при смене языка
+    private int _lastTime;
+    private int _lastAttempts;
+    private int _lastXp;
+    private bool _statsSet;
+
+    // ─── Unity lifecycle ──────────────────────────────────────────────────
 
     private void Awake()
     {
@@ -41,6 +52,15 @@ public class VictoryPanelUI : MonoBehaviour
         _transitionManager = FindFirstObjectByType<CloudTransitionManager>();
         if (_transitionManager == null)
             Debug.LogWarning("[VictoryPanelUI] CloudTransitionManager не найден в сцене!");
+
+        if (LocalizationManager.Instance != null)
+            LocalizationManager.Instance.OnLanguageChanged += OnLanguageChanged;
+        }
+
+    private void OnDestroy()
+    {
+        if (LocalizationManager.Instance != null)
+            LocalizationManager.Instance.OnLanguageChanged -= OnLanguageChanged;
     }
 
     private void OnEnable()
@@ -54,22 +74,50 @@ public class VictoryPanelUI : MonoBehaviour
             Debug.LogWarning("[VictoryPanelUI] Спрайты starEmpty / starFilled не назначены!");
     }
 
+    // ─── Публичный API ────────────────────────────────────────────────────
+
     public void SetStats(int timeSeconds, int attempts, int stars, int xp)
     {
         Debug.Log($"[VictoryPanelUI] SetStats: time={timeSeconds}s, attempts={attempts}, stars={stars}, xp={xp}");
 
-        if (timeText != null)
-            timeText.text = $"Время: {timeSeconds} с";
+        _lastTime     = timeSeconds;
+        _lastAttempts = attempts;
+        _lastXp       = xp;
+        _statsSet     = true;
 
-        if (attemptsText != null)
-            attemptsText.text = $"Попыток: {attempts}";
-
+        ApplyStats();
         UpdateStars(stars);
-
-        if (xpText != null)
-            xpText.text = xp > 0 ? $"+{xp} XP" : "Загрузка XP...";
     }
 
+    // ─── Локализация ──────────────────────────────────────────────────────
+
+    private void OnLanguageChanged(string langCode)
+    {
+        if (_statsSet) ApplyStats();
+    }
+
+    private void ApplyStats()
+    {
+        if (timeText != null)
+            timeText.text = string.Format(L("victory_time", "Время: {0} с"), _lastTime);
+
+        if (attemptsText != null)
+            attemptsText.text = string.Format(L("victory_attempts", "Попыток: {0}"), _lastAttempts);
+
+        if (xpText != null)
+            xpText.text = _lastXp > 0
+                ? $"+{_lastXp} XP"
+                : L("victory_xp_loading", "Загрузка XP...");
+    }
+
+    /// <summary>Безопасное получение строки из БД с fallback.</summary>
+    private string L(string key, string fallback)
+    {
+        if (localizationDB == null) return fallback;
+        var lang = LocalizationManager.Instance != null ? LocalizationManager.Instance.CurrentLang : "ru";
+        var value = localizationDB.Get(key, lang);
+        return string.IsNullOrEmpty(value) ? fallback : value;
+    }
     // ─── Приватные хелперы ────────────────────────────────────────────────
 
     private void UpdateStars(int count)
@@ -85,7 +133,6 @@ public class VictoryPanelUI : MonoBehaviour
     {
         Time.timeScale = 1f;
 
-        // Пробуем взять менеджер повторно — он DontDestroyOnLoad, мог создаться после Start
         if (_transitionManager == null)
             _transitionManager = FindFirstObjectByType<CloudTransitionManager>();
 

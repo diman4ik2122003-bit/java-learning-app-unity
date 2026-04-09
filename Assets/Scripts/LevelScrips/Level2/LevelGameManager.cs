@@ -4,6 +4,9 @@ using System;
 
 public class LevelGameManager : MonoBehaviour
 {
+    [Header("Localization")]
+    public LocalizedTextDatabase localizationDB;
+
     public static LevelGameManager Instance { get; private set; }
 
     [Header("UI Reference")]
@@ -56,8 +59,41 @@ public class LevelGameManager : MonoBehaviour
         {
             Debug.LogError("[LevelGameManager] Нет уровней для загрузки!");
         }
+
+        LocalizationManager.Instance.OnLanguageChanged += OnLanguageChanged;
     }
 
+    void OnDestroy()
+    {
+        if (LocalizationManager.Instance != null)
+        LocalizationManager.Instance.OnLanguageChanged -= OnLanguageChanged;
+    }
+
+    void OnLanguageChanged(string langCode)
+    {
+        if (currentLevel != null) ApplyLocalization(currentLevel);
+    }
+    void ApplyLocalization(LevelData level)
+    {
+        string lang = LocalizationManager.Instance.CurrentLang;
+
+        string name = (lang == "en" && !string.IsNullOrEmpty(level.levelName_en))
+            ? level.levelName_en : level.levelName;
+        string desc = (lang == "en" && !string.IsNullOrEmpty(level.description_en))
+            ? level.description_en : level.description;
+        string code = (lang == "en" && !string.IsNullOrEmpty(level.starterCode_en))
+            ? level.starterCode_en : level.starterCode;
+
+        if (uiManager != null)
+        {
+            string group = (lang == "en" && !string.IsNullOrEmpty(level.groupName_en))
+                ? level.groupName_en : level.groupName;
+
+            uiManager.SetTaskInfo($"{group} - {name}", desc);
+            if (uiManager.codeEditor != null)
+                uiManager.codeEditor.SetCode(code);
+        }
+    }
     void LoadLevelDirectly(LevelData level)
     {
         if (level == null) return;
@@ -72,11 +108,11 @@ public class LevelGameManager : MonoBehaviour
         if (uiManager != null)
         {
             uiManager.HideHintUI();
-            uiManager.SetTaskInfo($"{level.groupName} - {level.levelName}", level.description);
-
+            ApplyLocalization(level);
+            
             if (uiManager.codeEditor != null)
             {
-                uiManager.codeEditor.SetCode(level.starterCode);
+                ApplyLocalization(level);
                 uiManager.codeEditor.ClearConsole();
             }
 
@@ -179,7 +215,9 @@ public class LevelGameManager : MonoBehaviour
 
         if (uiManager != null && uiManager.codeEditor != null)
         {
-            uiManager.codeEditor.AddConsoleLog($"❌ Попытка {failedAttempts}. Попробуй ещё раз!");
+            string lang = LocalizationManager.Instance.CurrentLang;
+            string tpl = localizationDB.Get("level_failed_attempt", lang);
+            uiManager.codeEditor.AddConsoleLog(string.Format(tpl, failedAttempts));
         }
 
         int attemptsPerHint = currentLevel.attemptsBeforeFirstHint;
@@ -219,11 +257,17 @@ public class LevelGameManager : MonoBehaviour
     string GetCurrentHint()
     {
         if (currentLevel == null) return "";
+        string lang = LocalizationManager.Instance.CurrentLang;
+
+        string h1 = (lang == "en" && !string.IsNullOrEmpty(currentLevel.hint1_en)) ? currentLevel.hint1_en : currentLevel.hint1;
+        string h2 = (lang == "en" && !string.IsNullOrEmpty(currentLevel.hint2_en)) ? currentLevel.hint2_en : currentLevel.hint2;
+        string h3 = (lang == "en" && !string.IsNullOrEmpty(currentLevel.hint3_en)) ? currentLevel.hint3_en : currentLevel.hint3;
+
         switch (currentHintIndex)
         {
-            case 1: return currentLevel.hint1;
-            case 2: return currentLevel.hint2;
-            case 3: return currentLevel.hint3;
+            case 1: return h1;
+            case 2: return h2;
+            case 3: return h3;
             default: return currentLevel.hint;
         }
     }
@@ -252,7 +296,11 @@ public class LevelGameManager : MonoBehaviour
         {
             if (uiManager != null && uiManager.codeEditor != null)
             {
-                uiManager.codeEditor.SetCode(currentLevel.starterCode);
+                string lang = LocalizationManager.Instance.CurrentLang;
+                string code = (lang == "en" && !string.IsNullOrEmpty(currentLevel.starterCode_en))
+                    ? currentLevel.starterCode_en : currentLevel.starterCode;
+                uiManager.codeEditor.SetCode(code);
+
                 uiManager.codeEditor.ClearConsole();
             }
 
@@ -297,10 +345,11 @@ public class LevelGameManager : MonoBehaviour
 
             if (uiManager.codeEditor != null)
             {
-                uiManager.codeEditor.AddConsoleLog("🎉 Уровень пройден!");
-                uiManager.codeEditor.AddConsoleLog($"⭐ Звёзд: {stars}/3");
-                uiManager.codeEditor.AddConsoleLog($"⏱️ Время: {completionTime}с");
-                uiManager.codeEditor.AddConsoleLog($"📊 Попыток: {attemptsTotal}");
+                string lang = LocalizationManager.Instance.CurrentLang;
+                uiManager.codeEditor.AddConsoleLog(localizationDB.Get("level_completed", lang));
+                uiManager.codeEditor.AddConsoleLog(string.Format(localizationDB.Get("level_stars", lang), stars));
+                uiManager.codeEditor.AddConsoleLog(string.Format(localizationDB.Get("level_time", lang), completionTime));
+                uiManager.codeEditor.AddConsoleLog(string.Format(localizationDB.Get("level_attempts", lang), attemptsTotal));
                 
                 if (failedAttempts == 0) uiManager.codeEditor.AddConsoleLog("🏆 Идеально! Решено с первой попытки!");
                 else if (failedAttempts <= 2) uiManager.codeEditor.AddConsoleLog($"✨ Отлично!");

@@ -109,11 +109,11 @@ MonoBehaviour:
     ru: "\u0423\u0440\u043E\u0432\u0435\u043D\u044C \u043F\u0440\u043E\u0439\u0434\u0435\u043D!"
     en: Level complete!
   - key: victory_time
-    ru: "\u0412\u0440\u0435\u043C\u044F:"
-    en: 'Time:'
+    ru: "\u0412\u0440\u0435\u043C\u044F: {0} \u0441"
+    en: 'Time: {0} s'
   - key: victory_attempts
-    ru: "\u041F\u043E\u043F\u044B\u0442\u043E\u043A:"
-    en: 'Attempts:'
+    ru: "\u041F\u043E\u043F\u044B\u0442\u043E\u043A: {0}"
+    en: 'Attempts: {0}'
   - key: back_to_menu_button
     ru: "\u0412\u0435\u0440\u043D\u0443\u0442\u044C\u0441\u044F \u0432 \u043C\u0435\u043D\u044E"
     en: Back to menu
@@ -126,3 +126,39 @@ MonoBehaviour:
   - key: solution_button
     ru: "\u0420\u0435\u0448\u0435\u043D\u0438\u0435"
     en: Solution
+  - key: level_failed_attempt
+    ru: "\u274C \u041F\u043E\u043F\u044B\u0442\u043A\u0430 {0}. \u041F\u043E\u043F\u0440\u043E\u0431\u0443\u0439
+      \u0435\u0449\u0451 \u0440\u0430\u0437!"
+    en: "\u274C Attempt {0}. Try again!"
+  - key: level_completed
+    ru: "\U0001F389 \u0423\u0440\u043E\u0432\u0435\u043D\u044C \u043F\u0440\u043E\u0439\u0434\u0435\u043D!"
+    en: "\U0001F389 Level completed!"
+  - key: level_stars
+    ru: "\u2B50 \u0417\u0432\u0451\u0437\u0434: {0}/3"
+    en: "\u2B50 Stars: {0}/3"
+  - key: level_time
+    ru: "\u23F1\uFE0F \u0412\u0440\u0435\u043C\u044F: {0}\u0441"
+    en: "\u23F1\uFE0F Time: {0}s"
+  - key: level_attempts
+    ru: "\U0001F4CA \u041F\u043E\u043F\u044B\u0442\u043E\u043A: {0}"
+    en: "\U0001F4CA Attempts: {0}"
+  - key: hint_failed_attempt
+    ru: "\u274C \u041F\u043E\u043F\u044B\u0442\u043A\u0430 {0}. \u0415\u0449\u0451
+      {1} \u043F\u043E\u043F\u044B\u0442\u043E\u043A \u0434\u043E \u043F\u043E\u0434\u0441\u043A\u0430\u0437\u043A\u0438"
+    en: "\u274C Attempt {0}. {1} more attempts until hint"
+  - key: "hint_solution_header\t"
+    ru: "\U0001F4DD \u041F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u043E\u0435
+      \u0440\u0435\u0448\u0435\u043D\u0438\u0435:"
+    en: "\U0001F4DD Correct solution:"
+  - key: "hint_solution_inserted\t"
+    ru: "\u2713 \u041A\u043E\u0434 \u0432\u0441\u0442\u0430\u0432\u043B\u0435\u043D
+      \u0432 \u0440\u0435\u0434\u0430\u043A\u0442\u043E\u0440. \u041D\u0430\u0436\u043C\u0438
+      Run Code!"
+    en: "\u2713 Code inserted. Press Run Code!"
+  - key: hint_solution_missing
+    ru: "\u26A0\uFE0F \u041F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u044B\u0439
+      \u043A\u043E\u0434 \u043D\u0435 \u043D\u0430\u0441\u0442\u0440\u043E\u0435\u043D"
+    en: "\u26A0\uFE0F Correct code not configured "
+  - key: victory_xp_loading
+    ru: "\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0430 XP..."
+    en: Loading XP...

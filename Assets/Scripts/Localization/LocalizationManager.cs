@@ -48,7 +48,7 @@ public class LocalizationManager : MonoBehaviour
             return;
 
         CurrentLang = langCode;
-        Debug.Log("[Localization] Language set to: " + CurrentLang);
+        // Debug.Log("[Localization] Language set to: " + CurrentLang);
 
         if (saveToPrefs)
         {

@@ -14,7 +14,7 @@ public class LocalizedText : MonoBehaviour
         if (!tmpText)
             tmpText = GetComponentInChildren<TMP_Text>();
 
-        Debug.Log($"[LocalizedText] Awake on {gameObject.name}, tmpText={(tmpText ? tmpText.name : "NULL")}");
+        //Debug.Log($"[LocalizedText] Awake on {gameObject.name}, tmpText={(tmpText ? tmpText.name : "NULL")}");
     }
 
     void Start()
@@ -48,7 +48,7 @@ public class LocalizedText : MonoBehaviour
             return;
 
         string value = database.Get(key, lang);
-        Debug.Log($"[LocalizedText] {gameObject.name} key='{key}' lang='{lang}' => '{value}'");
+        //Debug.Log($"[LocalizedText] {gameObject.name} key='{key}' lang='{lang}' => '{value}'");
         tmpText.text = value;
     }
 }

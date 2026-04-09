@@ -7,19 +7,24 @@ public class LevelData : ScriptableObject
     [Header("Level Info")]
     public string levelId = "1-1";
     public string groupName = "Переменные";
+     public string groupName_en;
     public string levelName = "Первая переменная";
-    
+    public string levelName_en;
+
     [Header("Level Scene")]
     public GameObject levelPrefab; // Prefab со всей сценой уровня
     
     [Header("Description")]
     [TextArea(3, 6)]
     public string description = "Создай переменную distance и используй её в Player.moveRight()";
-    
+    [TextArea(3, 6)]
+    public string description_en;
+
     [Header("Starting Code")]
     [TextArea(5, 10)]
     public string starterCode = "// Создай переменную distance\n\n// Двигайся на distance метров вправо\n";
-    
+    [TextArea(5, 10)] public string starterCode_en;
+
     [Header("Solution (for progressive hints)")]
     [TextArea(5, 10)]
     public string solutionCode = "int distance = 5;\nPlayer.moveRight(distance);";
@@ -43,6 +48,10 @@ public class LevelData : ScriptableObject
     [TextArea(2, 4)]
     public string hint3 = "💡 Используй Player.moveRight(distance);";
     
+    [TextArea(2, 4)] public string hint1_en;
+    [TextArea(2, 4)] public string hint2_en;
+    [TextArea(2, 4)] public string hint3_en;
+
     [Header("Validation (Optional)")]
     public LevelValidation[] validations;
     

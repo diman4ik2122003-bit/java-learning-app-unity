@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 public class HintSystem : MonoBehaviour
 {
+    [Header("Localization")]
+    public LocalizedTextDatabase localizationDB;
+
     [Header("Hint Settings")]
     [Tooltip("Количество неудачных попыток перед первой подсказкой")]
     public int attemptsBeforeFirstHint = 3;
@@ -59,7 +62,9 @@ public class HintSystem : MonoBehaviour
             int attemptsUntilHint = GetAttemptsUntilNextHint();
             if (attemptsUntilHint > 0 && codeEditor != null)
             {
-                codeEditor.AddConsoleLog($"❌ Попытка {failedAttempts}. Ещё {attemptsUntilHint} попыток до подсказки");
+                string lang = LocalizationManager.Instance.CurrentLang;
+                string tpl = localizationDB.Get("hint_failed_attempt", lang);
+                codeEditor.AddConsoleLog(string.Format(tpl, failedAttempts, attemptsUntilHint));
             }
         }
     }
@@ -73,7 +78,7 @@ public class HintSystem : MonoBehaviour
         
         if (codeEditor != null)
         {
-            codeEditor.AddConsoleLog("🎉 Уровень пройден!");
+            codeEditor.AddConsoleLog(localizationDB.Get("level_completed", LocalizationManager.Instance.CurrentLang));
         }
     }
     
@@ -129,17 +134,18 @@ public class HintSystem : MonoBehaviour
     {
         if (codeEditor == null) return;
         
-        codeEditor.AddConsoleLog("\n📝 Правильное решение:");
+        string lang = LocalizationManager.Instance.CurrentLang;
+        codeEditor.AddConsoleLog(localizationDB.Get("hint_solution_header", lang));
         codeEditor.AddConsoleLog("──────────────────────");
         
         if (!string.IsNullOrEmpty(correctCode))
         {
             codeEditor.SetCode(correctCode);
-            codeEditor.AddConsoleLog("✓ Код вставлен в редактор. Нажми Run Code!");
+            codeEditor.AddConsoleLog(localizationDB.Get("hint_solution_inserted", lang));
         }
         else
         {
-            codeEditor.AddConsoleLog("⚠️ Правильный код не настроен для этого уровня");
+            codeEditor.AddConsoleLog(localizationDB.Get("hint_solution_missing", lang));
         }
     }
     

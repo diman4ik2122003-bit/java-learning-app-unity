@@ -1655,8 +1655,11 @@ MonoBehaviour:
   - {fileID: 9011699549907237636}
   - {fileID: 3784659199001170676}
   - {fileID: 5100851852757930524}
-  sceneLoadDelay: 1.2
-  endTransitionDelay: 0.5
+  speedMultiplier: 2
+  sceneLoadDelay: 0
+  endTransitionDelay: 0
+  cloudsInSound: CloudsIn
+  cloudsOutSound: CloudsIn
 --- !u!1 &2718838017549214534
 GameObject:
   m_ObjectHideFlags: 0
