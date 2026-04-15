@@ -725,6 +725,17 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: 20bbdbac714c6844c9d510fa19be068d, type: 3}
+--- !u!114 &987350695 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6068652050565846288, guid: 20bbdbac714c6844c9d510fa19be068d, type: 3}
+  m_PrefabInstance: {fileID: 987350694}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5048690de89496a448b34819f6dcd0f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NpcController
 --- !u!1 &1001432277
 GameObject:
   m_ObjectHideFlags: 0
@@ -1328,6 +1339,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1914465280}
   - component: {fileID: 1914465279}
+  - component: {fileID: 1914465281}
   m_Layer: 0
   m_Name: LevelManager
   m_TagString: Untagged
@@ -1369,6 +1381,33 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1914465281
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1914465278}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2413e6e56754a44b8e82e529592bcf0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AlchemyLevelManager
+  wizard: {fileID: 987350695}
+  codeEditor: {fileID: 1693888575}
+  levelGameManager: {fileID: 1914465279}
+  resultText: {fileID: 0}
+  requiredDrops: 10
+  dropValue: 0.1
+  phase1SuccessMsg: "\u2705 \u041A\u043E\u043D\u0446\u0435\u043D\u0442\u0440\u0430\u0446\u0438\u044F:
+    {0:F10}\n\U0001F33E \u0414\u043B\u044F \u043F\u043E\u043B\u0435\u0432\u044B\u0445
+    \u0443\u0441\u043B\u043E\u0432\u0438\u0439 \u0441\u043E\u0439\u0434\u0451\u0442!"
+  phase2SuccessMsg: "\u2705 \u0422\u043E\u0447\u043D\u043E\u0441\u0442\u044C: {0:F15}\n\U0001F451
+    \u041A\u043E\u0440\u043E\u043B\u0435\u0432\u0441\u043A\u0430\u044F \u043B\u0430\u0431\u043E\u0440\u0430\u0442\u043E\u0440\u0438\u044F
+    \u043E\u0434\u043E\u0431\u0440\u044F\u0435\u0442!"
+  phase2FailMsg: "\u274C \u041D\u0435\u0434\u043E\u0441\u0442\u0430\u0442\u043E\u0447\u043D\u043E
+    \u0442\u043E\u0447\u043D\u044B\u0439 \u0442\u0438\u043F \u0434\u0430\u043D\u043D\u044B\u0445!\n\U0001F4A5
+    \u041A\u043E\u0442\u0451\u043B \u0432\u0437\u043E\u0440\u0432\u0430\u043B\u0441\u044F!"
 --- !u!114 &105021376324409145
 MonoBehaviour:
   m_ObjectHideFlags: 0

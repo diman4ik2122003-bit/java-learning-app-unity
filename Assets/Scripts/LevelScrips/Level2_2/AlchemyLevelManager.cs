@@ -176,25 +176,18 @@ public class AlchemyLevelManager : MonoBehaviour
         Debug.Log($"[AlchemyLevelManager] Фаза {currentPhase}, используется double: {usedDouble}");
     }
 
-    /// <summary>
-    /// Сброс уровня
-    /// </summary>
-    public void ResetLevel()
-    {
-        currentPhase = 1;
-        dropsAdded = 0;
-        usedDouble = false;
-        levelCompleted = false;
-        
-        if (resultText != null)
-            resultText.text = "";
-        
-        if (wizard != null)
-            wizard.HideSpeech();
-        
-        if (codeEditor != null)
-            codeEditor.AddConsoleLog("⟲ Уровень перезагружен. Начинаем с фазы 1.");
-        
-        Debug.Log("[AlchemyLevelManager] ⟲ Сброс");
-    }
+/// <summary>
+/// Вызывается JavaCodeExecutor с количеством добавленных капель
+/// </summary>
+public void OnExecutionFinished(int dropsAddedThisRun)
+{
+    if (levelCompleted) return;
+
+    dropsAdded = dropsAddedThisRun;
+
+    if (currentPhase == 1)
+        CheckPhase1();
+    else if (currentPhase == 2)
+        CheckPhase2();
+}
 }

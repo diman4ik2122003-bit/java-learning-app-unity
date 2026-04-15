@@ -37,7 +37,7 @@ public class JavaCodeExecutor : MonoBehaviour
         
         if (string.IsNullOrWhiteSpace(code))
         {
-            codeEditor.AddConsoleLog("❌ Код пустой!", true);
+            codeEditor.AddConsoleLog("❌ Ко�� пустой!", true);
             CallExecutionFinished();
             return;
         }
@@ -55,14 +55,12 @@ public class JavaCodeExecutor : MonoBehaviour
         ElevatorLevelController elc = FindFirstObjectByType<ElevatorLevelController>();
         if (elc != null)
         {
-            // Очищаем код от комментариев, чтобы подсказки // не блокировали запуск
             string cleanCode = Regex.Replace(code, @"//.*", "");
             cleanCode = Regex.Replace(cleanCode, @"/\*.*?\*/", "", RegexOptions.Singleline);
 
             string[] restrictedTypes = { "short", "int", "long", "float", "double" };
             foreach (var type in restrictedTypes)
             {
-                // Ищем точное совпадение слова (например, "short ")
                 if (Regex.IsMatch(cleanCode, $@"\b{type}\b"))
                 {
                     if (!elc.unlockedTypes.Contains(type))
@@ -115,8 +113,6 @@ public class JavaCodeExecutor : MonoBehaviour
                     if (result.success && result.status == "success")
                     {
                         // ВОССТАНОВЛЕНИЕ EXACT LONG:
-                        // Node.js округляет 64-битные числа, так что JsonUtility ставит 0 для огромных (т.к. они > long.MaxValue).
-                        // Но в result.output числа лежат как точный текст от Java!
                         if (!string.IsNullOrEmpty(result.output))
                         {
                             var mc1 = Regex.Matches(result.output, @"\""value\""\s*:\s*(-?\d+)");
@@ -189,6 +185,15 @@ public class JavaCodeExecutor : MonoBehaviour
     IEnumerator ExecuteCommandsSequence(GameCommand[] commands)
     {
         executionAborted = false;
+        
+        // ⭐ Считаем количество addDrop команд
+        int dropsCount = 0;
+        foreach (var cmd in commands)
+        {
+            if (cmd.action == "addDrop")
+                dropsCount += (int)cmd.value;
+        }
+        
         foreach (var cmd in commands)
         {
             if (executionAborted)
@@ -226,10 +231,13 @@ public class JavaCodeExecutor : MonoBehaviour
                     break;
 
                 case "addDrop":
-                    AlchemyLevelManager alm = FindFirstObjectByType<AlchemyLevelManager>();
-                    if (alm != null)
+                    // Визуальный эффект: маг кастует
+                    NpcController wizard = FindFirstObjectByType<NpcController>();
+                    if (wizard != null)
                     {
-                        alm.OnAddDrop((int)cmd.value);
+                        Animator anim = wizard.GetComponent<Animator>();
+                        if (anim != null)
+                            anim.SetTrigger("Cast");
                     }
                     break;
                     
@@ -247,14 +255,14 @@ public class JavaCodeExecutor : MonoBehaviour
         
         codeEditor.AddConsoleLog("✅ Выполнение завершено!");
         
-        // ⭐ ПРОВЕРКА: сначала AlchemyLevelManager, потом LevelGameManager
+        // ⭐ ВЫЗЫВАЕМ AlchemyLevelManager с количеством капель
         AlchemyLevelManager almMgr = FindFirstObjectByType<AlchemyLevelManager>();
         LevelGameManager levelManager = FindFirstObjectByType<LevelGameManager>();
         
         if (almMgr != null)
         {
-            Debug.Log("[JavaCodeExecutor] 🎯 Вызываем AlchemyLevelManager.OnExecutionFinished()");
-            almMgr.OnExecutionFinished();
+            Debug.Log($"[JavaCodeExecutor] 🎯 Вызываем AlchemyLevelManager.OnExecutionFinished() с {dropsCount} каплями");
+            almMgr.OnExecutionFinished(dropsCount);
         }
         else if (levelManager != null)
         {
@@ -267,7 +275,6 @@ public class JavaCodeExecutor : MonoBehaviour
         }
     }
 
-    // ⭐ Единая точка вызова OnExecutionFinished
     void CallExecutionFinished()
     {
         AlchemyLevelManager almMgr = FindFirstObjectByType<AlchemyLevelManager>();
@@ -275,8 +282,8 @@ public class JavaCodeExecutor : MonoBehaviour
         
         if (almMgr != null)
         {
-            Debug.Log("[JavaCodeExecutor] ⭐ Вызываем AlchemyLevelManager.OnExecutionFinished()");
-            almMgr.OnExecutionFinished();
+            Debug.Log("[JavaCodeExecutor] ⭐ Вызываем AlchemyLevelManager.OnExecutionFinished() с 0 каплями");
+            almMgr.OnExecutionFinished(0);
         }
         else if (levelManager != null)
         {
