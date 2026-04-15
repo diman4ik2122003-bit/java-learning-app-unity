@@ -17,6 +17,10 @@ public class GridMovementController : MonoBehaviour
     [Header("Collision")]
     public Tilemap[] collisionTilemaps;
     
+    [Header("Settings")]
+    [Tooltip("Если выключено, персонаж останется в свободных координатах при старте, не привязываясь к центру клетки.")]
+    public bool snapToGridOnStart = true;
+    
     private Vector2Int gridPosition;
     private bool isMoving = false;
     
@@ -48,7 +52,11 @@ public class GridMovementController : MonoBehaviour
         }
         
         gridPosition = WorldToGrid(transform.position);
-        SnapToGrid();
+        
+        if (snapToGridOnStart)
+        {
+            SnapToGrid();
+        }
         
         Debug.Log($"Player initialized at world: {transform.position}, grid: {gridPosition}");
     }

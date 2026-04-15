@@ -231,13 +231,10 @@ public class JavaCodeExecutor : MonoBehaviour
                     break;
 
                 case "addDrop":
-                    // Визуальный эффект: маг кастует
-                    NpcController wizard = FindFirstObjectByType<NpcController>();
-                    if (wizard != null)
+                    AlchemyLevelManager almExec = FindFirstObjectByType<AlchemyLevelManager>();
+                    if (almExec != null)
                     {
-                        Animator anim = wizard.GetComponent<Animator>();
-                        if (anim != null)
-                            anim.SetTrigger("Cast");
+                        almExec.OnAddDrop((int)cmd.value);
                     }
                     break;
                     

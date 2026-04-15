@@ -13,19 +13,15 @@ public class AlchemyLevelManager : MonoBehaviour
     [Header("UI")]
     [SerializeField] private TMP_Text resultText;
     
+    [Header("Sequences")]
+    public NpcSequencer introSeq;
+    public NpcSequencer failSeq;
+    public NpcSequencer phase2TransitionSeq;
+    public NpcSequencer explosionSeq;
+    public NpcSequencer successSeq;
+
     [Header("Alchemy Settings")]
     [SerializeField] private int requiredDrops = 10;
-    [SerializeField] private float dropValue = 0.1f;
-    
-    [Header("Phase 1 Messages")]
-    [TextArea(2, 4)]
-    [SerializeField] private string phase1SuccessMsg = "✅ Концентрация: {0:F10}\n🌾 Для полевых условий сойдёт!";
-    
-    [Header("Phase 2 Messages")]
-    [TextArea(2, 4)]
-    [SerializeField] private string phase2SuccessMsg = "✅ Точность: {0:F15}\n👑 Королевская лаборатория одобряет!";
-    [TextArea(2, 4)]
-    [SerializeField] private string phase2FailMsg = "❌ Недостаточно точный тип данных!\n💥 Котёл взорвался!";
     
     private int currentPhase = 1;
     private int dropsAdded = 0;
@@ -34,20 +30,45 @@ public class AlchemyLevelManager : MonoBehaviour
 
     void Awake()
     {
-        if (wizard == null)
-            wizard = FindFirstObjectByType<NpcController>();
-        if (codeEditor == null)
-            codeEditor = FindFirstObjectByType<CodeEditor>();
-        if (levelGameManager == null)
-            levelGameManager = FindFirstObjectByType<LevelGameManager>();
+        if (wizard == null) wizard = FindFirstObjectByType<NpcController>();
+        if (codeEditor == null) codeEditor = FindFirstObjectByType<CodeEditor>();
+        if (levelGameManager == null) levelGameManager = FindFirstObjectByType<LevelGameManager>();
     }
 
-    /// <summary>
-    /// Вызывается JavaCodeExecutor когда код выполнен
-    /// </summary>
-    public void OnExecutionFinished()
+    void Start()
+    {
+        if (introSeq != null)
+            introSeq.Play();
+    }
+
+    public void DetectDataType(string code)
+    {
+        usedDouble = Regex.IsMatch(code, @"\bdouble\s+\w+\s*=");
+        dropsAdded = 0; 
+        Debug.Log($"[AlchemyLevelManager] Фаза {currentPhase}, double: {usedDouble}");
+    }
+
+    public void OnAddDrop(int count)
+    {
+        dropsAdded += count;
+
+        if (wizard != null)
+        {
+            Animator anim = wizard.GetComponent<Animator>();
+            if (anim != null) anim.SetTrigger("Cast");
+        }
+
+        if (codeEditor != null)
+            codeEditor.AddConsoleLog($"💧 +{count} капель. Всего: {dropsAdded}/{requiredDrops}");
+    }
+
+    public void OnExecutionFinished(int dropsAddedThisRun)
     {
         if (levelCompleted) return;
+
+        // Синхронизируем счетчик на всякий случай
+        if (dropsAddedThisRun > 0 && dropsAdded != dropsAddedThisRun)
+            dropsAdded = dropsAddedThisRun;
 
         if (currentPhase == 1)
             CheckPhase1();
@@ -55,139 +76,57 @@ public class AlchemyLevelManager : MonoBehaviour
             CheckPhase2();
     }
 
-    /// <summary>
-    /// ФАЗА 1: Полевой эксперимент (float)
-    /// </summary>
     private void CheckPhase1()
     {
         if (dropsAdded != requiredDrops)
         {
-            codeEditor.AddConsoleLog($"❌ Добавлено {dropsAdded} капель, нужно {requiredDrops}!", true);
+            codeEditor.AddConsoleLog($"❌ Ошибка: Добавлено {dropsAdded} капель, нужно ровно {requiredDrops}!", true);
+            if (failSeq != null) failSeq.Play();
             return;
         }
 
-        // Успех фазы 1
-        float concentration = dropsAdded * dropValue;
-        codeEditor.AddConsoleLog(string.Format(phase1SuccessMsg, concentration));
+        // Успех фазы 1, но симулируем ошибку float
+        string floatResult = "1.0000001";
+        string msg = $"✅ Концентрация: {floatResult}\n🌾 Для полевых условий сойдёт! Но посмотри на погрешность!";
+        codeEditor.AddConsoleLog(msg);
         
-        if (resultText != null)
-            resultText.text = string.Format(phase1SuccessMsg, concentration);
+        if (resultText != null) resultText.text = msg;
         
-        if (wizard != null)
-            wizard.ShowSpeech("Отлично! Но в королевской лаборатории требуется больше точности...");
+        if (phase2TransitionSeq != null) phase2TransitionSeq.Play();
 
-        // Переход к фазе 2
-        StartCoroutine(TransitionToPhase2());
+        // Переход во вторую фазу
+        currentPhase = 2;
+        codeEditor.AddConsoleLog("\n--- ФАЗА 2: БОЕВОЕ ЗЕЛЬЕ ---\nИспользуй тип DOUBLE для абсолютной точности!");
     }
 
-    /// <summary>
-    /// ФАЗА 2: Королевская лаборатория (double)
-    /// </summary>
     private void CheckPhase2()
     {
-        // Проверка типа данных
         if (!usedDouble)
         {
-            codeEditor.AddConsoleLog(phase2FailMsg, true);
-            if (resultText != null)
-                resultText.text = phase2FailMsg;
+            string msg = "❌ Котёл взорвался! Нужно было использовать тип DOUBLE!";
+            codeEditor.AddConsoleLog(msg, true);
+            if (resultText != null) resultText.text = msg;
             
-            if (wizard != null)
-                wizard.ShowSpeech("💥 Взрыв! Нужна DOUBLE точность!");
-            
+            if (explosionSeq != null) explosionSeq.Play();
             return;
         }
 
-        // Проверка количества капель
         if (dropsAdded != requiredDrops)
         {
-            codeEditor.AddConsoleLog($"❌ Добавлено {dropsAdded} капель, нужно {requiredDrops}!", true);
+            codeEditor.AddConsoleLog($"❌ Ошибка: Добавлено {dropsAdded} капель, нужно ровно {requiredDrops}!", true);
+            if (failSeq != null) failSeq.Play();
             return;
         }
 
-        // УСПЕХ - LEVEL WIN!
-        double concentration = dropsAdded * dropValue;
-        codeEditor.AddConsoleLog(string.Format(phase2SuccessMsg, concentration));
+        // Идеальный успех
+        string msgSuccess = $"✅ Концентрация: 1.0\n👑 Идеально! Точность соответствует стандартам!";
+        codeEditor.AddConsoleLog(msgSuccess);
         
-        if (resultText != null)
-            resultText.text = string.Format(phase2SuccessMsg, concentration);
+        if (resultText != null) resultText.text = msgSuccess;
         
-        if (wizard != null)
-            wizard.ShowSpeech("👑 Идеально! Точность соответствует королевским стандартам!");
+        if (successSeq != null) successSeq.Play();
 
         levelCompleted = true;
-        
-        // Вызываем успех уровня
-        if (levelGameManager != null)
-            levelGameManager.OnExecutionFinished();
+        if (levelGameManager != null) levelGameManager.OnExecutionFinished();
     }
-
-    /// <summary>
-    /// Переход между фазами
-    /// </summary>
-    private IEnumerator TransitionToPhase2()
-    {
-        yield return new WaitForSeconds(2f);
-        
-        // Сброс счётчика капель
-        dropsAdded = 0;
-        usedDouble = false;
-        currentPhase = 2;
-        
-        // Очищаем консоль для новой фазы
-        if (codeEditor != null)
-        {
-            codeEditor.AddConsoleLog("\n--- ФАЗА 2: КОРОЛЕВСКАЯ ЛАБОРАТОРИЯ ---\n");
-            codeEditor.AddConsoleLog("Используй DOUBLE для точности!");
-        }
-        
-        if (wizard != null)
-            wizard.ShowSpeech("Теперь попробуй с double для королевской лаборатории!");
-    }
-
-    /// <summary>
-    /// Добавить каплю реагента
-    /// Вызывается из JavaCodeExecutor
-    /// </summary>
-    public void OnAddDrop(int count)
-    {
-        dropsAdded += count;
-
-        // Анимация маги
-        if (wizard != null)
-        {
-            Animator anim = wizard.GetComponent<Animator>();
-            if (anim != null)
-                anim.SetTrigger("Cast");
-        }
-
-        codeEditor.AddConsoleLog($"💧 +{count} капель. Всего: {dropsAdded}/{requiredDrops}");
-    }
-
-    /// <summary>
-    /// Определить используется ли double
-    /// Вызывается из JavaCodeExecutor перед выполнением
-    /// </summary>
-    public void DetectDataType(string code)
-    {
-        // Ищем объявление double переменной
-        usedDouble = Regex.IsMatch(code, @"\bdouble\s+\w+\s*=");
-        
-        Debug.Log($"[AlchemyLevelManager] Фаза {currentPhase}, используется double: {usedDouble}");
-    }
-
-/// <summary>
-/// Вызывается JavaCodeExecutor с количеством добавленных капель
-/// </summary>
-public void OnExecutionFinished(int dropsAddedThisRun)
-{
-    if (levelCompleted) return;
-
-    dropsAdded = dropsAddedThisRun;
-
-    if (currentPhase == 1)
-        CheckPhase1();
-    else if (currentPhase == 2)
-        CheckPhase2();
-}
 }
