@@ -3,6 +3,7 @@ using UnityEngine.Networking;
 using System.Collections;
 using System.Text;
 using System;
+using System.Text.RegularExpressions;
 
 public class JavaCodeExecutor : MonoBehaviour
 {
@@ -37,23 +38,32 @@ public class JavaCodeExecutor : MonoBehaviour
         if (string.IsNullOrWhiteSpace(code))
         {
             codeEditor.AddConsoleLog("❌ Код пустой!", true);
-            CallExecutionFinished(); // ← Даже при пустом коде вызываем!
+            CallExecutionFinished();
             return;
         }
 
-        // --- Геймификация: проверка открытых типов данных ---
+        // --- Для AlchemyLevelManager: определяем тип данных ---
+        AlchemyLevelManager alm = FindFirstObjectByType<AlchemyLevelManager>();
+        if (alm != null)
+        {
+            alm.DetectDataType(code);
+            Debug.Log("[JavaCodeExecutor] AlchemyLevelManager detected");
+        }
+        // -------------------------------------------------------
+
+        // --- Геймификация: проверка открытых типов данных (для лифта) ---
         ElevatorLevelController elc = FindFirstObjectByType<ElevatorLevelController>();
         if (elc != null)
         {
             // Очищаем код от комментариев, чтобы подсказки // не блокировали запуск
-            string cleanCode = System.Text.RegularExpressions.Regex.Replace(code, @"//.*", "");
-            cleanCode = System.Text.RegularExpressions.Regex.Replace(cleanCode, @"/\*.*?\*/", "", System.Text.RegularExpressions.RegexOptions.Singleline);
+            string cleanCode = Regex.Replace(code, @"//.*", "");
+            cleanCode = Regex.Replace(cleanCode, @"/\*.*?\*/", "", RegexOptions.Singleline);
 
             string[] restrictedTypes = { "short", "int", "long", "float", "double" };
             foreach (var type in restrictedTypes)
             {
                 // Ищем точное совпадение слова (например, "short ")
-                if (System.Text.RegularExpressions.Regex.IsMatch(cleanCode, $@"\b{type}\b"))
+                if (Regex.IsMatch(cleanCode, $@"\b{type}\b"))
                 {
                     if (!elc.unlockedTypes.Contains(type))
                     {
@@ -64,7 +74,7 @@ public class JavaCodeExecutor : MonoBehaviour
                 }
             }
         }
-        // ----------------------------------------------------
+        // ---------------------------------------------------------------
         
         StartCoroutine(SendCodeToServer(code));
     }
@@ -109,14 +119,14 @@ public class JavaCodeExecutor : MonoBehaviour
                         // Но в result.output числа лежат как точный текст от Java!
                         if (!string.IsNullOrEmpty(result.output))
                         {
-                            var mc1 = System.Text.RegularExpressions.Regex.Matches(result.output, @"\""value\""\s*:\s*(-?\d+)");
-                            var mc2 = System.Text.RegularExpressions.Regex.Matches(result.output, @"\""value2\""\s*:\s*(-?\d+)");
+                            var mc1 = Regex.Matches(result.output, @"\""value\""\s*:\s*(-?\d+)");
+                            var mc2 = Regex.Matches(result.output, @"\""value2\""\s*:\s*(-?\d+)");
                             for (int i = 0; i < result.commands.Length; i++)
                             {
                                 if (i < mc1.Count && long.TryParse(mc1[i].Groups[1].Value, out long trueVal))
                                     result.commands[i].value = trueVal;
                                 else if (i < mc1.Count && ulong.TryParse(mc1[i].Groups[1].Value, out ulong _))
-                                    result.commands[i].value = long.MaxValue; // Хак на случай если число вышло за границу
+                                    result.commands[i].value = long.MaxValue;
 
                                 if (i < mc2.Count && long.TryParse(mc2[i].Groups[1].Value, out long trueVal2))
                                     result.commands[i].value2 = trueVal2;
@@ -131,23 +141,23 @@ public class JavaCodeExecutor : MonoBehaviour
                     else if (result.status == "compilation_error")
                     {
                         codeEditor.AddConsoleLog(result.error, true);
-                        CallExecutionFinished(); // ← Ошибка компиляции = провал
+                        CallExecutionFinished();
                     }
                     else if (result.status == "runtime_error")
                     {
                         codeEditor.AddConsoleLog(result.error, true);
-                        CallExecutionFinished(); // ← Ошибка выполнения = провал
+                        CallExecutionFinished();
                     }
                     else
                     {
                         codeEditor.AddConsoleLog("❌ " + (result.error ?? "Неизвестная ошибка"), true);
-                        CallExecutionFinished(); // ← Любая ошибка = провал
+                        CallExecutionFinished();
                     }
                 }
                 else
                 {
                     codeEditor.AddConsoleLog("❌ Ошибка обработки ответа сервера", true);
-                    CallExecutionFinished(); // ← Ошибка парсинга = провал
+                    CallExecutionFinished();
                 }
             }
             else
@@ -155,7 +165,7 @@ public class JavaCodeExecutor : MonoBehaviour
                 codeEditor.AddConsoleLog("❌ Ошибка соединения с сервером", true);
                 codeEditor.AddConsoleLog($"Детали: {www.error}", true);
                 Debug.LogError("[JavaCodeExecutor] Network error: " + www.error);
-                CallExecutionFinished(); // ← Сетевая ошибка = провал
+                CallExecutionFinished();
             }
         }
     }
@@ -214,6 +224,14 @@ public class JavaCodeExecutor : MonoBehaviour
                         yield return elevatorController.RaiseElevator((int)cmd.value2, cmd.value);
                     }
                     break;
+
+                case "addDrop":
+                    AlchemyLevelManager alm = FindFirstObjectByType<AlchemyLevelManager>();
+                    if (alm != null)
+                    {
+                        alm.OnAddDrop((int)cmd.value);
+                    }
+                    break;
                     
                 case "wait":
                     yield return new WaitForSeconds(cmd.value * 0.1f);
@@ -229,34 +247,45 @@ public class JavaCodeExecutor : MonoBehaviour
         
         codeEditor.AddConsoleLog("✅ Выполнение завершено!");
         
-        // ⭐ КРИТИЧНО: ВСЕГДА вызываем LevelGameManager
-        // чтобы проверить, провалился уровень или нет
-        // Задержка небольшая, чтобы успеть доиграть анимации
+        // ⭐ ПРОВЕРКА: сначала AlchemyLevelManager, потом LevelGameManager
+        AlchemyLevelManager almMgr = FindFirstObjectByType<AlchemyLevelManager>();
         LevelGameManager levelManager = FindFirstObjectByType<LevelGameManager>();
         
-        if (levelManager != null)
+        if (almMgr != null)
         {
-            Debug.Log("[JavaCodeExecutor] 🎯 Вызываем OnExecutionFinished()");
+            Debug.Log("[JavaCodeExecutor] 🎯 Вызываем AlchemyLevelManager.OnExecutionFinished()");
+            almMgr.OnExecutionFinished();
+        }
+        else if (levelManager != null)
+        {
+            Debug.Log("[JavaCodeExecutor] 🎯 Вызываем LevelGameManager.OnExecutionFinished()");
             levelManager.OnExecutionFinished();
         }
         else
         {
-            Debug.LogWarning("[JavaCodeExecutor] LevelGameManager не найден!");
+            Debug.LogWarning("[JavaCodeExecutor] LevelGameManager not found!");
         }
     }
 
     // ⭐ Единая точка вызова OnExecutionFinished
     void CallExecutionFinished()
     {
+        AlchemyLevelManager almMgr = FindFirstObjectByType<AlchemyLevelManager>();
         LevelGameManager levelManager = FindFirstObjectByType<LevelGameManager>();
-        if (levelManager != null)
+        
+        if (almMgr != null)
         {
-            Debug.Log("[JavaCodeExecutor] ⭐ Вызываем OnExecutionFinished()");
+            Debug.Log("[JavaCodeExecutor] ⭐ Вызываем AlchemyLevelManager.OnExecutionFinished()");
+            almMgr.OnExecutionFinished();
+        }
+        else if (levelManager != null)
+        {
+            Debug.Log("[JavaCodeExecutor] ⭐ Вызываем LevelGameManager.OnExecutionFinished()");
             levelManager.OnExecutionFinished();
         }
         else
         {
-            Debug.LogWarning("[JavaCodeExecutor] LevelGameManager не найден!");
+            Debug.LogWarning("[JavaCodeExecutor] No level manager found!");
         }
     }
 }

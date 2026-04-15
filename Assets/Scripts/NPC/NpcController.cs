@@ -2,19 +2,6 @@ using UnityEngine;
 using System.Collections;
 using TMPro;
 
-/// <summary>
-/// Универсальный контроллер NPC.
-/// Использует GridMovementController для сеточного движения
-/// и управляет речевым пузырём над головой персонажа.
-///
-/// Структура префаба Wizard:
-///   Wizard  (компоненты: SpriteRenderer, Animator, Rigidbody2D, CapsuleCollider2D,
-///            GridMovementController, NpcController, NpcSequencer)
-///   └── SpeechBubble (дочерний GameObject, позиция 0, 1.5, 0)
-///       ├── SpriteRenderer  ← спрайт пузыря (9-sliced)
-///       └── BubbleText (дочерний GameObject)
-///           └── TextMeshPro ← НЕ TextMeshProUGUI, а именно TextMeshPro
-/// </summary>
 [RequireComponent(typeof(GridMovementController))]
 public class NpcController : MonoBehaviour
 {
@@ -28,7 +15,6 @@ public class NpcController : MonoBehaviour
     [Tooltip("TextMeshPro (world space) с текстом реплики внутри пузыря")]
     public TextMeshPro speechText;
 
-    // ──────────────────────────────────────────────────────────────
     void Awake()
     {
         if (movement == null)
@@ -38,13 +24,9 @@ public class NpcController : MonoBehaviour
     }
 
     // ══════════════════════════════════════════
-    //  ДВИЖЕНИЕ (возвращает IEnumerator — yield return изнутри секвенсора)
+    //  ДВИЖЕНИЕ
     // ══════════════════════════════════════════
 
-    /// <summary>
-    /// Переместить NPC к клетке сетки.
-    /// Сначала движение по X, затем по Y.
-    /// </summary>
     public IEnumerator MoveToGridAsync(Vector2Int targetGrid)
     {
         Vector2Int current = movement.GetGridPosition();
@@ -58,10 +40,6 @@ public class NpcController : MonoBehaviour
         else if (dy < 0) yield return movement.MoveDown(-dy);
     }
 
-    /// <summary>
-    /// Переместить NPC к мировой позиции (автоматическая конвертация в клетку сетки).
-    /// Удобно, если цель — другой GameObject на сцене (котёл, игрок и т.д.).
-    /// </summary>
     public IEnumerator MoveToWorldAsync(Vector3 worldPos)
     {
         yield return MoveToGridAsync(movement.WorldToGrid(worldPos));
@@ -77,22 +55,16 @@ public class NpcController : MonoBehaviour
 
     private Coroutine _typewriterCoroutine;
 
-    /// <summary>
-    /// Показать реплику с эффектом печатной машинки, затем подождать и скрыть пузырь.
-    /// displayDuration — сколько секунд пузырь висит ПОСЛЕ того как текст допечатался.
-    /// </summary>
     public IEnumerator SayAsync(string text, float displayDuration = 2.5f)
     {
         if (speechBubbleRoot != null) speechBubbleRoot.SetActive(true);
 
         if (typewriterSpeed <= 0f)
         {
-            // Мгновенно
             if (speechText != null) speechText.text = text;
         }
         else
         {
-            // Ждём пока допечатается
             yield return TypewriterRoutine(text);
         }
 
@@ -100,14 +72,12 @@ public class NpcController : MonoBehaviour
         HideSpeech();
     }
 
-    /// <summary>Показать пузырь с текстом мгновенно (без typewriter, без автоскрытия).</summary>
     public void ShowSpeech(string text)
     {
         if (speechBubbleRoot != null) speechBubbleRoot.SetActive(true);
         if (speechText != null)       speechText.text = text;
     }
 
-    /// <summary>Скрыть речевой пузырь.</summary>
     public void HideSpeech()
     {
         if (_typewriterCoroutine != null)
@@ -118,7 +88,6 @@ public class NpcController : MonoBehaviour
         if (speechBubbleRoot != null) speechBubbleRoot.SetActive(false);
     }
 
-    /// <summary>Корутина печатной машинки — открывает символы через TMP visibleCharacters.</summary>
     private IEnumerator TypewriterRoutine(string text)
     {
         if (speechText == null) yield break;
@@ -139,14 +108,12 @@ public class NpcController : MonoBehaviour
     //  АНИМАЦИИ
     // ══════════════════════════════════════════
 
-    /// <summary>Вызвать Animator.SetTrigger(name).</summary>
     public void SetAnimTrigger(string triggerName)
     {
         if (movement.animator != null && !string.IsNullOrEmpty(triggerName))
             movement.animator.SetTrigger(triggerName);
     }
 
-    /// <summary>Вызвать Animator.SetBool(name, value).</summary>
     public void SetAnimBool(string paramName, bool value)
     {
         if (movement.animator != null && !string.IsNullOrEmpty(paramName))
@@ -157,10 +124,24 @@ public class NpcController : MonoBehaviour
     //  УТИЛИТЫ
     // ══════════════════════════════════════════
 
-    /// <summary>Текущий язык из LocalizationManager ("ru" или "en").</summary>
     public string GetCurrentLang()
     {
         if (LocalizationManager.Instance == null) return "ru";
         return LocalizationManager.Instance.CurrentLang;
+    }
+
+    /// <summary>
+    /// Сброс состояния NPC
+    /// </summary>
+    public void ResetState()
+    {
+        HideSpeech();
+        
+        Animator anim = GetComponent<Animator>();
+        if (anim != null)
+        {
+            anim.ResetTrigger("Cast");
+            anim.ResetTrigger("Move");
+        }
     }
 }
