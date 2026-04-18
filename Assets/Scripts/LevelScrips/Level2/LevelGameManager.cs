@@ -78,9 +78,7 @@ public class LevelGameManager : MonoBehaviour
     }
     void ApplyLocalization(LevelData level)
     {
-        string lang = "ru"; 
-        if (LocalizationManager.Instance != null)
-            lang = LocalizationManager.Instance.CurrentLang;
+        string lang = LocalizationManager.Instance != null ? LocalizationManager.Instance.CurrentLang : "ru";
 
         string name = (lang == "en" && !string.IsNullOrEmpty(level.levelName_en))
             ? level.levelName_en : level.levelName;
@@ -157,7 +155,11 @@ public class LevelGameManager : MonoBehaviour
         ElevatorLevelController elc = FindFirstObjectByType<ElevatorLevelController>();
         if (elc == null && player != null)
         {
-            player.ResetState();
+            BridgeLevelController blc = FindFirstObjectByType<BridgeLevelController>();
+            if (blc == null)
+            {
+                player.ResetState();
+            }
         }
 
         if (useJavaServer)
@@ -220,17 +222,9 @@ public class LevelGameManager : MonoBehaviour
 
         if (uiManager != null && uiManager.codeEditor != null)
         {
-            string lang = (LocalizationManager.Instance != null) ? LocalizationManager.Instance.CurrentLang : "ru";
-            string failMsg = $"❌ ПРОВАЛ! Попытка {failedAttempts}"; // Дефолт Сообщение
-
-            if (localizationDB != null)
-            {
-                string tpl = localizationDB.Get("level_failed_attempt", lang);
-                if (!string.IsNullOrEmpty(tpl))
-                    failMsg = string.Format(tpl, failedAttempts);
-            }
-            
-            uiManager.codeEditor.AddConsoleLog(failMsg);
+            string lang = LocalizationManager.Instance != null ? LocalizationManager.Instance.CurrentLang : "ru";
+            string tpl = localizationDB != null ? localizationDB.Get("level_failed_attempt", lang) : "Попытка {0}";
+            uiManager.codeEditor.AddConsoleLog(string.Format(tpl, failedAttempts));
         }
 
         int attemptsPerHint = currentLevel.attemptsBeforeFirstHint;
@@ -270,7 +264,7 @@ public class LevelGameManager : MonoBehaviour
     string GetCurrentHint()
     {
         if (currentLevel == null) return "";
-        string lang = LocalizationManager.Instance.CurrentLang;
+        string lang = LocalizationManager.Instance != null ? LocalizationManager.Instance.CurrentLang : "ru";
 
         string h1 = (lang == "en" && !string.IsNullOrEmpty(currentLevel.hint1_en)) ? currentLevel.hint1_en : currentLevel.hint1;
         string h2 = (lang == "en" && !string.IsNullOrEmpty(currentLevel.hint2_en)) ? currentLevel.hint2_en : currentLevel.hint2;
@@ -303,13 +297,15 @@ public class LevelGameManager : MonoBehaviour
     public void OnResetLevel()
     {
         if (CodeExecutor.Instance != null) CodeExecutor.Instance.StopExecution();
+        if (JavaCodeExecutor.Instance != null) JavaCodeExecutor.Instance.StopExecution();
+        
         if (player != null) player.ResetState();
 
         if (currentLevel != null)
         {
             if (uiManager != null && uiManager.codeEditor != null)
             {
-                string lang = LocalizationManager.Instance.CurrentLang;
+                string lang = LocalizationManager.Instance != null ? LocalizationManager.Instance.CurrentLang : "ru";
                 string code = (lang == "en" && !string.IsNullOrEmpty(currentLevel.starterCode_en))
                     ? currentLevel.starterCode_en : currentLevel.starterCode;
                 uiManager.codeEditor.SetCode(code);
@@ -326,6 +322,13 @@ public class LevelGameManager : MonoBehaviour
         if (elc != null)
         {
             elc.ResetLevel();
+        }
+
+        // Пробрасываем сброс в BridgeLevelController
+        BridgeLevelController blc = FindFirstObjectByType<BridgeLevelController>();
+        if (blc != null)
+        {
+            blc.ResetLevel();
         }
     }
 
@@ -358,11 +361,15 @@ public class LevelGameManager : MonoBehaviour
 
             if (uiManager.codeEditor != null)
             {
-                string lang = LocalizationManager.Instance.CurrentLang;
-                uiManager.codeEditor.AddConsoleLog(localizationDB.Get("level_completed", lang));
-                uiManager.codeEditor.AddConsoleLog(string.Format(localizationDB.Get("level_stars", lang), stars));
-                uiManager.codeEditor.AddConsoleLog(string.Format(localizationDB.Get("level_time", lang), completionTime));
-                uiManager.codeEditor.AddConsoleLog(string.Format(localizationDB.Get("level_attempts", lang), attemptsTotal));
+                string lang = LocalizationManager.Instance != null ? LocalizationManager.Instance.CurrentLang : "ru";
+                
+                if (localizationDB != null)
+                {
+                    uiManager.codeEditor.AddConsoleLog(localizationDB.Get("level_completed", lang));
+                    uiManager.codeEditor.AddConsoleLog(string.Format(localizationDB.Get("level_stars", lang), stars));
+                    uiManager.codeEditor.AddConsoleLog(string.Format(localizationDB.Get("level_time", lang), completionTime));
+                    uiManager.codeEditor.AddConsoleLog(string.Format(localizationDB.Get("level_attempts", lang), attemptsTotal));
+                }
                 
                 if (failedAttempts == 0) uiManager.codeEditor.AddConsoleLog("🏆 Идеально! Решено с первой попытки!");
                 else if (failedAttempts <= 2) uiManager.codeEditor.AddConsoleLog($"✨ Отлично!");
