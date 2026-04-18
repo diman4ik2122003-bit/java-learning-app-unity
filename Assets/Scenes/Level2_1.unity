@@ -1094,6 +1094,7 @@ MonoBehaviour:
   goalTransform: {fileID: 196614541}
   useJavaServer: 1
   currentLevel: {fileID: 11400000, guid: e106abc1b9458d14f9a9291efbc9e2e3, type: 2}
+  checkGoalDistance: 1
   progressMadeThisRun: 0
 --- !u!4 &1914465280
 Transform:

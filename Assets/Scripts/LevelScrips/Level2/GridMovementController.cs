@@ -20,15 +20,22 @@ public class GridMovementController : MonoBehaviour
     [Header("Settings")]
     [Tooltip("Если выключено, персонаж останется в свободных координатах при старте, не привязываясь к центру клетки.")]
     public bool snapToGridOnStart = true;
+    [Tooltip("Поставь галочку, если начально спрайт в исходном файле смотрит ВЛЕВО")]
+    public bool defaultFacingLeft = false;
     
     private Vector2Int gridPosition;
     private bool isMoving = false;
+    private Vector3 visualOffset;
     
     void Start()
     {
         if (spriteRenderer == null)
         {
             spriteRenderer = GetComponent<SpriteRenderer>();
+        }
+        if (animator == null)
+        {
+            animator = GetComponent<Animator>();
         }
         
         // Автопоиск Grid
@@ -53,8 +60,13 @@ public class GridMovementController : MonoBehaviour
         
         gridPosition = WorldToGrid(transform.position);
         
+        // Вычисляем смещение от идеального центра клетки, чтобы сохранить текущую высоту при движении
+        Vector3 cellCenter = grid != null ? grid.GetCellCenterWorld(new Vector3Int(gridPosition.x, gridPosition.y, 0)) : transform.position;
+        visualOffset = transform.position - cellCenter;
+        
         if (snapToGridOnStart)
         {
+            visualOffset = Vector3.zero; // Сбрасываем смещение, если принудительно магнитим к центру
             SnapToGrid();
         }
         
@@ -85,7 +97,8 @@ public class GridMovementController : MonoBehaviour
         {
             // Используем встроенный метод Grid
             Vector3 cellCenter = grid.GetCellCenterWorld(new Vector3Int(gridPos.x, gridPos.y, 0));
-            return new Vector3(cellCenter.x, cellCenter.y, transform.position.z);
+            // Возвращаем позицию клетки + наше визуальное смещение (для сохранения высоты)
+            return new Vector3(cellCenter.x + visualOffset.x, cellCenter.y + visualOffset.y, transform.position.z);
         }
         else
         {
@@ -181,7 +194,11 @@ public class GridMovementController : MonoBehaviour
         // Поворот спрайта
         if (direction.x != 0 && spriteRenderer != null)
         {
-            spriteRenderer.flipX = direction.x < 0;
+            // Если оригинальный спрайт смотрит влево: движение право (>0) означает flipX = true.
+            if (defaultFacingLeft)
+                spriteRenderer.flipX = direction.x > 0;
+            else
+                spriteRenderer.flipX = direction.x < 0;
         }
         
         // Включаем анимацию ходьбы

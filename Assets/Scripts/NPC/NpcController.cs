@@ -15,10 +15,21 @@ public class NpcController : MonoBehaviour
     [Tooltip("TextMeshPro (world space) с текстом реплики внутри пузыря")]
     public TextMeshPro speechText;
 
+    private AudioSource _audioSource;
+    private object[] _dialogueParams; // Параметры для подстановки в текст {0}, {1}...
+
     void Awake()
     {
         if (movement == null)
             movement = GetComponent<GridMovementController>();
+
+        _audioSource = GetComponent<AudioSource>();
+        if (_audioSource == null)
+        {
+            _audioSource = gameObject.AddComponent<AudioSource>();
+            _audioSource.playOnAwake = false;
+            _audioSource.spatialBlend = 1f; // Делаем звук 3D (тише, если игрок далеко)
+        }
 
         HideSpeech();
     }
@@ -55,9 +66,25 @@ public class NpcController : MonoBehaviour
 
     private Coroutine _typewriterCoroutine;
 
-    public IEnumerator SayAsync(string text, float displayDuration = 2.5f)
+    public IEnumerator SayAsync(string text, float displayDuration = 2.5f, AudioClip voiceClip = null)
     {
+        // ⭐ ПОДСТАНОВКА ПАРАМЕТРОВ
+        try {
+            if (_dialogueParams != null && _dialogueParams.Length > 0)
+            {
+                text = string.Format(text, _dialogueParams);
+            }
+        } catch (System.Exception e) {
+            Debug.LogWarning($"[NpcController] Ошибка форматирования текста: {e.Message}");
+        }
+
         if (speechBubbleRoot != null) speechBubbleRoot.SetActive(true);
+
+        if (voiceClip != null && _audioSource != null)
+        {
+            _audioSource.clip = voiceClip;
+            _audioSource.Play();
+        }
 
         if (typewriterSpeed <= 0f)
         {
@@ -68,7 +95,18 @@ public class NpcController : MonoBehaviour
             yield return TypewriterRoutine(text);
         }
 
-        yield return new WaitForSeconds(displayDuration);
+        // Небольшая задержка, чтобы случайный клик от пропуска текста не закрыл его сразу
+        yield return new WaitForSeconds(0.1f);
+
+        // Ждем клика игрока для продолжения (как в RPG)
+        while (!Input.GetMouseButtonDown(0))
+        {
+            yield return null;
+        }
+
+        // ⭐ Ждем, пока игрок ОТПУСТИТ кнопку, чтобы клик не перешел на следующее сообщение
+        yield return new WaitUntil(() => !Input.GetMouseButton(0));
+
         HideSpeech();
     }
 
@@ -80,6 +118,8 @@ public class NpcController : MonoBehaviour
 
     public void HideSpeech()
     {
+        if (_audioSource != null) _audioSource.Stop();
+
         if (_typewriterCoroutine != null)
         {
             StopCoroutine(_typewriterCoroutine);
@@ -93,14 +133,31 @@ public class NpcController : MonoBehaviour
         if (speechText == null) yield break;
 
         speechText.text = text;
+        int totalChars = text.Length;
         speechText.maxVisibleCharacters = 0;
 
-        float delay = 1f / typewriterSpeed;
-
-        for (int i = 0; i <= text.Length; i++)
+        for (int i = 0; i <= totalChars; i++)
         {
+            if (Input.GetMouseButtonDown(0))
+            {
+                speechText.maxVisibleCharacters = totalChars;
+                yield break;
+            }
+
             speechText.maxVisibleCharacters = i;
-            yield return new WaitForSeconds(delay);
+            
+            float timer = 1f / typewriterSpeed;
+            while (timer > 0)
+            {
+                // Проверка клика внутри ожидания между буквами
+                if (Input.GetMouseButtonDown(0))
+                {
+                    speechText.maxVisibleCharacters = totalChars;
+                    yield break;
+                }
+                timer -= Time.deltaTime;
+                yield return null;
+            }
         }
     }
 
@@ -143,5 +200,10 @@ public class NpcController : MonoBehaviour
             anim.ResetTrigger("Cast");
             anim.ResetTrigger("Move");
         }
+    }
+
+    public void SetDialogueParams(params object[] args)
+    {
+        _dialogueParams = args;
     }
 }

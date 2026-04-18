@@ -35,6 +35,8 @@ public class NpcActionStep
     public Vector2Int targetGrid;
     [Tooltip("Целевой объект: NPC встанет на его клетку сетки (actionType = MoveToTransform)")]
     public Transform targetTransform;
+    [Tooltip("Скорость ходьбы для этого шага (0 = использовать базовую из GridMovementController)")]
+    public float customMoveSpeed = 0f;
 
     // ── Say ───────────────────────────────────────────
     [Header("Say")]
@@ -42,6 +44,8 @@ public class NpcActionStep
     [TextArea(1, 4)] public string text_en;
     [Tooltip("Сколько секунд показывать пузырь")]
     public float speechDuration = 2.5f;
+    [Header("Voice (Optional)")]
+    public AudioClip voiceClip;
 
     // ── Wait ──────────────────────────────────────────
     [Header("Wait")]
@@ -173,18 +177,27 @@ public class NpcSequencer : MonoBehaviour
 
     IEnumerator RunStep(NpcActionStep step)
     {
-        switch (step.actionType)
+        float originalSpeed = npc.movement != null ? npc.movement.moveSpeed : 0f;
+        try
         {
-            // ── Движение к клетке ─────────────────────
-            case NpcActionType.MoveTo:
-                yield return npc.MoveToGridAsync(step.targetGrid);
-                break;
+            if (npc.movement != null && step.customMoveSpeed > 0f && 
+                (step.actionType == NpcActionType.MoveTo || step.actionType == NpcActionType.MoveToTransform))
+            {
+                npc.movement.moveSpeed = step.customMoveSpeed;
+            }
 
-            // ── Движение к объекту ────────────────────
-            case NpcActionType.MoveToTransform:
-                if (step.targetTransform != null)
-                    yield return npc.MoveToWorldAsync(step.targetTransform.position);
-                break;
+            switch (step.actionType)
+            {
+                // ── Движение к клетке ─────────────────────
+                case NpcActionType.MoveTo:
+                    yield return npc.MoveToGridAsync(step.targetGrid);
+                    break;
+
+                // ── Движение к объекту ────────────────────
+                case NpcActionType.MoveToTransform:
+                    if (step.targetTransform != null)
+                        yield return npc.MoveToWorldAsync(step.targetTransform.position);
+                    break;
 
             // ── Реплика ───────────────────────────────
             case NpcActionType.Say:
@@ -192,7 +205,7 @@ public class NpcSequencer : MonoBehaviour
                 string text = (lang == "en" && !string.IsNullOrEmpty(step.text_en))
                     ? step.text_en
                     : step.text_ru;
-                yield return npc.SayAsync(text, step.speechDuration);
+                yield return npc.SayAsync(text, step.speechDuration, step.voiceClip);
                 break;
 
             // ── Ожидание ──────────────────────────────
@@ -220,6 +233,15 @@ public class NpcSequencer : MonoBehaviour
             case NpcActionType.FireEvent:
                 step.onExecute?.Invoke();
                 break;
+        }
+        }
+        finally
+        {
+            if (npc.movement != null && step.customMoveSpeed > 0f && 
+                (step.actionType == NpcActionType.MoveTo || step.actionType == NpcActionType.MoveToTransform))
+            {
+                npc.movement.moveSpeed = originalSpeed;
+            }
         }
     }
 }

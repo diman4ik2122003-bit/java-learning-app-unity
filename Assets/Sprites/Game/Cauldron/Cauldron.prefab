@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 3381131908197287030}
   - component: {fileID: 5191578145495450523}
   - component: {fileID: 9106037010265078499}
+  - component: {fileID: 7972079202803455049}
   m_Layer: 0
   m_Name: Cauldron
   m_TagString: Untagged
@@ -113,3 +114,15 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &7972079202803455049
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3481782390475329380}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15e29c77cf1fcde448daae8c8d3324a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CauldronEffects

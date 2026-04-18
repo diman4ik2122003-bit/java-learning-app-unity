@@ -83,11 +83,16 @@ public class JavaCodeExecutor : MonoBehaviour
         
         int levelId = 1;
         LevelGameManager levelManager = FindFirstObjectByType<LevelGameManager>();
-        if (levelManager != null)
+        
+        if (levelManager != null && levelManager.currentLevel != null)
         {
-            // Simple logic: if we have a current level index, use it. 
-            // In a real scenario we'd use currentLevel.levelId.
+            string sid = levelManager.currentLevel.levelId;
+            // Убираем тире, чтобы получилось 22 из 2-2
+            string numericId = sid.Replace("-", "");
+            int.TryParse(numericId, out levelId);
         }
+        
+        Debug.Log("[JavaCodeExecutor] Отправка кода для Level ID: " + levelId);
 
         var request = new ExecutionRequest { code = code, levelId = levelId };
         string json = JsonUtility.ToJson(request);
@@ -132,7 +137,7 @@ public class JavaCodeExecutor : MonoBehaviour
                         codeEditor.AddConsoleLog("✅ Код скомпилирован!");
                         codeEditor.AddConsoleLog($"📝 Команд: {result.commands.Length}");
                         
-                        yield return StartCoroutine(ExecuteCommandsSequence(result.commands));
+                        yield return StartCoroutine(ExecuteCommandsSequence(result.commands, result.output));
                     }
                     else if (result.status == "compilation_error")
                     {
@@ -182,7 +187,7 @@ public class JavaCodeExecutor : MonoBehaviour
     
     public bool executionAborted = false;
 
-    IEnumerator ExecuteCommandsSequence(GameCommand[] commands)
+    IEnumerator ExecuteCommandsSequence(GameCommand[] commands, string output)
     {
         executionAborted = false;
         
@@ -243,11 +248,15 @@ public class JavaCodeExecutor : MonoBehaviour
                     break;
                     
                 default:
-                    codeEditor.AddConsoleLog($"⚠️ Неизвестная команда: {cmd.action}", true);
+                    // codeEditor.AddConsoleLog($"⚠️ Неизвестная команда: {cmd.action}", true);
                     break;
             }
             
-            yield return new WaitForSeconds(0.1f);
+            // ⭐ Ждем 1.2 сек, так как анимация замедлена (Speed 0.5)
+            if (cmd.action == "addDrop")
+                yield return new WaitForSeconds(1.0f);
+            else
+                yield return new WaitForSeconds(0.1f);
         }
         
         codeEditor.AddConsoleLog("✅ Выполнение завершено!");
@@ -259,7 +268,7 @@ public class JavaCodeExecutor : MonoBehaviour
         if (almMgr != null)
         {
             Debug.Log($"[JavaCodeExecutor] 🎯 Вызываем AlchemyLevelManager.OnExecutionFinished() с {dropsCount} каплями");
-            almMgr.OnExecutionFinished(dropsCount);
+            almMgr.OnExecutionFinished(dropsCount, output);
         }
         else if (levelManager != null)
         {
@@ -280,7 +289,7 @@ public class JavaCodeExecutor : MonoBehaviour
         if (almMgr != null)
         {
             Debug.Log("[JavaCodeExecutor] ⭐ Вызываем AlchemyLevelManager.OnExecutionFinished() с 0 каплями");
-            almMgr.OnExecutionFinished(0);
+            almMgr.OnExecutionFinished(0, "");
         }
         else if (levelManager != null)
         {

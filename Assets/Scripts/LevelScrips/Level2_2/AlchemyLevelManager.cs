@@ -9,6 +9,7 @@ public class AlchemyLevelManager : MonoBehaviour
     [SerializeField] private NpcController wizard;
     [SerializeField] private CodeEditor codeEditor;
     [SerializeField] private LevelGameManager levelGameManager;
+    [SerializeField] private CauldronEffects cauldronEffects;
     
     [Header("UI")]
     [SerializeField] private TMP_Text resultText;
@@ -18,6 +19,7 @@ public class AlchemyLevelManager : MonoBehaviour
     public NpcSequencer failSeq;
     public NpcSequencer phase2TransitionSeq;
     public NpcSequencer explosionSeq;
+    public NpcSequencer explosionPostSeq;
     public NpcSequencer successSeq;
 
     [Header("Alchemy Settings")]
@@ -33,6 +35,13 @@ public class AlchemyLevelManager : MonoBehaviour
         if (wizard == null) wizard = FindFirstObjectByType<NpcController>();
         if (codeEditor == null) codeEditor = FindFirstObjectByType<CodeEditor>();
         if (levelGameManager == null) levelGameManager = FindFirstObjectByType<LevelGameManager>();
+        if (cauldronEffects == null) cauldronEffects = FindFirstObjectByType<CauldronEffects>();
+
+        // ⭐ ПРИВЯЗЫВАЕМ МАГА К ЭФФЕКТАМ КОТЛА
+        if (cauldronEffects != null && wizard != null)
+        {
+            cauldronEffects.wizardAnimator = wizard.GetComponent<Animator>();
+        }
     }
 
     void Start()
@@ -43,6 +52,8 @@ public class AlchemyLevelManager : MonoBehaviour
 
     public void DetectDataType(string code)
     {
+        if (wizard != null) wizard.HideSpeech(); // Прячем диалоги интро, если они еще висят
+        
         usedDouble = Regex.IsMatch(code, @"\bdouble\s+\w+\s*=");
         dropsAdded = 0; 
         Debug.Log($"[AlchemyLevelManager] Фаза {currentPhase}, double: {usedDouble}");
@@ -62,21 +73,32 @@ public class AlchemyLevelManager : MonoBehaviour
             codeEditor.AddConsoleLog($"💧 +{count} капель. Всего: {dropsAdded}/{requiredDrops}");
     }
 
-    public void OnExecutionFinished(int dropsAddedThisRun)
+    public void OnExecutionFinished(int dropsAddedThisRun, string rawOutput)
     {
         if (levelCompleted) return;
 
-        // Синхронизируем счетчик на всякий случай
+        // Синхронизируем счетчик
         if (dropsAddedThisRun > 0 && dropsAdded != dropsAddedThisRun)
             dropsAdded = dropsAddedThisRun;
 
+        // ⭐ Ищем ВСЕ числа с точкой и берем ПОСЛЕДНЕЕ (итоговое)
+        string valueStr = "1.0";
+        var matches = Regex.Matches(rawOutput, @"\d+\.\d+");
+        if (matches.Count > 0)
+        {
+            valueStr = matches[matches.Count - 1].Value;
+        }
+
+        if (wizard != null)
+            wizard.SetDialogueParams(dropsAdded, valueStr);
+
         if (currentPhase == 1)
-            CheckPhase1();
+            CheckPhase1(valueStr);
         else if (currentPhase == 2)
-            CheckPhase2();
+            CheckPhase2(valueStr);
     }
 
-    private void CheckPhase1()
+    private void CheckPhase1(string valueStr)
     {
         if (dropsAdded != requiredDrops)
         {
@@ -99,7 +121,7 @@ public class AlchemyLevelManager : MonoBehaviour
         codeEditor.AddConsoleLog("\n--- ФАЗА 2: БОЕВОЕ ЗЕЛЬЕ ---\nИспользуй тип DOUBLE для абсолютной точности!");
     }
 
-    private void CheckPhase2()
+    private void CheckPhase2(string valueStr)
     {
         if (!usedDouble)
         {
@@ -108,6 +130,15 @@ public class AlchemyLevelManager : MonoBehaviour
             if (resultText != null) resultText.text = msg;
             
             if (explosionSeq != null) explosionSeq.Play();
+            
+            // ⭐ ЭФФЕКТЫ ВЗРЫВА
+            if (cauldronEffects != null)
+            {
+                cauldronEffects.StartHeating(1.5f); 
+                Invoke(nameof(TriggerVisualExplosion), 1.5f);
+                // Поучение мага после того, как котел восстановился (1.5 нагрев + 0.7 пауза + 1.2 появление + запас)
+                Invoke(nameof(PlayPostExplosionDialogue), 3.8f);
+            }
             return;
         }
 
@@ -119,14 +150,28 @@ public class AlchemyLevelManager : MonoBehaviour
         }
 
         // Идеальный успех
-        string msgSuccess = $"✅ Концентрация: 1.0\n👑 Идеально! Точность соответствует стандартам!";
+        string msgSuccess = $"✅ Концентрация: {valueStr}\n👑 Идеально! Точность соответствует стандартам!";
         codeEditor.AddConsoleLog(msgSuccess);
         
         if (resultText != null) resultText.text = msgSuccess;
         
-        if (successSeq != null) successSeq.Play();
+        if (successSeq != null)
+        {
+            wizard.SetDialogueParams(dropsAdded, valueStr);
+            successSeq.Play();
+        }
 
         levelCompleted = true;
-        if (levelGameManager != null) levelGameManager.OnExecutionFinished();
+        if (levelGameManager != null) levelGameManager.OnLevelCompleted();
+    }
+
+    private void PlayPostExplosionDialogue()
+    {
+        if (explosionPostSeq != null) explosionPostSeq.Play();
+    }
+
+    private void TriggerVisualExplosion()
+    {
+        if (cauldronEffects != null) cauldronEffects.Explode();
     }
 }

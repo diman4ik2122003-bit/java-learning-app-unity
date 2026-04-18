@@ -23,6 +23,8 @@ public class LevelGameManager : MonoBehaviour
     [Header("Level Configuration")]
     [Tooltip("Данные текущего уровня")]
     public LevelData currentLevel;
+    [Tooltip("Нужно ли проверять достижение цели по дистанции до goalTransform?")]
+    public bool checkGoalDistance = true;
 
     [Header("Runtime Status")]
     public bool progressMadeThisRun = false;
@@ -60,13 +62,14 @@ public class LevelGameManager : MonoBehaviour
             Debug.LogError("[LevelGameManager] Нет уровней для загрузки!");
         }
 
-        LocalizationManager.Instance.OnLanguageChanged += OnLanguageChanged;
+        if (LocalizationManager.Instance != null)
+            LocalizationManager.Instance.OnLanguageChanged += OnLanguageChanged;
     }
 
     void OnDestroy()
     {
         if (LocalizationManager.Instance != null)
-        LocalizationManager.Instance.OnLanguageChanged -= OnLanguageChanged;
+            LocalizationManager.Instance.OnLanguageChanged -= OnLanguageChanged;
     }
 
     void OnLanguageChanged(string langCode)
@@ -75,7 +78,9 @@ public class LevelGameManager : MonoBehaviour
     }
     void ApplyLocalization(LevelData level)
     {
-        string lang = LocalizationManager.Instance.CurrentLang;
+        string lang = "ru"; 
+        if (LocalizationManager.Instance != null)
+            lang = LocalizationManager.Instance.CurrentLang;
 
         string name = (lang == "en" && !string.IsNullOrEmpty(level.levelName_en))
             ? level.levelName_en : level.levelName;
@@ -215,9 +220,17 @@ public class LevelGameManager : MonoBehaviour
 
         if (uiManager != null && uiManager.codeEditor != null)
         {
-            string lang = LocalizationManager.Instance.CurrentLang;
-            string tpl = localizationDB.Get("level_failed_attempt", lang);
-            uiManager.codeEditor.AddConsoleLog(string.Format(tpl, failedAttempts));
+            string lang = (LocalizationManager.Instance != null) ? LocalizationManager.Instance.CurrentLang : "ru";
+            string failMsg = $"❌ ПРОВАЛ! Попытка {failedAttempts}"; // Дефолт Сообщение
+
+            if (localizationDB != null)
+            {
+                string tpl = localizationDB.Get("level_failed_attempt", lang);
+                if (!string.IsNullOrEmpty(tpl))
+                    failMsg = string.Format(tpl, failedAttempts);
+            }
+            
+            uiManager.codeEditor.AddConsoleLog(failMsg);
         }
 
         int attemptsPerHint = currentLevel.attemptsBeforeFirstHint;
@@ -318,7 +331,7 @@ public class LevelGameManager : MonoBehaviour
 
     void Update()
     {
-        if (!levelCompleted && player != null && goalTransform != null)
+        if (checkGoalDistance && !levelCompleted && player != null && goalTransform != null)
         {
             if (Vector2.Distance(player.transform.position, goalTransform.position) < 0.5f)
             {
@@ -327,7 +340,7 @@ public class LevelGameManager : MonoBehaviour
         }
     }
 
-    void OnLevelCompleted()
+    public void OnLevelCompleted()
     {
         if (levelCompleted) return;
         levelCompleted = true;
