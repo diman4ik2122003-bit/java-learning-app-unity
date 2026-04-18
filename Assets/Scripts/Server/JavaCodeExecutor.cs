@@ -9,8 +9,16 @@ public class JavaCodeExecutor : MonoBehaviour
     [Header("Server Settings")]
     public string serverUrl = "http://localhost:4000/api/v1/submissions/execute";
     
+    public static JavaCodeExecutor Instance;
+    
     private CodeEditor codeEditor;
     private PlayerController player;
+    
+    void Awake()
+    {
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
+    }
     
     void Start()
     {
@@ -175,6 +183,12 @@ public class JavaCodeExecutor : MonoBehaviour
     }
     
     public bool executionAborted = false;
+    
+    public void StopExecution()
+    {
+        executionAborted = true;
+        StopAllCoroutines();
+    }
 
     IEnumerator ExecuteCommandsSequence(GameCommand[] commands)
     {
@@ -215,6 +229,14 @@ public class JavaCodeExecutor : MonoBehaviour
                     }
                     break;
                     
+                case "addPlank":
+                    BridgeLevelController bridgeController = FindFirstObjectByType<BridgeLevelController>();
+                    if (bridgeController != null)
+                    {
+                        yield return bridgeController.AddPlank((int)cmd.value);
+                    }
+                    break;
+                    
                 case "wait":
                     yield return new WaitForSeconds(cmd.value * 0.1f);
                     break;
@@ -228,6 +250,13 @@ public class JavaCodeExecutor : MonoBehaviour
         }
         
         codeEditor.AddConsoleLog("✅ Выполнение завершено!");
+        
+        // Для уровня с мостом запускаем попытку пройти по мосту в самом конце
+        BridgeLevelController levelBridgeController = FindFirstObjectByType<BridgeLevelController>();
+        if (levelBridgeController != null)
+        {
+            yield return levelBridgeController.WalkBridgeAndCheck();
+        }
         
         // ⭐ КРИТИЧНО: ВСЕГДА вызываем LevelGameManager
         // чтобы проверить, провалился уровень или нет

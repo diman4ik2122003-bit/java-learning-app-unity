@@ -1,0 +1,520 @@
+fileFormatVersion: 2
+guid: 34962014a54a68f4ea6d105b4a948a15
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -924210702421499341
+    second: bridge_sprite_0
+  - first:
+      213: 9057740177430891375
+    second: bridge_sprite_1
+  - first:
+      213: -1005561383662345577
+    second: bridge_sprite_2
+  - first:
+      213: 9024777767456062327
+    second: bridge_sprite_3
+  - first:
+      213: 6167643710432444334
+    second: bridge_sprite_4
+  - first:
+      213: -6334459732577316500
+    second: bridge_sprite_5
+  - first:
+      213: 5596646834794697644
+    second: bridge_sprite_6
+  - first:
+      213: -1039630472760375635
+    second: bridge_sprite_7
+  - first:
+      213: 5082548498080747069
+    second: bridge_sprite_8
+  - first:
+      213: 5587045559548108706
+    second: bridge_sprite_9
+  - first:
+      213: 1597915324967037531
+    second: bridge_sprite_10
+  - first:
+      213: 231406432282601672
+    second: bridge_sprite_11
+  - first:
+      213: 8777506916858057175
+    second: bridge_sprite_12
+  - first:
+      213: 4262251193555722070
+    second: bridge_sprite_13
+  - first:
+      213: -6235733495505084797
+    second: bridge_sprite_14
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: bridge_sprite_0
+      rect:
+        serializedVersion: 2
+        x: 16
+        y: 903
+        width: 578
+        height: 38
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3326d88434b8c23f0800000000000000
+      internalID: -924210702421499341
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bridge_sprite_1
+      rect:
+        serializedVersion: 2
+        x: 16
+        y: 848
+        width: 578
+        height: 38
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f6b4d8f83be83bd70800000000000000
+      internalID: 9057740177430891375
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bridge_sprite_2
+      rect:
+        serializedVersion: 2
+        x: 16
+        y: 791
+        width: 578
+        height: 38
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 792a4fecf378b02f0800000000000000
+      internalID: -1005561383662345577
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bridge_sprite_3
+      rect:
+        serializedVersion: 2
+        x: 16
+        y: 450
+        width: 32
+        height: 290
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 77bbf0e60937e3d70800000000000000
+      internalID: 9024777767456062327
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bridge_sprite_4
+      rect:
+        serializedVersion: 2
+        x: 67
+        y: 450
+        width: 32
+        height: 290
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: eaf7f7de64fd79550800000000000000
+      internalID: 6167643710432444334
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bridge_sprite_5
+      rect:
+        serializedVersion: 2
+        x: 118
+        y: 450
+        width: 32
+        height: 290
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c6196b34f6a7718a0800000000000000
+      internalID: -6334459732577316500
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bridge_sprite_6
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 453
+        width: 32
+        height: 284
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ca39049d4a84bad40800000000000000
+      internalID: 5596646834794697644
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bridge_sprite_7
+      rect:
+        serializedVersion: 2
+        x: 243
+        y: 453
+        width: 32
+        height: 284
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: da6427dd79d7291f0800000000000000
+      internalID: -1039630472760375635
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bridge_sprite_8
+      rect:
+        serializedVersion: 2
+        x: 294
+        y: 453
+        width: 32
+        height: 284
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d3e4cc53ee6d88640800000000000000
+      internalID: 5082548498080747069
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bridge_sprite_9
+      rect:
+        serializedVersion: 2
+        x: 373
+        y: 447
+        width: 200
+        height: 296
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2afd9c0c55c298d40800000000000000
+      internalID: 5587045559548108706
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bridge_sprite_10
+      rect:
+        serializedVersion: 2
+        x: 579
+        y: 444
+        width: 200
+        height: 296
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b5a20dd958fec2610800000000000000
+      internalID: 1597915324967037531
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bridge_sprite_11
+      rect:
+        serializedVersion: 2
+        x: 784
+        y: 444
+        width: 200
+        height: 296
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8c8e1f29cee163300800000000000000
+      internalID: 231406432282601672
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bridge_sprite_12
+      rect:
+        serializedVersion: 2
+        x: 16
+        y: 109
+        width: 290
+        height: 290
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7d1dbd02908ffc970800000000000000
+      internalID: 8777506916858057175
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bridge_sprite_13
+      rect:
+        serializedVersion: 2
+        x: 355
+        y: 109
+        width: 290
+        height: 290
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 65f9f5fc0ee862b30800000000000000
+      internalID: 4262251193555722070
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bridge_sprite_14
+      rect:
+        serializedVersion: 2
+        x: 694
+        y: 109
+        width: 290
+        height: 290
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 38e1a669c693679a0800000000000000
+      internalID: -6235733495505084797
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      bridge_sprite_0: -924210702421499341
+      bridge_sprite_1: 9057740177430891375
+      bridge_sprite_10: 1597915324967037531
+      bridge_sprite_11: 231406432282601672
+      bridge_sprite_12: 8777506916858057175
+      bridge_sprite_13: 4262251193555722070
+      bridge_sprite_14: -6235733495505084797
+      bridge_sprite_2: -1005561383662345577
+      bridge_sprite_3: 9024777767456062327
+      bridge_sprite_4: 6167643710432444334
+      bridge_sprite_5: -6334459732577316500
+      bridge_sprite_6: 5596646834794697644
+      bridge_sprite_7: -1039630472760375635
+      bridge_sprite_8: 5082548498080747069
+      bridge_sprite_9: 5587045559548108706
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
