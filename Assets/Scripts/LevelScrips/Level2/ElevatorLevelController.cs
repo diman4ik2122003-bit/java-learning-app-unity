@@ -179,26 +179,18 @@ public class ElevatorLevelController : MonoBehaviour
             }
             else
             {
-                UniversalLevelManager uniMgr = FindFirstObjectByType<UniversalLevelManager>();
-                if (uniMgr != null && uniMgr.goalTransform != null && uniMgr.goalTransform.position.x > player.transform.position.x)
+                LevelGameManager lm = FindFirstObjectByType<LevelGameManager>();
+                if (lm != null && lm.goalTransform != null && lm.goalTransform.position.x > player.transform.position.x)
                 {
-                    targetX = uniMgr.goalTransform.position.x;
+                    targetX = lm.goalTransform.position.x;
                 }
                 else
                 {
-                    LevelGameManager lm = FindFirstObjectByType<LevelGameManager>();
-                    if (lm != null && lm.goalTransform != null && lm.goalTransform.position.x > player.transform.position.x)
+                    // Прямая попытка найти объект с тегом "Finish" или именем "Goal" на крайний случай
+                    GameObject goalObj = GameObject.Find("Goal");
+                    if (goalObj != null && goalObj.transform.position.x > player.transform.position.x)
                     {
-                        targetX = lm.goalTransform.position.x;
-                    }
-                    else
-                    {
-                        // Прямая попытка найти объект с тегом "Finish" или именем "Goal" на крайний случай
-                        GameObject goalObj = GameObject.Find("Goal");
-                        if (goalObj != null && goalObj.transform.position.x > player.transform.position.x)
-                        {
-                            targetX = goalObj.transform.position.x;
-                        }
+                        targetX = goalObj.transform.position.x;
                     }
                 }
             }

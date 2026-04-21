@@ -446,7 +446,11 @@ PrefabInstance:
       objectReference: {fileID: 11400000, guid: 7e5d43645b3342646aa2beeadd22250f, type: 2}
     - target: {fileID: 5285317517917404329, guid: 9c4580f6c016bc04ca0e0b0a1926a03f, type: 3}
       propertyPath: nextLevelSceneName
-      value: Level1_1
+      value: Level4_1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6715830643993523115, guid: 9c4580f6c016bc04ca0e0b0a1926a03f, type: 3}
+      propertyPath: targetSceneName
+      value: Level4_1
       objectReference: {fileID: 0}
     - target: {fileID: 8138412520820912415, guid: 9c4580f6c016bc04ca0e0b0a1926a03f, type: 3}
       propertyPath: m_AnchorMax.x
