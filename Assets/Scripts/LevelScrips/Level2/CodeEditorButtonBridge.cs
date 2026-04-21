@@ -19,13 +19,9 @@ public class CodeEditorButtonBridge : MonoBehaviour
 
     private void OnEnable()
     {
-        Debug.Log("[CodeEditorButtonBridge] OnEnable: Searching for LevelManager...");
         levelManager = FindFirstObjectByType<LevelGameManager>();
         universalLevelManager = FindFirstObjectByType<UniversalLevelManager>();
         scaleController = FindFirstObjectByType<ScaleController>();
-
-        if (levelManager != null) Debug.Log("[CodeEditorButtonBridge] Found LevelManager!");
-        if (universalLevelManager != null) Debug.Log("[CodeEditorButtonBridge] Found UniversalLevelManager!");
 
         if (levelManager == null && universalLevelManager == null) 
             Debug.LogError("[CodeEditorButtonBridge] NO LEVEL MANAGER FOUND!");
@@ -34,7 +30,6 @@ public class CodeEditorButtonBridge : MonoBehaviour
         {
             runButton.onClick.RemoveAllListeners();
             runButton.onClick.AddListener(OnRunClicked);
-            Debug.Log("[CodeEditorButtonBridge] Bound Run Button");
         }
         else Debug.LogError("[CodeEditorButtonBridge] Run Button field is EMPTY!");
 
@@ -42,7 +37,6 @@ public class CodeEditorButtonBridge : MonoBehaviour
         {
             resetCodeButton.onClick.RemoveAllListeners();
             resetCodeButton.onClick.AddListener(OnResetClicked);
-            Debug.Log("[CodeEditorButtonBridge] Bound Reset Button");
         }
 
         if (scaleController != null)
@@ -50,13 +44,11 @@ public class CodeEditorButtonBridge : MonoBehaviour
             if (plusScaleButton != null) plusScaleButton.onClick.AddListener(scaleController.OnPlusScale);
             if (minusScaleButton != null) minusScaleButton.onClick.AddListener(scaleController.OnMinusScale);
             if (resetScaleButton != null) resetScaleButton.onClick.AddListener(scaleController.OnResetScale);
-            Debug.Log("[CodeEditorButtonBridge] Bound Scale Buttons");
         }
     }
 
     private void OnRunClicked()
     {
-        Debug.Log("[CodeEditorButtonBridge] RUN Button Clicked");
         if (levelManager != null)
             levelManager.OnRunCode();
         else
@@ -65,7 +57,6 @@ public class CodeEditorButtonBridge : MonoBehaviour
 
     private void OnResetClicked()
     {
-        Debug.Log("[CodeEditorButtonBridge] RESET Button Clicked");
         if (levelManager != null)
             levelManager.OnResetLevel();
         else if (universalLevelManager != null)

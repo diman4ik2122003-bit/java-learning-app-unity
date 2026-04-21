@@ -89,11 +89,11 @@ public class ChestController : MonoBehaviour
             }
         }
 
-        Debug.Log("🎉 Сундук открыт!");
+        Debug.Log("[OK] Сундук открыт!");
         
         if (ConsoleController.Instance != null)
         {
-            ConsoleController.Log("🎉 Сундук открыт!");
+            ConsoleController.Log("[OK] Сундук открыт!");
         }
     }
 

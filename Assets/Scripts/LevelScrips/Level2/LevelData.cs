@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using System.Collections.Generic;
 
 [CreateAssetMenu(fileName = "LevelData", menuName = "Game/Level Data")]
 public class LevelData : ScriptableObject
@@ -54,10 +55,29 @@ public class LevelData : ScriptableObject
 
     [Header("Validation (Optional)")]
     public LevelValidation[] validations;
+
+    [Header("Rating Conditions")]
+    [Tooltip("Время в секундах, за которое даются 3 звезды")]
+    public int timeFor3Stars = 300;
+    [Tooltip("Макс. количество ошибок для 3 звезд")]
+    public int attemptsFor3Stars = 2;
+    [Tooltip("Макс. количество ошибок для 2 звезд")]
+    public int attemptsFor2Stars = 5;
     
+    [Header("Contextual Hints (New System)")]
+    public List<LevelStep> steps = new List<LevelStep>();
+
     [Header("Legacy Hint (deprecated)")]
     [TextArea(2, 4)]
     public string hint = "💡 Пример:\nint distance = 5;\nPlayer.moveRight(distance);";
+}
+
+[Serializable]
+public class LevelStep
+{
+    public string stepName; // Название шага (например, "Лифт 1")
+    [TextArea(3, 10)]
+    public List<string> hints = new List<string>(); // Список подсказок для этого шага
 }
 
 [Serializable]

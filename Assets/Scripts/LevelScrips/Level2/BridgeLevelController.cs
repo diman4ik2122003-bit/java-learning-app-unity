@@ -129,7 +129,7 @@ public class BridgeLevelController : MonoBehaviour
         if (slotIndex < 0 || slotIndex >= requiredPlanks)
         {
             if (editor != null)
-                editor.AddConsoleLog($"🔴 IllegalArgumentException: Ошибка! Попытка положить планку в слот {slotIndex}. Доступно только слотов: 0 - {requiredPlanks - 1}", true);
+                editor.AddConsoleLog($"[!] ОШИБКА: Попытка положить планку в слот {slotIndex}. Доступно только слотов: 0 - {requiredPlanks - 1}", true);
                 
             JavaCodeExecutor executor = FindFirstObjectByType<JavaCodeExecutor>();
             if (executor != null) executor.executionAborted = true; // Прерываем

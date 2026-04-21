@@ -23,72 +23,83 @@ MonoBehaviour:
     \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u044F \u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u044B\u0435
     \u0442\u0438\u043F\u044B \u0434\u0430\u043D\u043D\u044B\u0445"
   description_en: Lower 4 elevators using the correct data types
-  starterCode: "// \u041E\u043F\u0443\u0441\u0442\u0438 \u0432\u0441\u0435 4 \u043B\u0438\u0444\u0442\u0430!\r\n//
-    \u041B\u0438\u0444\u0442 1: \u0432\u0435\u0441 126\r\n// \u041B\u0438\u0444\u0442
-    2: \u0432\u0435\u0441 32766\r\n// \u041B\u0438\u0444\u0442 3: \u0432\u0435\u0441
-    2147483646\r\n// \u041B\u0438\u0444\u0442 4: \u0432\u0435\u0441 9223372036854775806
-    (\u043D\u0443\u0436\u0435\u043D \u0442\u0438\u043F long!)\r\n\r\n// \u041F\u0440\u0438\u043C\u0435\u0440:\r\n//
-    byte w1 = 127;\r\n// Elevator.lower(1, w1);"
-  starterCode_en: '// Lower all 4 elevators!
-
-    // Elevator 1: weight 126
-
-    //
-    Elevator 2: weight 32766
-
-    // Elevator 3: weight 2147483646
-
-    // Elevator
-    4: weight 9223372036854775806 (requires a long type!)
-
-
-    // Example:
-
-    //
-    byte w1 = 127;
-
-    // Elevator.lower(1, w1);'
+  starterCode: "// \u041F\u0435\u0440\u0435\u0432\u0435\u0441\u044C \u0432\u0441\u0435
+    4 \u043B\u0438\u0444\u0442\u0430, \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u044F
+    \u041C\u0410\u041A\u0421\u0418\u041C\u0410\u041B\u042C\u041D\u042B\u0415 \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u044F
+    \u0442\u0438\u043F\u043E\u0432!\r\n// \u041B\u0438\u0444\u0442 1 (\u041F\u0440\u043E\u0442\u0438\u0432\u043E\u0432\u0435\u0441
+    126): \u043D\u0443\u0436\u0435\u043D byte\r\n// \u041B\u0438\u0444\u0442 2 (\u041F\u0440\u043E\u0442\u0438\u0432\u043E\u0432\u0435\u0441
+    32766): \u043D\u0443\u0436\u0435\u043D short\r\n// \u041B\u0438\u0444\u0442 3
+    (\u041F\u0440\u043E\u0442\u0438\u0432\u043E\u0432\u0435\u0441  2147483646): \u043D\u0443\u0436\u0435\u043D
+    int\r\n// \u041B\u0438\u0444\u0442 4 (\u041F\u0440\u043E\u0442\u0438\u0432\u043E\u0432\u0435\u0441
+    9223372036854775806): \u043D\u0443\u0436\u0435\u043D long\r\n\r\n// \u041F\u0440\u0438\u043C\u0435\u0440:\r\nbyte
+    w = 127;\r\nElevator.lower(1, w);"
+  starterCode_en: '// Lower all 4 elevators! // Elevator 1: weight 126 // Elevator
+    2: weight 32766 // Elevator 3: weight 2147483646 // Elevator 4: weight 9223372036854775806
+    (requires a long type!)'
   solutionCode: 'byte w1 = 127;
 
     Elevator.lower(1, w1);
-
-
 
     short w2 = 32767;
 
     Elevator.lower(2,
     w2);
 
-
-
     int w3 = 2147483647;
 
     Elevator.lower(3, w3);
 
+    long w4 = 9223372036854775807L;
 
-
-    long w4 =
-    9223372036854775807L;
-
-    Elevator.lower(4, w4);
-
-'
+    Elevator.lower(4,
+    w4);'
   playerStartPosition: {x: -11.35, y: -1.27, z: 0}
   goalPosition: {x: 20.709, y: 15.774, z: 0}
   attemptsBeforeFirstHint: 2
-  hint1: "\U0001F4A1 \u041A\u0430\u0436\u0434\u044B\u0439 \u043B\u0438\u0444\u0442
-    \u0442\u0440\u0435\u0431\u0443\u0435\u0442 \u043E\u043F\u0440\u0435\u0434\u0435\u043B\u0451\u043D\u043D\u044B\u0439
-    \u0432\u0435\u0441. \u041F\u043E\u043F\u0440\u043E\u0431\u0443\u0439 byte \u0434\u043B\u044F
-    \u043C\u0430\u043B\u0435\u043D\u044C\u043A\u0438\u0445 \u0447\u0438\u0441\u0435\u043B"
-  hint2: "\U0001F4A1 byte: \u0434\u043E 127, short: \u0434\u043E 32767, int: \u0434\u043E
-    2 147 483 647, long: \u0435\u0449\u0451 \u0431\u043E\u043B\u044C\u0448\u0435"
-  hint3: "\U0001F4A1 Elevator.lower(id, \u0432\u0435\u0441) \u2014 long \u043B\u0438\u0442\u0435\u0440\u0430\u043B\u044B
-    \u043F\u0438\u0448\u0443\u0442\u0441\u044F \u0441 L: 9223372036854775806L"
-  hint1_en: "\U0001F4A1 Each elevator requires a certain weight. Try byte for small
-    numbers."
-  hint2_en: "\U0001F4A1 byte: up to 127, short: up to 32767, int: up to 2,147,483,647,
-    long: even more"
-  hint3_en: "\U0001F4A1 Elevator.lower(id, weight) \u2014 long literals are written
-    with L: 9223372036854775806L"
+  hint1: "\U0001F4A1 \u0418\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0439 \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u0443\u044E
+    \u0434\u043B\u044F \u0445\u0440\u0430\u043D\u0435\u043D\u0438\u044F \u0440\u0430\u0441\u0441\u0442\u043E\u044F\u043D\u0438\u044F"
+  hint2: "\U0001F4A1 \u0421\u043E\u0437\u0434\u0430\u0439 \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u0443\u044E:
+    int distance = 5;"
+  hint3: "\U0001F4A1 \u0418\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0439 Player.moveRight(distance);"
+  hint1_en: 
+  hint2_en: 
+  hint3_en: 
   validations: []
+  timeFor3Stars: 300
+  attemptsFor3Stars: 2
+  attemptsFor2Stars: 5
+  steps:
+  - stepName: Lift 1 (byte)
+    hints:
+    - "\u0414\u043B\u044F \u043F\u0435\u0440\u0432\u043E\u0433\u043E \u043B\u0438\u0444\u0442\u0430
+      (126) \u0438\u0434\u0435\u0430\u043B\u044C\u043D\u043E \u043F\u043E\u0434\u0445\u043E\u0434\u0438\u0442
+      \u0441\u0430\u043C\u044B\u0439 \u043C\u0430\u043B\u0435\u043D\u044C\u043A\u0438\u0439
+      \u0442\u0438\u043F \u2014 byte."
+    - "byte \u0432\u043C\u0435\u0449\u0430\u0435\u0442 \u0447\u0438\u0441\u043B\u0430
+      \u0434\u043E 127. \u0422\u0432\u043E\u0439 \u0432\u0435\u0441 126 \u043A\u0430\u043A
+      \u0440\u0430\u0437 \u0432\u043B\u0435\u0437\u0430\u0435\u0442!"
+  - stepName: Lift 2 (short)
+    hints:
+    - "\u0412\u0442\u043E\u0440\u043E\u0439 \u043B\u0438\u0444\u0442 (32766) \u0441\u043B\u0438\u0448\u043A\u043E\u043C
+      \u0442\u044F\u0436\u0435\u043B \u0434\u043B\u044F byte. \u0418\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0439
+      short."
+    - "short \u0432\u043C\u0435\u0449\u0430\u0435\u0442 \u0434\u043E 32767. \u042D\u0442\u043E
+      \u043A\u0430\u043A \u0440\u0430\u0437 \u0434\u043B\u044F \u0432\u0435\u0441\u0430
+      32766."
+  - stepName: Lift 3 (int)
+    hints:
+    - "\u0422\u0440\u0435\u0442\u0438\u0439 \u043B\u0438\u0444\u0442 (2 \u043C\u043B\u0440\u0434)
+      \u0442\u0440\u0435\u0431\u0443\u0435\u0442 \u0441\u0442\u0430\u043D\u0434\u0430\u0440\u0442\u043D\u044B\u0439
+      \u0442\u0438\u043F int."
+    - "int \u0432\u043C\u0435\u0449\u0430\u0435\u0442 \u0434\u043E 2 147 483 647.
+      \u0422\u0432\u043E\u0439 \u0432\u0435\u0441 \u043A\u0430\u043A \u0440\u0430\u0437
+      \u0443\u043A\u043B\u0430\u0434\u044B\u0432\u0430\u0435\u0442\u0441\u044F."
+  - stepName: Lift 4 (long)
+    hints:
+    - "\u0427\u0435\u0442\u0432\u0435\u0440\u0442\u044B\u0439 \u043B\u0438\u0444\u0442
+      \u0441\u043B\u0438\u0448\u043A\u043E\u043C \u0442\u044F\u0436\u0435\u043B \u0434\u043B\u044F
+      int. \u041D\u0443\u0436\u0435\u043D \u0442\u0438\u043F long."
+    - "\u0412\u0430\u0436\u043D\u043E! \u0414\u043B\u044F long \u0432 \u043A\u043E\u043D\u0446\u0435
+      \u0447\u0438\u0441\u043B\u0430 \u043D\u0443\u0436\u043D\u043E \u043F\u0438\u0441\u0430\u0442\u044C
+      \u0431\u0443\u043A\u0432\u0443 L. \u041F\u0440\u0438\u043C\u0435\u0440: 9223372036854775806L"
   hint: "\U0001F4A1 \u041F\u0440\u0438\u043C\u0435\u0440:\nint distance = 5;\nPlayer.moveRight(distance);"

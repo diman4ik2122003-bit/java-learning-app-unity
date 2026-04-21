@@ -56,7 +56,7 @@ public class AlchemyLevelManager : MonoBehaviour
         
         usedDouble = Regex.IsMatch(code, @"\bdouble\s+\w+\s*=");
         dropsAdded = 0; 
-        Debug.Log($"[AlchemyLevelManager] Фаза {currentPhase}, double: {usedDouble}");
+        // Debug.Log($"[AlchemyLevelManager] Фаза {currentPhase}, double: {usedDouble}");
     }
 
     public void OnAddDrop(int count)
@@ -70,7 +70,9 @@ public class AlchemyLevelManager : MonoBehaviour
         }
 
         if (codeEditor != null)
-            codeEditor.AddConsoleLog($"💧 +{count} капель. Всего: {dropsAdded}/{requiredDrops}");
+        {
+            // codeEditor.AddConsoleLog($"💧 +{count} капель. Всего: {dropsAdded}/{requiredDrops}");
+        }
     }
 
     public void OnExecutionFinished(int dropsAddedThisRun, string rawOutput)
@@ -109,11 +111,14 @@ public class AlchemyLevelManager : MonoBehaviour
 
         // Успех фазы 1, но симулируем ошибку float
         string floatResult = "1.0000001";
-        string msg = $"✅ Концентрация: {floatResult}\n🌾 Для полевых условий сойдёт! Но посмотри на погрешность!";
+        string msg = $"[OK] Концентрация: {floatResult}\n🌾 Для полевых условий сойдёт! Но посмотри на погрешность!";
         codeEditor.AddConsoleLog(msg);
         
         if (resultText != null) resultText.text = msg;
         
+        // ⭐ УСПЕХ: Сообщаем менеджеру о переходе на новый этап
+        if (LevelGameManager.Instance != null) LevelGameManager.Instance.ReportProgress();
+
         if (phase2TransitionSeq != null) phase2TransitionSeq.Play();
 
         // Переход во вторую фазу
@@ -125,7 +130,7 @@ public class AlchemyLevelManager : MonoBehaviour
     {
         if (!usedDouble)
         {
-            string msg = "❌ Котёл взорвался! Нужно было использовать тип DOUBLE!";
+            string msg = "[!] Котёл взорвался! Нужно было использовать тип DOUBLE!";
             codeEditor.AddConsoleLog(msg, true);
             if (resultText != null) resultText.text = msg;
             
@@ -149,8 +154,16 @@ public class AlchemyLevelManager : MonoBehaviour
             return;
         }
 
+        StartCoroutine(SuccessRoutine(valueStr));
+    }
+
+    private IEnumerator SuccessRoutine(string valueStr)
+    {
+        // ⭐ УСПЕХ: Сразу ставим флаг, чтобы менеджер не засчитал ошибку пока мы смотрим диалог
+        if (LevelGameManager.Instance != null) LevelGameManager.Instance.progressMadeThisRun = true;
+
         // Идеальный успех
-        string msgSuccess = $"✅ Концентрация: {valueStr}\n👑 Идеально! Точность соответствует стандартам!";
+        string msgSuccess = $"[OK] Концентрация: {valueStr}\n👑 Идеально! Точность соответствует стандартам!";
         codeEditor.AddConsoleLog(msgSuccess);
         
         if (resultText != null) resultText.text = msgSuccess;
@@ -159,6 +172,9 @@ public class AlchemyLevelManager : MonoBehaviour
         {
             wizard.SetDialogueParams(dropsAdded, valueStr);
             successSeq.Play();
+            
+            // ⭐ Ждем, пока игрок прокликает все диалогиSuccessSeq
+            yield return new WaitUntil(() => !successSeq.IsPlaying);
         }
 
         levelCompleted = true;

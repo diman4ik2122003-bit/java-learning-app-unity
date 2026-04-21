@@ -28,13 +28,18 @@ public class LevelGameManager : MonoBehaviour
 
     [Header("Runtime Status")]
     public bool progressMadeThisRun = false;
+    private bool isExecutionActive = false; // Блокировка повторных отчетов за один запуск
 
     // Системные счетчики
-    private int failedAttempts = 0;
+    public int failedAttempts = 0; // Сделаем публичным для удобства
+    public int currentStepIndex = 0; // Текущий этап (например, номер лифта)
     private int hintsUsedCount = 0;
     private int currentHintIndex = 0;
     private bool levelCompleted = false;
     private float levelStartTime = 0f;
+    private Collider2D goalCollider; // Кэшируем коллайдер цели
+
+    private float lastFinishedTime = 0f;
 
     void Awake()
     {
@@ -48,13 +53,11 @@ public class LevelGameManager : MonoBehaviour
 
         if (LevelSelectionManager.SelectedLevel != null)
         {
-            Debug.Log("[LevelGameManager] Загружаем уровень из roadmap: " + LevelSelectionManager.SelectedLevel.levelId);
             LoadLevelDirectly(LevelSelectionManager.SelectedLevel);
             LevelSelectionManager.SelectedLevel = null;
         }
         else if (currentLevel != null)
         {
-            Debug.Log("[LevelGameManager] Загружаем выделенный currentLevel");
             LoadLevelDirectly(currentLevel);
         }
         else
@@ -131,6 +134,8 @@ public class LevelGameManager : MonoBehaviour
         if (goalTransform != null)
         {
             goalTransform.position = level.goalPosition;
+            // Ищем коллайдер на самом объекте или в его детях
+            goalCollider = goalTransform.GetComponentInChildren<Collider2D>();
         }
 
         Debug.Log($"[LevelGameManager] ✅ Загружен уровень: {level.levelId}");
@@ -138,7 +143,7 @@ public class LevelGameManager : MonoBehaviour
 
     public void OnRunCode()
     {
-        Debug.Log("[LevelGameManager] ⭐ OnRunCode() вызван");
+        isExecutionActive = true;
 
         if (uiManager == null)
         {
@@ -193,15 +198,22 @@ public class LevelGameManager : MonoBehaviour
 
     public void OnExecutionFinished()
     {
+        // Если мы уже обработали результат этого запуска или запуск не активен — игнорируем
+        if (!isExecutionActive) return;
+        
+        isExecutionActive = false; // СРАЗУ закрываем окно для повторных вызовов
         Invoke(nameof(CheckAfterExecution), 0.3f);
     }
 
     void CheckAfterExecution()
     {
         if (levelCompleted) return;
+        // Флаг теперь сбрасывается в OnExecutionFinished
 
         if (progressMadeThisRun)
         {
+            failedAttempts = 0; // Сбрасываем ошибки при любом прогрессе
+            
             if (uiManager != null && uiManager.codeEditor != null)
             {
                 uiManager.codeEditor.AddConsoleLog("👍 Отличная работа! Продолжай писать код дальше.", false);
@@ -213,7 +225,7 @@ public class LevelGameManager : MonoBehaviour
         }
     }
 
-    void OnLevelFailed()
+    public void OnLevelFailed()
     {
         failedAttempts++;
         if (currentLevel == null) return;
@@ -222,9 +234,7 @@ public class LevelGameManager : MonoBehaviour
 
         if (uiManager != null && uiManager.codeEditor != null)
         {
-            string lang = LocalizationManager.Instance != null ? LocalizationManager.Instance.CurrentLang : "ru";
-            string tpl = localizationDB != null ? localizationDB.Get("level_failed_attempt", lang) : "Попытка {0}";
-            uiManager.codeEditor.AddConsoleLog(string.Format(tpl, failedAttempts));
+            uiManager.codeEditor.AddConsoleLog($"Попытка {failedAttempts}. Попробуй ещё раз!", true);
         }
 
         int attemptsPerHint = currentLevel.attemptsBeforeFirstHint;
@@ -235,7 +245,6 @@ public class LevelGameManager : MonoBehaviour
             if (uiManager != null)
             {
                 uiManager.ShowSolutionButton();
-                if (uiManager.codeEditor != null) uiManager.codeEditor.AddConsoleLog("💡 Кнопка 'Решение' доступна!");
             }
         }
         else if (failedAttempts >= attemptsPerHint)
@@ -245,7 +254,9 @@ public class LevelGameManager : MonoBehaviour
             if (uiManager != null)
             {
                 uiManager.EnableHintButton();
-                if (uiManager.codeEditor != null) uiManager.codeEditor.AddConsoleLog("💡 Подсказка доступна! Нажми кнопку 'Подсказка'");
+                
+                // ⭐ АВТО-ОФФЕР: Открываем панель, но без текста (с кнопкой "Получить")
+                uiManager.OpenHintOffer();
             }
         }
     }
@@ -266,6 +277,22 @@ public class LevelGameManager : MonoBehaviour
         if (currentLevel == null) return "";
         string lang = LocalizationManager.Instance != null ? LocalizationManager.Instance.CurrentLang : "ru";
 
+        // ⭐ НОВАЯ СИСТЕМА: Сначала пробуем шаги
+        if (currentLevel.steps != null && currentLevel.steps.Count > 0)
+        {
+            int stepIdx = Mathf.Clamp(currentStepIndex, 0, currentLevel.steps.Count - 1);
+            LevelStep step = currentLevel.steps[stepIdx];
+            
+            if (step.hints != null && step.hints.Count > 0)
+            {
+                // Выбираем под-подсказку внутри шага на основе количества ошибок на ЭТОМ шаге
+                int hintInStepIdx = (failedAttempts / currentLevel.attemptsBeforeFirstHint) - 1;
+                hintInStepIdx = Mathf.Clamp(hintInStepIdx, 0, step.hints.Count - 1);
+                return step.hints[hintInStepIdx];
+            }
+        }
+
+        // ⭐ СТАРАЯ СИСТЕМА: Если шаги не заполнены (hint1, hint2, hint3)
         string h1 = (lang == "en" && !string.IsNullOrEmpty(currentLevel.hint1_en)) ? currentLevel.hint1_en : currentLevel.hint1;
         string h2 = (lang == "en" && !string.IsNullOrEmpty(currentLevel.hint2_en)) ? currentLevel.hint2_en : currentLevel.hint2;
         string h3 = (lang == "en" && !string.IsNullOrEmpty(currentLevel.hint3_en)) ? currentLevel.hint3_en : currentLevel.hint3;
@@ -277,6 +304,15 @@ public class LevelGameManager : MonoBehaviour
             case 3: return h3;
             default: return currentLevel.hint;
         }
+    }
+
+    // Метод для контроллеров уровней, чтобы сообщать о прогрессе
+    public void ReportProgress()
+    {
+        progressMadeThisRun = true;
+        currentStepIndex++;
+        failedAttempts = 0; // Обнуляем ошибки при переходе на новый этап
+        Debug.Log($"[LevelGameManager] Прогресс! Текущий шаг: {currentStepIndex}");
     }
 
     public void OnUseSolution()
@@ -334,12 +370,28 @@ public class LevelGameManager : MonoBehaviour
 
     void Update()
     {
-        if (checkGoalDistance && !levelCompleted && player != null && goalTransform != null)
+        if (!levelCompleted && player != null && goalTransform != null)
         {
-            if (Vector2.Distance(player.transform.position, goalTransform.position) < 0.5f)
+            Vector2 playerPos = player.transform.position;
+            Vector2 goalPos = goalTransform.position;
+            float dist = Vector2.Distance(playerPos, goalPos);
+
+            bool reachedByDistance = checkGoalDistance && dist < 1.4f;
+            bool reachedByCollider = (goalCollider != null && goalCollider.OverlapPoint(playerPos));
+
+            if (reachedByDistance || reachedByCollider)
             {
                 OnLevelCompleted();
             }
+        }
+    }
+
+    // Позволяет засчитывать победу через триггеры (если на Цели стоит коллайдер)
+    public void OnTriggerEnter2D(Collider2D other)
+    {
+        if (!levelCompleted && other.CompareTag("Player"))
+        {
+            OnLevelCompleted();
         }
     }
 
@@ -389,11 +441,20 @@ public class LevelGameManager : MonoBehaviour
 
     int CalculateStars(int attempts, int hints, int time)
     {
+        if (currentLevel == null) return 1;
+
         int stars = 3;
-        if (attempts > 5) stars = 1;
-        else if (attempts > 2) stars = 2;
+        
+        // Проверка по попыткам
+        if (attempts > currentLevel.attemptsFor2Stars) stars = 1;
+        else if (attempts > currentLevel.attemptsFor3Stars) stars = 2;
+        
+        // Штраф за подсказки
         if (hints > 0 && stars > 1) stars--;
-        if (time > 300 && stars > 1) stars--;
+        
+        // Штраф за время
+        if (time > currentLevel.timeFor3Stars && stars > 1) stars--;
+        
         return Mathf.Max(1, stars);
     }
 

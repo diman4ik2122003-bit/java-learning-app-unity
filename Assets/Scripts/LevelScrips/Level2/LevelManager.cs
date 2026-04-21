@@ -15,9 +15,25 @@ public class LevelManager : MonoBehaviour
     public UnityEngine.UI.Button showHintButton;
     public UnityEngine.UI.Button useSolutionButton;
 
-    [Header("UI Panels")]
     public GameObject victoryPanel;
     public VictoryPanelUI victoryPanelUI;
+    
+    private void Start()
+    {
+        // Автоматически привязываем функции к кнопкам, чтобы не делать это вручную в Инспекторе
+        if (closeHintButton != null)
+            closeHintButton.onClick.AddListener(OnCloseHint);
+            
+        if (showHintButton != null)
+            showHintButton.onClick.AddListener(() => {
+                if (LevelGameManager.Instance != null) LevelGameManager.Instance.OnShowHint();
+            });
+            
+        if (useSolutionButton != null)
+            useSolutionButton.onClick.AddListener(() => {
+                if (LevelGameManager.Instance != null) LevelGameManager.Instance.OnUseSolution();
+            });
+    }
     
     public void SetTaskInfo(string title, string description)
     {
@@ -31,6 +47,20 @@ public class LevelManager : MonoBehaviour
         {
             hintText.text = hintMessage;
             hintPanel.SetActive(true);
+            // Скрываем кнопку "получить", так как текст уже показан
+            if (showHintButton != null) showHintButton.gameObject.SetActive(false);
+        }
+    }
+
+    public void OpenHintOffer()
+    {
+        if (hintPanel != null)
+        {
+            hintPanel.SetActive(true);
+            // Очищаем текст или ставим заглушку
+            if (hintText != null) hintText.text = ""; 
+            // Показываем кнопку "Получить подсказку" внутри или поверх панели
+            if (showHintButton != null) showHintButton.gameObject.SetActive(true);
         }
     }
 

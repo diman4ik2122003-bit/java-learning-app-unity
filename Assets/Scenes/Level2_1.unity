@@ -210,10 +210,8 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.999912, y: 0.999912, z: 0.999912}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 792906582}
-  - {fileID: 1797032834}
-  m_Father: {fileID: 1791619621}
+  m_Children: []
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
@@ -245,8 +243,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 423ea6d4d77533449a9d89f1940ec670, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LanguageToggleController
-  ruToggle: {fileID: 792906583}
-  enToggle: {fileID: 1797032835}
+  ruToggle: {fileID: 0}
+  enToggle: {fileID: 0}
 --- !u!114 &537730499
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -480,6 +478,18 @@ PrefabInstance:
     - target: {fileID: 8138412520820912415, guid: 9c4580f6c016bc04ca0e0b0a1926a03f, type: 3}
       propertyPath: m_AnchorMin.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8452215283136232880, guid: 9c4580f6c016bc04ca0e0b0a1926a03f, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 1914465279}
+    - target: {fileID: 8452215283136232880, guid: 9c4580f6c016bc04ca0e0b0a1926a03f, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: OnShowHint
+      objectReference: {fileID: 0}
+    - target: {fileID: 8452215283136232880, guid: 9c4580f6c016bc04ca0e0b0a1926a03f, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: LevelGameManager, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 8565327381464149955, guid: 9c4580f6c016bc04ca0e0b0a1926a03f, type: 3}
       propertyPath: m_AnchorMax.x
@@ -1229,6 +1239,8 @@ MonoBehaviour:
   currentLevel: {fileID: 11400000, guid: e106abc1b9458d14f9a9291efbc9e2e3, type: 2}
   checkGoalDistance: 1
   progressMadeThisRun: 0
+  failedAttempts: 0
+  currentStepIndex: 0
 --- !u!4 &1914465280
 Transform:
   m_ObjectHideFlags: 0
@@ -18417,3 +18429,4 @@ SceneRoots:
   - {fileID: 788418922}
   - {fileID: 1473109568}
   - {fileID: 381956371496324111}
+  - {fileID: 537730496}

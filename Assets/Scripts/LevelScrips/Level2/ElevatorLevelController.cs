@@ -78,10 +78,10 @@ public class ElevatorLevelController : MonoBehaviour
                 editor.AddConsoleLog($"🏆 Найден новый тип данных из сундука: {typeName}!", false);
             }
 
-            LevelGameManager lm = FindFirstObjectByType<LevelGameManager>();
+            LevelGameManager lm = LevelGameManager.Instance;
             if (lm != null)
             {
-                lm.progressMadeThisRun = true;
+                lm.ReportProgress();
             }
         }
     }
@@ -117,12 +117,12 @@ public class ElevatorLevelController : MonoBehaviour
             totalWeight = long.MaxValue; 
         }
 
-        if (totalWeight < entry.pulley.requiredWeight)
+        if (totalWeight <= entry.pulley.requiredWeight)
         {
             CodeEditor editor = FindFirstObjectByType<CodeEditor>();
             if (editor != null)
             {
-                editor.AddConsoleLog($"🔴 IllegalArgumentException: Лифт {id} не сдвинется! Передан вес {weight}, но этого недостаточно для перевеса.", true);
+                editor.AddConsoleLog($"[!] ОШИБКА: Лифт {id} не сдвинется! Передан вес {weight}, но этого недостаточно для перевеса.", true);
             }
             
             JavaCodeExecutor executor = FindFirstObjectByType<JavaCodeExecutor>();
@@ -130,6 +130,7 @@ public class ElevatorLevelController : MonoBehaviour
             {
                 executor.executionAborted = true; // Прерываем цепочку команд
             }
+
             yield break;
         }
 

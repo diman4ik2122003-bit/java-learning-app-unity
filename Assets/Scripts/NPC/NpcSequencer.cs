@@ -107,6 +107,7 @@ public class NpcSequencer : MonoBehaviour
     public List<NpcActionStep> steps = new List<NpcActionStep>();
 
     private Coroutine _running;
+    public bool IsPlaying => _running != null;
 
     // ──────────────────────────────────────────────────────────────
     void Awake()
@@ -170,9 +171,10 @@ public class NpcSequencer : MonoBehaviour
     {
         for (int i = startIndex; i < steps.Count; i++)
         {
-            if (npc == null) yield break;
+            if (npc == null) break;
             yield return RunStep(steps[i]);
         }
+        _running = null;
     }
 
     IEnumerator RunStep(NpcActionStep step)

@@ -831,13 +831,21 @@ PrefabInstance:
       propertyPath: m_LocalPosition.y
       value: 0.333
       objectReference: {fileID: 0}
+    - target: {fileID: 2848938509457775316, guid: 20bbdbac714c6844c9d510fa19be068d, type: 3}
+      propertyPath: steps.Array.data[0].text_ru
+      value: "\u041D\u0430\u043A\u043E\u043D\u0435\u0446-\u0442\u043E! \u041A\u043E\u043D\u0446\u0435\u043D\u0442\u0440\u0430\u0446\u0438\u044F
+        \u0440\u043E\u0432\u043D\u043E {1}. \u0418\u0434\u0435\u0430\u043B\u044C\u043D\u043E!
+        \u0412\u0438\u0434\u0438\u0448\u044C? \u0412 \u0442\u0438\u043F\u0435 double
+        \u0442\u0430\u043A\u043E\u0439 \u043E\u0448\u0438\u0431\u043A\u0438 \u0443\u0436\u0435
+        \u043D\u0435\u0442!"
+      objectReference: {fileID: 0}
     - target: {fileID: 3147474585612222738, guid: 20bbdbac714c6844c9d510fa19be068d, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0.4
+      value: 0.81930226
       objectReference: {fileID: 0}
     - target: {fileID: 3147474585612222738, guid: 20bbdbac714c6844c9d510fa19be068d, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 0.11
+      value: 0.165
       objectReference: {fileID: 0}
     - target: {fileID: 6068652050565846288, guid: 20bbdbac714c6844c9d510fa19be068d, type: 3}
       propertyPath: typewriterSpeed
@@ -845,15 +853,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6497632983138208467, guid: 20bbdbac714c6844c9d510fa19be068d, type: 3}
       propertyPath: m_Size.x
-      value: 0.5
+      value: 0.9193023
       objectReference: {fileID: 0}
     - target: {fileID: 6497632983138208467, guid: 20bbdbac714c6844c9d510fa19be068d, type: 3}
       propertyPath: m_Size.y
-      value: 0.25
+      value: 0.305
       objectReference: {fileID: 0}
     - target: {fileID: 7811376511909457617, guid: 20bbdbac714c6844c9d510fa19be068d, type: 3}
       propertyPath: m_text
-      value: 
+      value: "\u041D\u0430\u043A\u043E\u043D\u0435\u0446-\u0442\u043E! \u041A\u043E\u043D\u0446\u0435\u043D\u0442\u0440\u0430\u0446\u0438\u044F
+        \u0440\u043E\u0432\u043D\u043E {1}. \n\u0418\u0434\u0435\u0430\u043B\u044C\u043D\u043E!
+        \u0412\u0438\u0434\u0438\u0448\u044C? \n\u0412 \u0442\u0438\u043F\u0435 double
+        \u0442\u0430\u043A\u043E\u0439 \u043E\u0448\u0438\u0431\u043A\u0438 \u0443\u0436\u0435
+        \u043D\u0435\u0442!\xBB"
       objectReference: {fileID: 0}
     - target: {fileID: 7811376511909457617, guid: 20bbdbac714c6844c9d510fa19be068d, type: 3}
       propertyPath: m_TextWrappingMode
@@ -1065,53 +1077,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c9623acd0f11d664cbe66106eebaff04, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NpcSequencer
---- !u!1 &1299024904
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1299024906}
-  - component: {fileID: 1299024905}
-  m_Layer: 0
-  m_Name: Localization Manager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1299024905
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1299024904}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fd68e479ba601af4b9687aa3fde82c5f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LocalizationManager
-  supportedLanguages:
-  - ru
-  - en
---- !u!4 &1299024906
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1299024904}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.75004, y: -1516.736, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1417949061 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8685059842722197971, guid: 9c4580f6c016bc04ca0e0b0a1926a03f, type: 3}
@@ -1687,6 +1652,8 @@ MonoBehaviour:
   currentLevel: {fileID: 11400000, guid: 0582f29262ccbbf46a66dc3728162a6e, type: 2}
   checkGoalDistance: 0
   progressMadeThisRun: 0
+  failedAttempts: 0
+  currentStepIndex: 0
 --- !u!4 &1914465280
 Transform:
   m_ObjectHideFlags: 0
@@ -2270,4 +2237,3 @@ SceneRoots:
   - {fileID: 381956371496324111}
   - {fileID: 1824442552}
   - {fileID: 979428363}
-  - {fileID: 1299024906}
