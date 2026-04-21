@@ -44,7 +44,7 @@ MonoBehaviour:
   solutionCode: "for (int i = 0; i < 10; i++) {\r\n    Bridge.addPlank(i);\r\n}\r\n"
   playerStartPosition: {x: -15.35, y: -1.27, z: 0}
   goalPosition: {x: 8.5, y: -1.38, z: 0}
-  attemptsBeforeFirstHint: 2
+  attemptsBeforeFirstHint: 1
   hint1: "\U0001F4A1 \u0426\u0438\u043A\u043B for \u0432\u044B\u0433\u043B\u044F\u0434\u0438\u0442
     \u0442\u0430\u043A: for (\u043D\u0430\u0447\u0430\u043B\u043E; \u0443\u0441\u043B\u043E\u0432\u0438\u0435;
     \u0448\u0430\u0433). \u041D\u0430\u0447\u043D\u0438 \u0441 int i = 0.\r\n"
