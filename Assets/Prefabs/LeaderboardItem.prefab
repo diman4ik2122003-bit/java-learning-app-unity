@@ -538,7 +538,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 2897789141000230234, guid: 68fe91cd4085889498ad5a3a845bcce1, type: 3}
+  m_Sprite: {fileID: 5196875044431045829, guid: 6e7e72412f3e6a54781f0588199c4e0f, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -786,4 +786,3 @@ MonoBehaviour:
   normalTextColor: {r: 0.6117647, g: 0.45490196, b: 0.3254902, a: 1}
   highlightTextColor: {r: 0.87058824, g: 0.64705884, b: 0.23529412, a: 1}
   defaultAvatarSprite: {fileID: 0}
-  debugLogs: 0

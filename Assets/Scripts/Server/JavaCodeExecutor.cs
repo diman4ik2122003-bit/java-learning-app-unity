@@ -419,14 +419,18 @@ public class JavaCodeExecutor : MonoBehaviour
                     break;
             }
             
-            // ⭐ Ждем 1.2 сек, так как анимация замедлена (Speed 0.5)
+            // ⭐ Быстрая очередь для капель, настраивается в AlchemyLevelManager
             if (cmd.action == "addDrop")
-                yield return new WaitForSeconds(1.0f);
+            {
+                AlchemyLevelManager almExec = FindFirstObjectByType<AlchemyLevelManager>();
+                float dropDelay = almExec != null ? almExec.timeBetweenDrops : 0.15f;
+                yield return new WaitForSeconds(dropDelay);
+            }
             else
+            {
                 yield return new WaitForSeconds(0.1f);
+            }
         }
-        
-        // codeEditor.AddConsoleLog("[OK] Выполнение завершено!");
         
         // Для уровня с мостом запускаем попытку пройти по мосту в самом конце
         BridgeLevelController levelBridgeController = FindFirstObjectByType<BridgeLevelController>();

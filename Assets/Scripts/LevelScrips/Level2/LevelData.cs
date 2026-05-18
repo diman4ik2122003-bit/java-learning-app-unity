@@ -14,6 +14,8 @@ public class LevelData : ScriptableObject
 
     [Header("Level Scene")]
     public GameObject levelPrefab; // Prefab со всей сценой уровня
+    [Tooltip("Опционально: Имя сцены для этого уровня. Если пусто, имя будет определено автоматически по имени ассета.")]
+    public string sceneName;
     
     [Header("Description")]
     [TextArea(3, 6)]

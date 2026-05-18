@@ -1325,6 +1325,8 @@ MonoBehaviour:
   removeButton: {fileID: 1975887259653706067}
   acceptButton: {fileID: 912978397751804662}
   declineButton: {fileID: 1744072638919766891}
+  useEditorPosition: 1
+  menuOffset: {x: 0, y: 0}
   normalBackgroundColor: {r: 0.17, g: 0.17, b: 0.17, a: 1}
 --- !u!114 &4804315831047652895
 MonoBehaviour:
@@ -2370,7 +2372,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 5196875044431045829, guid: 6e7e72412f3e6a54781f0588199c4e0f, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1

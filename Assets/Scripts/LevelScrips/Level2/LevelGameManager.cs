@@ -506,6 +506,6 @@ public class LevelGameManager : MonoBehaviour
     public void OnNextLevel()
     {
         Debug.Log("[LevelGameManager] Возврат в меню уровней (т.к. каждый уровень теперь на отдельной сцене)");
-        UnityEngine.SceneManagement.SceneManager.LoadScene("LevelSelectScene");
+        UnityEngine.SceneManagement.SceneManager.LoadScene("Island Road Map");
     }
 }

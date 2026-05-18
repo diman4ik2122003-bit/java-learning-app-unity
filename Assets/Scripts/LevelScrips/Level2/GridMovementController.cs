@@ -42,11 +42,7 @@ public class GridMovementController : MonoBehaviour
         if (grid == null)
         {
             grid = FindFirstObjectByType<Grid>();
-            if (grid != null)
-            {
-                Debug.Log($"Grid found at: {grid.transform.position}");
-            }
-            else
+            if (grid == null)
             {
                 Debug.LogError("Grid not found! Create a Grid GameObject in the scene.");
             }
@@ -69,8 +65,6 @@ public class GridMovementController : MonoBehaviour
             visualOffset = Vector3.zero; // Сбрасываем смещение, если принудительно магнитим к центру
             SnapToGrid();
         }
-        
-        Debug.Log($"Player initialized at world: {transform.position}, grid: {gridPosition}");
     }
     
     void AutoFindCollisionTilemaps()
@@ -83,9 +77,9 @@ public class GridMovementController : MonoBehaviour
             if (tilemap.GetComponent<TilemapCollider2D>() != null)
             {
                 collisionList.Add(tilemap);
-                Debug.Log($"Auto-found collision tilemap: {tilemap.name}");
             }
         }
+
         
         collisionTilemaps = collisionList.ToArray();
     }

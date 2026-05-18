@@ -5,6 +5,8 @@ public class CauldronEffects : MonoBehaviour
 {
     [Header("Magical Respawn")]
     public Animator wizardAnimator;
+    [Tooltip("Имя триггера в Аниматоре мага для анимации восстановления котла")]
+    public string wizardRestoreAnimTrigger = "Restore";
 
     private SpriteRenderer _renderer;
     private Vector3 _originalPos;
@@ -148,9 +150,9 @@ public class CauldronEffects : MonoBehaviour
         if (_renderer != null)
         {
             // ⭐ НЕ включаем рендерер сразу, чтобы он не "телепортировался"
-            if (wizardAnimator != null)
+            if (wizardAnimator != null && !string.IsNullOrEmpty(wizardRestoreAnimTrigger))
             {
-                wizardAnimator.SetTrigger("Cast");
+                wizardAnimator.SetTrigger(wizardRestoreAnimTrigger);
             }
             
             StartCoroutine(RespawnRoutine());

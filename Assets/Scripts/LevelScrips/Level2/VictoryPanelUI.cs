@@ -22,8 +22,8 @@ public class VictoryPanelUI : MonoBehaviour
     [SerializeField] private Button nextLevelButton;
 
     [Header("Scene Navigation")]
-    [SerializeField] private string levelSelectSceneName = "LevelSelectScene";
-    [SerializeField] private string nextLevelSceneName  = "LevelSelectScene";
+    [SerializeField] private string levelSelectSceneName = "Island Road Map";
+    [SerializeField] private string nextLevelSceneName  = "Island Road Map";
 
     [Header("Localization")]
     [SerializeField] private LocalizedTextDatabase localizationDB;

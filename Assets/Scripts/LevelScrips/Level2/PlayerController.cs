@@ -110,8 +110,18 @@ public class PlayerController : MonoBehaviour
         Debug.Log($"Start position set to: World={worldPos}, Grid={gridPos}");
     }
     
+    // ⭐ Метод для сохранения текущей позиции как новой стартовой (полезно после кат-сцен)
+    public void SaveCurrentPositionAsStart()
+    {
+        startWorldPosition = transform.position;
+        startGridPosition = gridMovement.GetGridPosition();
+        startPositionInitialized = true;
+    }
+
+    
     public Vector2Int GetGridPosition()
     {
         return gridMovement.GetGridPosition();
     }
 }
+

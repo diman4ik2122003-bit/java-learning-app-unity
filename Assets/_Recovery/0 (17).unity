@@ -1069,11 +1069,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5048690de89496a448b34819f6dcd0f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NpcController
---- !u!95 &987350697 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 975163346272403128, guid: 20bbdbac714c6844c9d510fa19be068d, type: 3}
-  m_PrefabInstance: {fileID: 987350694}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1001432277
 GameObject:
   m_ObjectHideFlags: 0
@@ -1483,10 +1478,6 @@ PrefabInstance:
       propertyPath: m_SortingOrder
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 7972079202803455049, guid: d5df25089a41ea24ea80ad2f538a8a29, type: 3}
-      propertyPath: wizardAnimator
-      value: 
-      objectReference: {fileID: 987350697}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

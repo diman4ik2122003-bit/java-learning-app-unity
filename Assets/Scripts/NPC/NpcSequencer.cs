@@ -163,7 +163,11 @@ public class NpcSequencer : MonoBehaviour
 
     IEnumerator DelayedPlay(float delay)
     {
-        if (delay > 0f) yield return new WaitForSeconds(delay);
+        if (delay > 0f) 
+            yield return new WaitForSeconds(delay);
+        else
+            yield return null; // Обязательно ждем 1 кадр, чтобы отработали все Start() у других скриптов
+            
         Play();
     }
 

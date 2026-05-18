@@ -22,6 +22,23 @@ public class AlchemyLevelManager : MonoBehaviour
     public NpcSequencer explosionPostSeq;
     public NpcSequencer successSeq;
 
+    [Header("Drop Settings")]
+    [SerializeField] private MagicDrop dropPrefab;
+    [SerializeField] private Transform wizardStaffPoint; // Точка вылета (посох)
+    [SerializeField] private Transform cauldronTargetPoint; // Точка падения (центр котла)
+
+    [Tooltip("Время полета одной капли от мага до котла (в секундах)")]
+    public float dropFlightDuration = 0.6f;
+    
+    [Tooltip("Пауза между вылетом каждой капли (скорость очереди)")]
+    public float timeBetweenDrops = 0.15f;
+    
+    [Tooltip("Базовая высота дуги (параболы)")]
+    public float baseArcHeight = 2.5f;
+    
+    [Tooltip("Насколько высота может случайно меняться (для эффекта красивого роя)")]
+    public float arcHeightRandomness = 0.5f;
+
     [Header("Alchemy Settings")]
     [SerializeField] private int requiredDrops = 10;
     
@@ -56,27 +73,41 @@ public class AlchemyLevelManager : MonoBehaviour
         
         usedDouble = Regex.IsMatch(code, @"\bdouble\s+\w+\s*=");
         dropsAdded = 0; 
-        // Debug.Log($"[AlchemyLevelManager] Фаза {currentPhase}, double: {usedDouble}");
+        Debug.Log($"[AlchemyLevelManager] Фаза {currentPhase}, double: {usedDouble}");
+        
+        // ⭐ Начинаем держать посох вверх (зацикленная анимация)
+        if (wizard != null)
+        {
+            Animator anim = wizard.GetComponent<Animator>();
+            if (anim != null) anim.SetBool("isCasting", true);
+        }
     }
 
     public void OnAddDrop(int count)
     {
         dropsAdded += count;
 
-        if (wizard != null)
+        // Спавним летящую каплю
+        if (dropPrefab != null && wizardStaffPoint != null && cauldronTargetPoint != null)
         {
-            Animator anim = wizard.GetComponent<Animator>();
-            if (anim != null) anim.SetTrigger("Cast");
-        }
-
-        if (codeEditor != null)
-        {
-            // codeEditor.AddConsoleLog($"💧 +{count} капель. Всего: {dropsAdded}/{requiredDrops}");
+            MagicDrop drop = Instantiate(dropPrefab, wizardStaffPoint.position, Quaternion.identity);
+            
+            // Считаем итоговую высоту дуги с небольшим рандомом
+            float arc = baseArcHeight + Random.Range(-arcHeightRandomness, arcHeightRandomness);
+            
+            drop.Fly(wizardStaffPoint.position, cauldronTargetPoint, dropFlightDuration, arc);
         }
     }
 
     public void OnExecutionFinished(int dropsAddedThisRun, string rawOutput)
     {
+        // ⭐ Опускаем посох
+        if (wizard != null)
+        {
+            Animator anim = wizard.GetComponent<Animator>();
+            if (anim != null) anim.SetBool("isCasting", false);
+        }
+
         if (levelCompleted) return;
 
         // Синхронизируем счетчик
@@ -90,6 +121,15 @@ public class AlchemyLevelManager : MonoBehaviour
         {
             valueStr = matches[matches.Count - 1].Value;
         }
+
+        // Запускаем корутину, чтобы дождаться приземления последних капель
+        StartCoroutine(ProcessExecutionResult(valueStr));
+    }
+
+    private IEnumerator ProcessExecutionResult(string valueStr)
+    {
+        // Даем последней вылетевшей капле время долететь до котла
+        yield return new WaitForSeconds(dropFlightDuration);
 
         if (wizard != null)
             wizard.SetDialogueParams(dropsAdded, valueStr);
@@ -117,8 +157,8 @@ public class AlchemyLevelManager : MonoBehaviour
         if (resultText != null) resultText.text = msg;
         
         // ⭐ УСПЕХ: Сообщаем менеджеру о переходе на новый этап
-        if (LevelGameManager.Instance != null) LevelGameManager.Instance.ReportProgress();
-
+        if (levelGameManager != null) levelGameManager.ReportProgress();
+        
         if (phase2TransitionSeq != null) phase2TransitionSeq.Play();
 
         // Переход во вторую фазу
@@ -160,7 +200,7 @@ public class AlchemyLevelManager : MonoBehaviour
     private IEnumerator SuccessRoutine(string valueStr)
     {
         // ⭐ УСПЕХ: Сразу ставим флаг, чтобы менеджер не засчитал ошибку пока мы смотрим диалог
-        if (LevelGameManager.Instance != null) LevelGameManager.Instance.progressMadeThisRun = true;
+        if (levelGameManager != null) levelGameManager.progressMadeThisRun = true;
 
         // Идеальный успех
         string msgSuccess = $"[OK] Концентрация: {valueStr}\n👑 Идеально! Точность соответствует стандартам!";
