@@ -14,16 +14,16 @@ public class CodeEditorButtonBridge : MonoBehaviour
     public Button resetScaleButton;
 
     private LevelGameManager levelManager;
-    private UniversalLevelManager universalLevelManager;
+    //private UniversalLevelManager universalLevelManager;
     private ScaleController scaleController;
 
     private void OnEnable()
     {
         levelManager = FindFirstObjectByType<LevelGameManager>();
-        universalLevelManager = FindFirstObjectByType<UniversalLevelManager>();
+        //universalLevelManager = FindFirstObjectByType<UniversalLevelManager>();
         scaleController = FindFirstObjectByType<ScaleController>();
 
-        if (levelManager == null && universalLevelManager == null) 
+        if (levelManager == null) 
             Debug.LogError("[CodeEditorButtonBridge] NO LEVEL MANAGER FOUND!");
 
         if (runButton != null)
@@ -59,8 +59,6 @@ public class CodeEditorButtonBridge : MonoBehaviour
     {
         if (levelManager != null)
             levelManager.OnResetLevel();
-        else if (universalLevelManager != null)
-            universalLevelManager.RestartLevel();
         else
             Debug.LogError("[CodeEditorButtonBridge] LevelManager not found!");
     }
